@@ -29,7 +29,6 @@ openHAB Cloud is mainly based on the following frameworks and technologies:
 * [MongoDB](https://www.mongodb.com/) - NoSQL database
 * [redis](http://redis.io) - Session Manager & data structure server
 * [Socket.IO](http://socket.io/) - Bi-directional communication between web clients and servers
-* [MEAN](https://en.wikipedia.org/wiki/MEAN_(software_bundle)) - Software stack
 
 
 ### Quick start ###
@@ -78,7 +77,7 @@ drwx------  2 ubuntu ubuntu 4096 Jun  4 12:34 .ssh
 
 
 To run openHAB Cloud you need to install the required software bundles/stacks.
-Within the main directory (openhabcloud) you need to run
+Within the main directory "openhabcloud" you need to run
 
 ```
 npm install
@@ -97,16 +96,7 @@ node --version
 ```
 
 
-If you see the node version, we can continue with runnung the following command
-within the openhabcloud directory:
-
-
-```
-sudo npm install
-```
-
-
-We also need to install some more node dependencies:
+If you see the node version, we can continue to install some more node dependencies:
 
 ```
 sudo npm install time q node-forge engine.io socket.io-parser has-binary-data socket.io-adapter
@@ -144,7 +134,7 @@ export NEW_RELIC_APP_NAME=openhabcloud
 ```
 
 
-Now we are going to setup the database path for mongoDB on our instance:
+Now we are going to setup the database path for mongoDB for our instance:
 ```
 sudo mkdir -p /data/db/
 ```
