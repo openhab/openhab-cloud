@@ -1,6 +1,6 @@
 {
     "system": {
-      "baseurl": "myopenhab.org",
+      "baseurl": "<your-openhab-cloud-host>:443",
       "logging": "info"
     },
     "express":{
@@ -43,6 +43,6 @@
         "secureConnection": true,
         "user": "foo@bar.com",
         "password": "password",
-        "from": "My openHAB <my@openhab.org>"
+        "from": "openHAB Cloud <your@email.address>"
     }
 }

@@ -3,8 +3,8 @@ var mongoose = require('mongoose'),
 var ObjectId = mongoose.SchemaTypes.ObjectId;
 
 var OAuth2CodeSchema = new Schema({
-    user: ObjectId,                             // my.OH user this code belongs to
-    oAuthClient: ObjectId,                      // my.OH OAuth2 Client this code was created for
+    user: ObjectId,                             // openhab-cloud user this code belongs to
+    oAuthClient: ObjectId,                      // openhab-cloud OAuth2 Client this code was created for
     code: String,                               // code itself
     scope: [String],                            // code scope (what can be done with this code?)
     redirectURI: String,                        // redirect URI
