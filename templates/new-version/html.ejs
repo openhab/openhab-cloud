@@ -1,0 +1,46 @@
+<html>
+<head>
+
+</head>
+<body>
+<h3>Hello <%= email %>!</h3>
+<p>
+<h3>openHAB Cloud has some news for you!</h3>
+</p>
+<p>
+<h3>Sorry for bothering!</h3>
+<p>
+    We would like to apologize for not taking care of this before, cause we didn't have an idea we would need this
+    and so we forgot to notify you that we gonna send some e-mails to our users from time to time. We hope you will
+    not consider this as a SPAM, cause we only plan to send some really usefull information to you.
+</p>
+<p>
+    First of all, thank you very much for taking your time to participate in openHAB Cloud testing, we really appreciate
+    it and hope that together we will be able to create something really usefull.
+</p>
+<p>While openHAB Cloud is not a publicly available service, we wouldn't like to bother other openHAB users with
+discussions about it on the general openHAB mailing list. And of cause yes, while it is at the very beginning it
+might have some problems from time to time, and we don't want to break their opinion about it before they even
+try it in person. So we created a separate group, <a href="https://groups.google.com/forum/#!forum/myopenhab">myopenhab</a>,
+for openHAB Cloud related discussions. We would appreciate if you subscribe to it and use it to share your experience
+with other beta testers.</p>
+<h3>Now something really usefull!</h3>
+<p>During this first days since openHAB Cloud went live we found a bug in an underlaying
+    Socket.IO java library, used by openHAB Cloud bundle for openHAB, which causes 100% CPU load if an existing connection
+    to server (openHAB Cloud cloud server we mean) fails. Unfortunately it appears only on selected platforms, so we were
+    not able to catch it until some of you met this problem after our first openHAB Cloud upgrade, when we restarted the
+    cloud with the new version and were very upset to see the problems this caused to you. We forked the lib, fixed this
+    bug and now you can download the new bundle at
+    <a href="https://myopenhab.org/downloads/org.openhab.io.myopenhab-1.4.0-SNAPSHOT.jar">https://myopenhab.org/downloads/org.openhab.io.myopenhab-1.4.0-SNAPSHOT.jar</a>.
+    So please, don't delay this and replace your existing bundle with the new one. Unless everybody does this we will not
+    be able to restart the cloud to fix some other bugs.
+</p>
+<p>And one of those bugs we missed are charts. After cloud restart /chart will start working.</p>
+<p>
+    Should you have any questions or ideas, please feel free to write to us - <a href="mailto:my@openhab.org">my@openhab.org</a>
+</p>
+<h3>Best regards,
+    openHAB Cloud team!
+</h3></p>
+</body>
+</html>

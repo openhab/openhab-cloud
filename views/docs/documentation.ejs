@@ -1,0 +1,95 @@
+<% section = 'docs' %>
+<%- include ../header.ejs %>
+<section id="content" class="fullWidth">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">Documentation</h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>documentation<span>/</span>getting started</div>
+            </div>
+        </div>
+    </header>
+    <section class="slice clearfix">
+        <div class="container">
+            <div class="row">
+                <aside class="span3" id="sidebar">
+                    <nav id="subnav">
+                        <ul>
+                            <li><a class="active" href="/docs">Getting started</a></li>
+                            <li><a href="/docs/notifications">Notifications</a></li>
+                            <li><a href="/docs/persistence">Persistence</a></li>
+                            <li><a href="/docs/ifttt">IFTTT</a></li>
+                        </ul>
+                        <div class="littleShadow"></div>
+                    </nav>
+                </aside>
+                <section class="span9 mb15 clearfix">
+                    <h3>openHAB Cloud bundle</h3>
+                    <div class="divider"><span></span></div>
+                    <p>
+                        To connect your openHAB with openHAB Cloud service you need to install a special bundle to your
+                        openHAB addons directory. You can always download the latest version of the bundle here:
+                        <a href="https://dl.bintray.com/openhab/mvn/org/openhab/io/org.openhab.io.myopenhab/1.8.0/org.openhab.io.myopenhab-1.8.0.jar">org.openhab.io.myopenhab-1.8.0.jar</a>.
+                    </p>
+                    <p>
+                        There is a known problem with SSL when using openHAB Cloud bundle with openjdk, so please use
+                        Oracle jdk.
+                    </p>
+                    <h3>UUID and secret</h3>
+                    <div class="divider"><span></span></div>
+                    <p>
+                        To authenticate with openHAB Cloud service your openHAB will generate two important pieces of
+                        information. The first one is a uniq identifier which one can think of as a username of your
+                        openHAB and which is UUID. The second one is a random secret key which one can think of as a
+                        password. Both pieces are written into local files for persistence and those files are stored
+                        in <code>webapps/static</code> directory of your openHAB installation in <code>uuid</code>
+                        and <code>secret</code> files. If you loose this files during openHAB upgrade or by another
+                        occasion openHAB will automatically generate new ones and you will have to reconfigure UUID
+                        and secret in openHAB Cloud under <a href="/account">My account</a> section.
+                    </p>
+                    <h3>Adjusting openHAB security settings to work with openHAB Cloud</h3>
+                    <div class="divider"><span></span></div>
+                    <p>
+                        openHAB Cloud doesn't pass authentication data through connection with your openHAB for security
+                        reasons, so you need to disable local authentication, so that bundle will be able to make
+                        requests to your openHAB. To do that you need to set <code>security:option=EXTERNAL</code>
+                        and adjust <code>security:netmask=</code> to your local LAN IP subnet in your <code>openhab.cfg</code>.
+                        After that openHAB Cloud bundle will be able to make requests while external requests will still
+                        be authenticated against your local users.cfg. If you don't expose your openHAB to outer
+                        world you can set <code>security:option</code> to <code>OFF</code> to switch authentication
+                        off completely.
+                    </p>
+                    <h3>What to do if your openHAB uses a different local port (not 8080)</h3>
+                    <div class="divider"><span></span></div>
+                    <p>
+                        Some users run openHAB on specific appliances, or just co-host openHAB with another applications
+                        which use port 8080. By default openHAB Cloud bundle will try to connect to openHAB at port 8080.
+                        But there is no problem to change this behavior. Just add
+                        <code>myopenhab:localPort=<the port of your choice></code> to your <code>openhab.cfg</code> file and
+                        openHAB Cloud bundle will start connecting to the port of your choice after openHAB reload.
+                    </p>
+                    <h3>Configuring iOS and Android applications</h3>
+                    <div class="divider"><span></span></div>
+                    <p>
+                        Configuring openHAB iOS and Android apps can't be easier. Just set remote URL to
+                        <code>https://myopenhab.org</code> in application settings and set username and password
+                        to the same ones you use to log in to myopenhab.org website, and you are done.
+                    </p>
+                    <h3>openHAB Cloud user support</h3>
+                    <div class="divider"><span></span></div>
+                    <p>
+                        With all respect to our users we are aimed to provide support for openHAB Cloud with the best effort
+                        quality we can afford keeping in mind that openHAB Cloud is still in the beta phase and it is completely
+                        non commercial project right now.
+                    </p>
+                    <p>
+                        To do so we've created a <a href="https://community.openhab.org/c/apps-services/my-openhab">openHAB Cloud section on our forum</a> where you can post your questions
+                        and discuss this service with other active testers. Apart from that we will always be happy to
+                        answer your questions and listen to your ideas sent to <a href="mailto:my@openhab.org">my@openhab.org</a>
+                    </p>
+                </section>
+            </div>
+        </div>
+    </section>
+</section>
+<%- include ../footer.ejs %>

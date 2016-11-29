@@ -1,0 +1,31 @@
+<% section = 'account' %>
+<%- include header.ejs %>
+<section id="content">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">Delete My Account</span></h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>Delete Account</div>
+            </div>
+        </div>
+    </header>
+</section>
+<div class="slice clearfix">
+    <div class="container">
+        <%- include alerts.ejs %>
+        <div class="row">
+            <div class="span12">
+                <h2>Warning! You are going to delete your items and event data! All items and event data will be completely erased!</h2>
+                <div class="divider"><span></span></div>
+                <p>
+                    Deleting items and event data will clean up all items and related events.
+                </p>
+                <form method="post" action="/itemsdelete" id="deleteform">
+                    <input type="hidden" name="_csrf" value="<%= token %>">
+                    <button name="submit" type="submit" class="btn btn-danger" id="submit">Delete Items and Events</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<%- include footer.ejs %>

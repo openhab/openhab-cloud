@@ -1,0 +1,48 @@
+{
+    "system": {
+      "baseurl": "myopenhab.org",
+      "logging": "info"
+    },
+    "express":{
+      "key" : "some express key"
+    },
+    "apn" : {
+      "gateway": "gateway.push.apple.com",
+      "cert": "certs/aps/aps_production_cert.pem",
+      "key": "certs/aps/aps_production_key.pem",
+      "passphrase": "passphrase"
+    },
+    "gcm" : {
+      "jid": "something@gcm.googleapis.com",
+      "password": "password"
+    },
+    "ifttt" : {
+      "iftttChannelKey" : "key",
+      "iftttTestToken" : "token"
+    },
+    "mail": {
+      "host" : "smtp",
+      "port" : 465,
+      "user" : "foo@bar.com",
+      "pass" : "password"
+    },
+    "mongodb": {
+        "hosts": ["127.0.0.1"],
+        "db": "openhab",
+        "user": "openhab",
+        "password": "password"
+    },
+    "redis": {
+        "host": "127.0.0.1",
+        "port": "6379",
+        "password": "password"
+    },
+    "mailer": {
+        "host" : "smtp",
+        "port": 465,
+        "secureConnection": true,
+        "user": "foo@bar.com",
+        "password": "password",
+        "from": "My openHAB <my@openhab.org>"
+    }
+}

@@ -1,0 +1,82 @@
+<% section = 'account' %>
+<%- include header.ejs %>
+<style type="text/css">
+    #map-canvas { width: 100%; height: 350px;}
+    .nav-subitem {
+        margin-left: 20px;
+    }
+</style>
+<!-- page content -->
+<section id="content" class="sidebar">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">My Devices</h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>Devices</div>
+            </div>
+        </div>
+    </header>
+    <div class="slice clearfix">
+        <div class="container">
+            <%- include alerts.ejs %>
+            <div class="row">
+                <aside class="span3" id="sidebar">
+                    <nav id="subnav">
+                        <ul>
+                            <% for (var i=0; i<userDevices.length; i++) { %>
+                            <li><a <% if (userDevices[i]._id == selectedDeviceId) { %>class="active"<%}%> href="/devices/<%=userDevices[i]._id%>"><%=userDevices[i].deviceModel%></a></li>
+                            <% } %>
+                        </ul>
+                        <div class="littleShadow"></div>
+                    </nav>
+                    <% if (userDevices.length == 0) { %>
+                    <section id="widgetArea">
+                        <div class="widget">
+                            <h3>No Devices</h3>
+                            <p>You currently have no devices registered with openHAB Cloud.</p>
+                        </div>
+                    </section>
+                    <% } %>
+                </aside>
+                <div class="span9">
+                    <% if (userDevices.length > 0 ) { %>
+                    <table class="table">
+                        <thead>
+                        <tr><th>Type</th><th>ID</th><th>Registered</th><th>Last location</th><th></th></tr>
+                        </thead>
+                        <tr>
+                            <td><%= userDevices[selectedDeviceArrayId].deviceType%></td>
+                            <td><%= userDevices[selectedDeviceArrayId].deviceId%></td>
+                            <td><%= date_util(userDevices[selectedDeviceArrayId].registered, timeZone).calendar()%></td>
+                            <td>
+                                <% if (typeof userDevices[selectedDeviceArrayId].lastGlobalLocation != 'undefined') { %>
+                                <%= date_util(userDevices[selectedDeviceArrayId].lastGlobalLocation, timeZone).calendar()%>
+                                <% } else { %>
+                                    Never
+                                <% } %>
+                            </td>
+                            <td>
+                                <a href="/devices/<%=userDevices[selectedDeviceArrayId].id%>/delete"><i class="icon-trash"></i></a>
+                                <a href="#"><i class="icon-edit"></i> </a>
+                            </td>
+                        </tr>
+                    </table>
+                    <% } %>
+                </div>
+                <div class="span9">
+                    <% if (userDevices.length > 0 ) { %>
+                    <h3>Send a message to this device</h3>
+                    <div class="divider"><span></span></div>
+                    <form method="post" action="/devices/<%=userDevices[selectedDeviceArrayId].id%>/sendmessage">
+                        <input type="hidden" name="_csrf" value="<%= token %>">
+                        <textarea id="messagetext" name="messagetext" maxlength="250" rows="4"></textarea>
+                        <button type="submit" class="btn">Send message</button>
+                    </form>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- page content -->
+<%- include footer.ejs %>

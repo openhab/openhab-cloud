@@ -1,0 +1,31 @@
+<%- include header.ejs %>
+
+<section id="content">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">Invitation</h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>Invitation</div>
+            </div>
+        </div>
+    </header>
+    <div class="slice clearfix">
+        <div class="container">
+            <%- include alerts.ejs %>
+            <div class="row">
+                <div class="span2"></div>
+                <div class="span8">
+                    <h3>Invite your friends to openHAB Cloud!</h3>
+                    <div class="divider"><span></span></div>
+                    <form method="post" action="/invitations">
+                        <input type="hidden" name="_csrf" value="<%= token %>">
+                        <input id="email" type="text" name="email" placeholder="E-Mail">
+                        <button type="submit" class="btn">Send invitation</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- page content -->
+<%- include footer.ejs %>

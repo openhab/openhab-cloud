@@ -1,0 +1,67 @@
+<% section = 'index' %>
+<%- include header.ejs %>
+      <% if (!user) { %>
+<!-- page content -->
+<section id="content" class="fullWidth">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">openHAB Cloud</h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a> </div>
+            </div>
+        </div>
+    </header>
+    <section class="slice clearfix">
+        <div class="container">
+            <%- include alerts.ejs %>
+            <div class="row">
+                <section class="span12 mb15 clearfix">
+                    <h2>What is openHAB Cloud?</h2>
+                    <div class="divider"><span></span></div>
+                    <p>
+                        openHAB Cloud is a companion cloud service for <a href="http://www.openhab.org">openHAB</a> open
+                        source home automation software. This service provides openHAB users ability to remotely monitor
+                        their homes through the Internet, collect and visualize data, receive notifications and much
+                        more.
+                    </p>
+                </section>
+                <section class="span12 mb15 clearfix">
+                    <blockquote>
+                        To connect your openHAB with openHAB Cloud service you need to <a href="https://bintray.com/artifact/download/openhab/mvn/org/openhab/io/org.openhab.io.myopenhab/1.8.2/org.openhab.io.myopenhab-1.8.2.jar">download and install</a> a special bundle to your
+                        openHAB addons directory.
+                        After installing the bundle hava a look at our <a href="/docs">Getting started</a> guide, collect all data needed and <a href="/login">register your account!</a>
+                    </blockquote>
+                </section>
+            </div>
+        </div>
+    </section>
+</section>
+<!-- page content -->
+
+    <% } else { %>
+<section id="content" class="portfolio">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <%- include alerts.ejs %>
+            <div class="row">
+                <h1 class="span8">Home</h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a></div>
+            </div>
+        </div>
+    </header>
+    <section class="slice clearfix">
+        <div class=" clearfix">
+            <div class="container" id="threeColumns">
+                <% if (openhabMajorVersion == '2') { %>
+                    You are using openHAB 2.x. <a href="https://myopenhab.org/start/index">Click here to access your openHAB's dashboard</a>
+                <% } else { %>
+                    You are using openHAB 1.x. To remotely access your openHAB's web interface go to <code>https://myopenhab.org/openhab.app?sitemap=yoursitemapname</code>
+                <% } %>
+            </div>
+        </div>
+    </section>
+</section>
+
+      <% } %>
+  </div>
+<%- include footer.ejs %>

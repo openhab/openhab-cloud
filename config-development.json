@@ -1,0 +1,25 @@
+{
+    "system": {
+      "logging": "debug",
+      "baseurl": "openhab-cloud.org:443"
+    },
+    "mongodb": {
+        "hosts": ["127.0.0.1"],
+        "db": "openhab",
+        "user": "someuser",
+        "password": "somepass"
+    },
+    "redis": {
+        "host": "127.0.0.1",
+        "port": "6379",
+        "password": "secret"
+    },
+    "mailer": {
+        "host" : "somehost",
+        "port": 465,
+        "secureConnection": true,
+        "user": "someuser",
+        "password": "somepass",
+        "from": "My openHAB <my@openhab.org>"
+    }
+}

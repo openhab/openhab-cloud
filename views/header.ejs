@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<html lang="en">
+<!--<![endif]-->
+<head>
+    <!-- Basic Page Needs
+        ================================================== -->
+    <meta charset="utf-8">
+    <title>openHAB Cloud - <%= title %></title>
+    <meta name="description" content="openHAB Cloud - cloud companion service for openHAB">
+    <meta name="author" content="openHAB">
+    <!-- Mobile Specific Metas
+        ================================================== -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSS
+        ================================================== -->
+    <!-- Bootstrap  -->
+    <link type="text/css" rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <!-- web font  -->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,800" rel="stylesheet" type="text/css">
+    <!-- plugin css  -->
+    <link rel="stylesheet" type="text/css" href="/js-plugin/pretty-photo/css/prettyPhoto.css" />
+    <link rel="stylesheet" type="text/css" href="/js-plugin/rs-plugin/css/settings.css" media="screen" />
+    <link type="text/css" rel="stylesheet" href="/js-plugin/hoverdir/css/style.css">
+    <!-- icon fonts -->
+    <link type="text/css" rel="stylesheet" href="/font-icons/custom-icons/css/custom-icons.css">
+    <link type="text/css" rel="stylesheet" href="/font-icons/custom-icons/css/custom-icons-ie7.css">
+    <!-- Custom css -->
+    <link type="text/css" rel="stylesheet" href="/css/layout.css">
+    <link type="text/css" id="colors" rel="stylesheet" href="/css/colors.css">
+    <!--[if lt IE 9]><script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+    <!--[if gte IE 9]><style type="text/css">.iconBig, .active, .hover a , .Shover a { filter: none !important; } </style> <![endif]-->
+
+    <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+
+    <script src="/js/modernizr-2.6.1.min.js"></script>
+    <!-- Favicons
+        ================================================== -->
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="apple-icon.png"  />
+
+    <style type="text/css">
+        .inversedlink {
+            color:#FFFFFF;
+        }
+        .inversedlink:hover {
+            color:#FFFFFF;
+        }
+        .inversedlink:visited {
+            color:#FFFFFF;
+        }
+        .inversedlink:active {
+            color:#FFFFFF;
+        }
+
+    </style>
+    <script src="/js/jquery.js"></script>
+    <script src="/js/codemirror.js"></script>
+    <script src="/js/javascript.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstimezonedetect/1.0.4/jstz.min.js"></script>
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCh6fTzWwOMbplxEyNTZSLIn4mxEE3sraE&sensor=false">
+    </script>
+    <script>
+        $( document ).ready(function() {
+            $("[rel='tooltip']").tooltip();
+            <% if (timeZone == 'undefined') { %>
+            var timeZone = 'undefined';
+            <% } else { %>
+            var timeZone = '<%= timeZone %>';
+            <% } %>
+            if (timeZone == 'undefined') {
+                var tz = jstz.determine();
+                $.get("/setTimezone?tz=" + tz.name(), function(data) {
+                });
+            }
+        });
+    </script>
+    <style type="text/css">
+        body {
+            padding-top: 60px;
+            padding-bottom: 40px;
+        }
+        .container {
+            margin: 0 auto;
+            max-width: 1000px;
+        }
+        .container-fluid {
+            margin: 0 auto;
+            max-width: 1000px;
+        }
+        .form-signin {
+            padding: 19px 29px 29px;
+            margin: 0 auto 20px;
+            background-color: #fff;
+            border: 1px solid #e5e5e5;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            border-radius: 5px;
+            -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+            -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
+        }
+        .form-signin .form-signin-heading,
+        .form-signin .checkbox {
+            margin-bottom: 10px;
+        }
+        .form-signin input[type="text"],
+        .form-signin input[type="password"] {
+            font-size: 16px;
+            height: auto;
+            margin-bottom: 15px;
+            padding: 7px 9px;
+        }
+        .openhab-online {
+            background: #e0f0d5;
+        }
+
+        .openhab-online:hover {
+            background: #e0f0d5 !important;
+            background-image: "" !important;
+        }
+
+        .openhab-offline {
+            background: #f1dede;
+        }
+
+        .openhab-offline:hover {
+            background: #f1dede !important;
+            background-image: "" !important;
+        }
+
+        .sidebar-nav {
+            display: block;
+            padding: 9px 14px;
+            margin-bottom: 14px;
+        }
+    </style>
+
+</head>
+<body>
+<title><%= title %></title>
+<!-- Primary Page Layout
+    ================================================== -->
+<!-- header -->
+<header id="mainHeader" class="clearfix">
+    <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container"> <a href="/" class="brand"><img src="/img/openhab-logo-top.png" alt="openHAB"/></a>
+                <nav id="mainMenu" class="clearfix">
+                    <ul>
+                        <% if (user) { %>
+                        <li><a href="/" class="firstLevel <% if (section == 'index')  { %>active<% } %>">Home</a></li>
+<!--                        <li>
+                            <a href="#" class="firstLevel <% if (section == 'config')  { %>active<% } %>" data-toggle="dropdown">Configuration</a>
+                            <ul>
+                                <li><a href="/config/system">System</a></li>
+                                <li><a href="">Items</a></li>
+                                <li><a href="">Sitemaps</a></li>
+                                <li><a href="">Rules</a></li>
+                                <li><a href="">Persist</a></li>
+                                <li><a href="">Scripts</a></li>
+                                <li><a href="">Translations</a></li>
+                            </ul>
+                        </li> -->
+                        <% if (!user.parent) { %>
+                        <li><a href="/items" class="firstLevel <% if (section == 'items')  { %>active<% } %>">Items</a></li>
+                        <li><a href="/events" class="firstLevel <% if (section == 'events')  { %>active<% } %>">Event log</a></li>
+                        <% } %>
+                        <li><a href="/notifications" class="firstLevel <% if (section == 'notifications')  { %>active<% } %>">Notifications</a></li>
+                        <% } %>
+                        <li><a href="/docs" class="firstLevel <% if (section == 'docs')  { %>active<% } %>">Docs</a></li>
+                        <% if (user) if (openhabstatus) { %>
+                        <% if (openhabstatus == 'online') { %>
+                        <li>
+                            <a class="openhab-online" href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).calendar()%>">Online</a>
+                        </li>
+                        <% } else { %>
+                        <li>
+                            <!-- <a data-toggle="tooltip" data-placement="left" title data-original-title="Last seen on xxx">openHAB <%= openhabstatus %></a> -->
+                            <a class="openhab-offline" href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).calendar()%>">Offline</a>
+                        </li>
+                        <% } %>
+                        <% } %>
+                        <% if (user) if (user.group == 'staff') { %>
+                        <li>
+                            <a href="/staff/stats" class="firstLevel <% if (section == 'staff')  { %>active<% } %>">Staff</a>
+                        </li>
+                        <% } %>
+                        <% if (!user) { %>
+                        <li><a href="/login" class="firstLevel <% if (section == 'login')  { %>active<% } %>">Login / Sign up</a></li>
+                        <% } else { %>
+                        <li>
+                            <a href="#" class="firstLevel" data-toggle="dropdown"><%= user.username %></a>
+                            <ul>
+                                <li><a href="/account">Account</a></li>
+                                <li><a href="/devices">Devices</a></li>
+                                <li><a href="/applications">Applications</a></li></li>
+                                <% if (user.role == "master") { %><li><a href="/users">Users</a></li> <% } %>
+                                <li class="divider"></li>
+                                <li><a href="/logout">Logout</a></li>
+                            </ul>
+                        </li>
+                        <% } %>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</header>
+<!-- header -->
+<!-- globalWrapper -->
+<div id="globalWrapper">

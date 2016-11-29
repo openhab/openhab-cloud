@@ -1,0 +1,17 @@
+[Unit]
+Description=node.js openhab cloud server
+
+[Service]
+User=openhabcloud
+Group=openhabcloud
+Environment=NODE_ENV=production
+#Environment=DEBUG=oath2orize
+Restart=always
+RestartSec=10                       # Restart service after 10 seconds if node service crashes
+StandardOutput=syslog               # Output to syslog
+StandardError=syslog                # Output to syslog
+SyslogIdentifier=openhabcloud
+WorkingDirectory=/home/openhabcloud/openhabcloud
+ExecStart=/home/openhabcloud/.nvm/v0.10.48/bin/node /home/openhabcloud/openhabcloud/app.js
+[Install]
+WantedBy=multi-user.target

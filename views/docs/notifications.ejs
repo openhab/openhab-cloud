@@ -1,0 +1,108 @@
+<% section = 'docs' %>
+<%- include ../header.ejs %>
+<section id="content" class="fullWidth">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">Documentation</h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>documentation<span>/</span>notifications</div>
+            </div>
+        </div>
+    </header>
+    <section class="slice clearfix">
+        <div class="container">
+            <div class="row">
+                <aside class="span3" id="sidebar">
+                    <nav id="subnav">
+                        <ul>
+                            <li><a href="/docs">Getting started</a></li>
+                            <li><a class="active" href="/docs/notifications">Notifications</a></li>
+                            <li><a href="/docs/persistence">Persistence</a></li>
+                            <li><a href="/docs/ifttt">IFTTT</a></li>
+                        </ul>
+                        <div class="littleShadow"></div>
+                    </nav>
+                </aside>
+                <section class="span9 mb15 clearfix">
+                    <h3>openHAB status notifications</h3>
+                    <div class="divider"><span></span></div>
+                    <p>
+                        Every time your openHAB connects to openHAB Cloud or disconnects from it, you will automatically
+                        receive a notification to your devices telling you if openHAB is online or offline. openHAB Cloud
+                        has a 300 seconds (5 minute) delay on sending those notifications. When your openHAB goes
+                        offline we will wait for 5 minutes. If your openHAB goes online during this period, nothing will
+                        happen and we will not bother your. If not, we will notify you that your openHAB is offline.
+                    </p>
+                    <h3>Sending notifications</h3>
+                    <div class="divider"><span></span></div>
+                    <p>
+                        As soon as you configure Android or iOS app to work with your myopenhab.org account, it will automatically register
+                        itself to receive notifications. Notifications sent to your device will appear as any other applications
+                        notifications. Now you can use a special action in your openHAB rules to send notifications.
+                    </p>
+                    <p class="text-info">
+                        <strong>Example:</strong> <code class="html">sendNotification("your openHAB Cloud user email here", "your text here")</code>
+                    </p>
+                    <p>
+                        This will send a notification with "your text here" to your device. If you use multiply devices with the
+                        same account configured, all of them will receive this notifications.
+                    </p>
+                    <p class="text-info">
+                        <strong>Example:</strong> <code class="html">sendBroadcastNotification("your text here")</code>
+                    </p>
+                    <p>
+                        This will send a notification with "your text here" to all devices of all users of your openHAB Cloud account.
+                    </p>
+                    <p class="text-info">
+                        <strong>Example:</strong> <code class="html">sendLogNotification("your text here")</code>
+                    </p>
+                    <p>
+                        This will send a log notification with "your text here". Log notifications are not sent to any of your devices, they
+                        are just saved to notifications list and will be listed in <a href="/notifications">notifications area</a> of openHAB Cloud and mobile apps.
+                    </p>
+                    <p>
+                        You can test if notifications are sent to any of your mobile devices by going to <a href="/devices">openHAB Cloud Devices</a>
+                        section and sending a message with any text to any particular device!
+                    </p>
+                    <h3>Sending SMS</h3>
+                    <div class="divider"><span></span></div>
+                    <p>Now you can send SMS directly to any mobile number from your openHAB.
+                    </p>
+                    <p class="text-info">
+                        <strong>Example:</strong> <code class="html">sendSms("+phone in international format", "your text here")</code>
+                    </p>
+                    <p>
+                        This will send an SMS with "your text here" to the mobile phone number you specified. The phone number should be
+                        in international format starting with '+', like +18001234567.
+                    </p>
+                    <p>
+                        P.S. please don't forget that SMS is a paid thing, and openHAB Cloud is a free service. So don't spend
+                        all of our money on spamming yourself :-)
+                    </p>
+
+                    <!--                    <h3>Persistence</h3>
+                                        <div class="divider"><span></span></div>
+                                        <p>
+                                            Now you can persist your events and data in openHAB Cloud cloud. To do that you need to configure openHAB Cloud
+                                            persistence in <em>configurations/persistence/myopenhab.persist</em>, defining the policy to store your data.
+                                        </p>
+                                        <p class="text-info">
+                                            <strong>Example:</strong><br>
+                                            <em>
+                                                Strategies {<br>
+                                                default = everyChange<br>
+                                                }<br>
+                                                Items {<br>
+                                                * : strategy = everyChange<br>
+                                                }<br>
+                                            </em>
+                                        </p>
+                                        <p>
+                                            This persist all your data, with every change, to openHAB Cloud cloud.
+                                        </p> -->
+                </section>
+            </div>
+        </div>
+    </section>
+</section>
+<%- include ../footer.ejs %>

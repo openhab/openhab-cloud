@@ -1,0 +1,62 @@
+<% section = 'staff' %>
+<%- include ../header.ejs %>
+<!-- page content -->
+<section id="content" class="sidebar">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">Staff</h1>
+                <div class="span4" id="navTrail"> <a href="index.html" class="homeLink">home</a><span>/</span>Staff<span>/</span>Enrollments</div>
+            </div>
+        </div>
+    </header>
+    <div class="slice clearfix">
+        <div class="container">
+            <%- include ../alerts.ejs %>
+            <div class="row">
+                <aside class="span3" id="sidebar">
+                    <nav id="subnav">
+                        <ul>
+                            <li ><a class="active" href="">Stats</a></li>
+                            <li ><a href="/staff/oauthclients">OAuth Clients</a></li>
+                            <li ><a href="">Users</a></li>
+                        </ul>
+                        <div class="littleShadow"></div>
+                    </nav>
+                </aside>
+                <div class="span9">
+                    <h3>openHAB-cloud Current Statistics (last collected on <%= last5MinStatTimestamp %>)</h3>
+                    <div class="divider"><span></span></div>
+                    <!-- <div class="row-fluid">
+                        <div class="span1">
+                        </div>
+                        <div class="span9">
+                            <canvas id="online_chart" width="520px">
+                            </canvas>
+                        </div>
+                    </div> -->
+                    <div class="row-fluid">
+                        <div class="span3 postDate">
+                            <%=userCount%>
+                            <span>Users Registered</span>
+                        </div>
+                        <div class="span3 postDate">
+                            <%=openhabCount%>
+                            <span>openHABs</span>
+                        </div>
+                        <div class="span3 postDate">
+                            <%=openhabOnlineCount%>
+                            <span>openHABS online</span>
+                        </div>
+                        <div class="span3 postDate">
+                            <%=userDeviceCount%>
+                            <span>User Devices</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- page content -->
+<%- include ../footer.ejs %>

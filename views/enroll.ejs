@@ -1,0 +1,63 @@
+<% section = '' %>
+<%- include header.ejs %>
+<!-- page content -->
+<section id="content" xmlns="http://www.w3.org/1999/html">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">Enroll for <span>Beta</span></h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>enroll</div>
+            </div>
+        </div>
+    </header>
+    <div class="slice clearfix">
+        <div class="container">
+            <%- include alerts.ejs %>
+            <div class="row">
+                <div class="span12">
+                    <h2>Early Beta</h2>
+                    <div class="divider"><span></span></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="span4">
+                <p>
+                    openHAB Cloud is currently running in a closed beta stage. Because we are limited in our resources
+                    and on the other hand we don't want you to get upset by openHAB Cloud experience, we let new users in
+                    in chunks and track the performance of our system.
+                </p>
+                <p>
+                    If you want to be one of the first to see this service and help us make it better before the public
+                    launch, please fill in the form and enroll for our beta. As soon as we have the capacity, you will
+                    get an invitation to join!
+                </p>
+                </div>
+                <div class="span8">
+                    <form method="post" action="/enroll" id="contactform">
+                        <input type="hidden" name="_csrf" value="<%= token %>" class="form-control">
+                        <label for="email"></label>
+                        <input type="text" name="email" id="email" placeholder="E-Mail" value="<% if (typeof email != 'undefined') email %>"/>
+                        <select name="platform" id="platform">
+                            <option selected="true" label="Select your OS..." value="">Select your OS...</option>
+                            <option label="Linux" value="linux">Linux</option>
+                            <option label="Linux Embedded" value="linuxemb">Linux Embedded</option>
+                            <option label="Windows" value="windows">Windows</option>
+                            <option label="Mac OS X" value="osx">Mac OS X</option>
+                        </select>
+                        <select name="java" id="java">
+                            <option selected="true" label="Select your Java experience..." value="">Select your Java experience...</option>
+                            <option label="What is Java?" value="none">What is Java?</option>
+                            <option label="Newbie" value="newbie">Newbie</option>
+                            <option label="Java developer" value="developer">Java developer</option>
+                            <option label="Java guru" value="guru">Java guru</option>
+                        </select>
+                        <textarea id="descr" name="descr" placeholder="Please provide short description of your installation and bindings and technologies you use"></textarea>
+                        <button name="submit" type="submit" class="btn" id="submit">Enroll me!</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- page content -->
+<%- include footer.ejs %>
