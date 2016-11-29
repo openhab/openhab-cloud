@@ -1,0 +1,32 @@
+<% section = 'account' %>
+<%- include header.ejs %>
+<section id="content">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">Delete My Account</span></h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>Delete Account</div>
+            </div>
+        </div>
+    </header>
+</section>
+<div class="slice clearfix">
+    <div class="container">
+        <%- include alerts.ejs %>
+        <div class="row">
+            <div class="span12">
+                <h2>Warning! You are going to delete your account! All data will be completely erased!</h2>
+                <div class="divider"><span></span></div>
+                <p>
+                    Deleting account will erase all openHAB, device, notification and event data.
+                    This can't be undone!
+                </p>
+                <form method="post" action="/accountdelete" id="deleteform">
+                    <input type="hidden" name="_csrf" value="<%= token %>">
+                    <button name="submit" type="submit" class="btn btn-danger" id="submit">Delete Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<%- include footer.ejs %>

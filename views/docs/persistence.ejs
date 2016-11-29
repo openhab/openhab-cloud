@@ -1,0 +1,61 @@
+<% section = 'docs' %>
+<%- include ../header.ejs %>
+<section id="content" class="fullWidth">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">Documentation</h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>documentation<span>/</span>persistence</div>
+            </div>
+        </div>
+    </header>
+    <section class="slice clearfix">
+        <div class="container">
+            <div class="row">
+                <aside class="span3" id="sidebar">
+                    <nav id="subnav">
+                        <ul>
+                            <li><a href="/docs">Getting started</a></li>
+                            <li><a href="/docs/notifications">Notifications</a></li>
+                            <li><a class="active" href="/docs/persistence">Persistence</a></li>
+                            <li><a href="/docs/ifttt">IFTTT</a></li>
+                        </ul>
+                        <div class="littleShadow"></div>
+                    </nav>
+                </aside>
+                <section class="span9 mb15 clearfix">
+                    <h3>Persistence</h3>
+                                        <div class="divider"><span></span></div>
+                                        <p>
+                                            You can persist your events and data in openHAB Cloud cloud. To do that you need to configure openHAB Cloud
+                                            persistence in <em>configurations/persistence/myopenhab.persist</em>, defining the policy to store your data.
+                                        </p>
+                                        <p class="text-info">
+                                            <strong>Example:</strong><br>
+                                            <em>
+                                                Strategies {<br>
+                                                default = everyChange<br>
+                                                }<br>
+                                                Items {<br>
+                                                * : strategy = everyChange<br>
+                                                }<br>
+                                            </em>
+                                        </p>
+                                        <p>
+                                            This persist all your data, with every change, to openHAB Cloud cloud.
+                                        </p>
+                    <p>
+                        Sending persistence data to openHAB Cloud is needed if you use any data-driven cloud functions,
+                        <a href="/docs/ifttt">IFTTT</a> integration for example.
+                    </p>
+                    <p>
+                        You will alse be able to see all
+                        items status changes in your <a href="/events">event log</a> and current item state in
+                        <a href="/items">items</a> section.
+                    </p>
+                </section>
+            </div>
+        </div>
+    </section>
+</section>
+<%- include ../footer.ejs %>

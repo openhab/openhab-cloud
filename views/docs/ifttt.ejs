@@ -1,0 +1,56 @@
+<% section = 'docs' %>
+<%- include ../header.ejs %>
+<section id="content" class="fullWidth">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">Documentation</h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>documentation<span>/</span>ifttt</div>
+            </div>
+        </div>
+    </header>
+    <section class="slice clearfix">
+        <div class="container">
+            <div class="row">
+                <aside class="span3" id="sidebar">
+                    <nav id="subnav">
+                        <ul>
+                            <li><a href="/docs">Getting started</a></li>
+                            <li><a href="/docs/notifications">Notifications</a></li>
+                            <li><a href="/docs/persistence">Persistence</a></li>
+                            <li><a class="active" href="/docs/ifttt">IFTTT</a></li>
+                        </ul>
+                        <div class="littleShadow"></div>
+                    </nav>
+                </aside>
+                <section class="span9 mb15 clearfix">
+                    <h3>IFTTT</h3>
+                    <div class="divider"><span></span></div>
+                    <p>
+                        With openHAB Cloud you can connect your openHAB with IFTTT and integrate it with miriade of recipes
+                        which will make it instantly work with a huge number of applications and devices on the Internet.
+                    </p>
+                    <p>
+                        Activating IFTTT integration is more then easy. Just log in to your <a href="https://ifttt.com">IFTTT</a> account and activate
+                        <a href="https://ifttt.com/openhab">openHAB channel</a>. You will be forwarded to openHAB Cloud website to authorize IFTTT channel connection.
+                        Before you start creating IFTTT recipes you need to configure <a href="/docs/persistence">persistence for openHAB Cloud</a>.
+                    </p>
+                    <p>
+                        Only those items which you configure for persistence to openHAB Cloud will be visible to IFTTT.
+                        You will also be able to send commands to those items from IFTTT recipes. Items will appear in openHAB Cloud
+                        and thus in IFTTT only after at least one persistence record will be sent to openHAB Cloud from your
+                        openHAB.
+                    </p>
+                    <p>
+                        To make it easier we've created several dozens of <a href="https://ifttt.com/p/openhab/shared">useful openHAB recipes</a> for you to get started!
+                    </p>
+                    <p>
+                        You can deactivate openHAB channel in IFTTT or delete IFTTT authorization in <a href="/applications">openHAB Cloud
+                        Applications</a> section anytime.
+                    </p>
+                </section>
+            </div>
+        </div>
+    </section>
+</section>
+<%- include ../footer.ejs %>

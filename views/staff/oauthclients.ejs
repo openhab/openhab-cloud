@@ -1,0 +1,66 @@
+<% section = 'staff' %>
+<%- include ../header.ejs %>
+<!-- page content -->
+<section id="content" class="sidebar">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">Staff</h1>
+                <div class="span4" id="navTrail"> <a href="index.html" class="homeLink">home</a><span>/</span>Staff<span>/</span>Invitations</div>
+            </div>
+        </div>
+    </header>
+    <div class="slice clearfix">
+        <div class="container">
+            <%- include ../alerts.ejs %>
+            <div class="row">
+                <aside class="span3" id="sidebar">
+                    <nav id="subnav">
+                        <ul>
+                            <li ><a href="/staff/stats">Stats</a></li>
+                            <li ><a class="active" href="/staff/oauthclients">OAuth Clients</a></li>
+                            <li ><a href="">Users</a></li>
+                        </ul>
+                        <div class="littleShadow"></div>
+                    </nav>
+                </aside>
+                <div class="span9">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th></th>
+                            <th>Name</th>
+                            <th>Client Id</th>
+                            <th>Active</th>
+                            <th>Created</th>
+                        </tr>
+                        </thead>
+                        <% for (var i=0; i<oauthclients.length; i++) { %>
+                        <tr >
+                            <td><img style="height: 24px;" src="/img/oauth2/<%= oauthclients[i].icon %>"></td>
+                            <td><%= oauthclients[i].name %></td>
+                            <td><%= oauthclients[i].clientId %></td>
+                            <td><%= oauthclients[i].active %></td>
+                            <td><%= date_util(oauthclients[i].created, timeZone).calendar() %></td>
+                        </tr>
+                        <% } %>
+                    </table>
+                    <% if (pages > 5) { pages = 5 } %>
+                    <% if (pages > 1) { %>
+                    <div class="pagination pagination-centered">
+                        <ul>
+                            <li <% if (page == 0) {%>class="disabled"<% } %>> <a href="#"> Prev </a> </li>
+                            <% for (var i=0; i <= pages; i++) { %>
+                            <li <% if (i == page) {%>class="active"<%}%>> <a href="?page=<%= i %>"><%= i+1 %></a> </li>
+                            <% } %>
+                            <li <% if (page == pages) { %>class="disabled"<% } %>> <a href="#"> Next </a> </li>
+                        </ul>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- page content -->
+<%- include ../footer.ejs %>
