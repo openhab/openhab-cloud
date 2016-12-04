@@ -9,11 +9,11 @@ The openHAB Cloud also serves as core backend integration point for cloud-based 
 provides an OAuth2 application enablement.
 
 
-## Funtional Architecture ##
+## Functional Architecture ##
 
 
 
-![FuntionalArchitecture](/docs/FunctionalArchitecture_openHAB-cloud_v1.0.png)
+![FunctionalArchitecture](/docs/FunctionalArchitecture_openHAB-cloud_v1.0.png)
 
 
 
@@ -38,7 +38,7 @@ At the moment openHAB Cloud needs a specific version (0.10.48) of Node.js instal
 Installing openHAB Cloud on Linux (ubuntu).
 
 
-First we need to make sure that the list of packages and dependencies
+First, we need to make sure that the list of packages and dependencies
 from all repositories are up-to-date:
 
 ```
@@ -53,7 +53,7 @@ sudo apt-get install build-essential redis-server mongodb nginx
 ```
 
 Now you need install git and clone the openHAB Cloud repository to your
-preffered directory (here: ubuntu) with the following commands:
+preferred directory (here: ubuntu) with the following commands:
 
 ```
 apt-get install git
@@ -62,7 +62,7 @@ git clone https://github.com/openhab/openhab-cloud.git
 ```
 
 
-Clone the openhabcloud repository and after the completed checkout you should have the directory in your choosen folder:
+Clone the openhabcloud repository and after the completed checkout you should have the directory in your chosen folder:
 ```
 ls -al
 total 32
@@ -255,7 +255,7 @@ Amazon calls the virtual servers instances. The EC2 instance is similar to a reg
 * As mentioned before select EC2 (Amazon’s Elastic Compute Cloud) from the list of services:
 
 * In the menu bar, on the right corner you will find an item labelled “Region”:
-Click to select your nearest region or chose a preffered region where you want to locate your virtual server.
+Click to select your nearest region or chose a preferred region where you want to locate your virtual server.
 We will use the [AWS Free Tier](https://aws.amazon.com/free/?nc1=h_ls), which includes services with a free tier available for 12 months following your AWS sign-up date. AWS cost varies between regions (be aware that is only free for the first year).
 
 
@@ -278,7 +278,7 @@ We are going to use a free tier and therefor select the Ubuntu Server, 64-bit by
 
 
 You will see under the Ubuntu logo that there is a free tier eligible, what we want to use.
-In our guide we are using the following AMI:
+In our guide, we are using the following AMI:
 Ubuntu Server 14.04 LTS (HVM), SSD Volume Type - AMI ID: ami-fce3c696
 
 ![AWS_7.png](/docs/AWS_7.png)
@@ -291,10 +291,10 @@ Leave the default selection with t2.micro where the green label says "Free tier 
 Just go ahead since we will use the default values on the "Configure Instance Details" page.
 Click on the button "Next: Add Storage".
 
-On the following page you see the storage device settings for your instance.
+On the following page, you see the storage device settings for your instance.
 Just continue by clicking "Next: Tag Instance", since the default storage will be fine for us.
 
-We dont need to Tag our Instance and we continue by clicking on "Next: Configure Security Group"
+We don't need to Tag our Instance and we continue by clicking on "Next: Configure Security Group"
 
 In the Configure Security Group page, leave the selected option for "Create a new security group" and
 add rules for protocols and ports by clicking "Add Rule" like in the image below:
@@ -303,7 +303,7 @@ add rules for protocols and ports by clicking "Add Rule" like in the image below
 
 We will add SSH to access and admin the instance (virtual server) by your console.
 The next two rules a pretty straight forward and depends how you want to run openHAB Cloud on your node.
-We recommend to use only HTTPS for Security reason. In this example you also see that we added HTTP.
+We recommend to use only HTTPS for Security reason. In this example, you also see that we added HTTP.
 
 ![AWS_8.png](/docs/AWS_8.png)
 
@@ -316,9 +316,9 @@ You will see a summary of your Instance Launch, which will look like this image:
 Just hit the blue "Launch" button and you will be prompted to select or create a key pair
 to connect securely to your instance.
 
-Select the "Create a new key pair" option from the dropdown menue and
+Select the "Create a new key pair" option from the dropdown menu and
 enter a name for your key pair (public and private key) and download your .pem file.
-Warning: Dont loose this file, you will not be able to download it again!
+Warning: Don't loose this file, you will not be able to download it again!
 
 ![AWS_10.png](/docs/AWS_10.png)
 
@@ -329,13 +329,13 @@ Open a terminal window and use this command to restrict access rights to the .pe
 chmod 400 YOUR-PEM-FILENAME.pem
 ```
 
-Finally under Instance you can see your instance starting up and running.
+Finally, under Instance you can see your instance starting up and running.
 
 
 ![AWS_11.png](/docs/AWS_11.png)
 
 There you will find all the needed info to ssh into your node.
-The important info is your Public DNS / Public IP adress.
+The important info is your Public DNS / Public IP address.
 
 
 ![AWS_13.png](/docs/AWS_13.png)
