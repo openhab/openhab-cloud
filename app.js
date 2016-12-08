@@ -346,13 +346,7 @@ function ensureStaff(req, res, next) {
 
 // General routes
 app.get('/', routes.index);
-app.get('/docs', routes.docs);
-app.get('/docs/notifications', routes.docsnotifications);
-app.get('/docs/persistence', routes.docspersistence);
-if(config.ifttt){
-	logger.info('openHAB-cloud: IFTTT is configured, app adding IFTTT documentation...');
-	app.get('/docs/ifttt', routes.docsifttt);
-}
+
 
 // V2 route - response to this route means this openHAB-cloud is using v2 transport based on socket.io 1.0
 app.get('/v2', routes.getv2);
