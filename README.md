@@ -46,10 +46,10 @@ sudo apt-get update
 sudo apt-get upgrade
 ```
 
-We need to install redis, mongoDB and Nginx:
+We need to install redis, mongoDB, Nginx and Python:
 
 ```
-sudo apt-get install build-essential redis-server mongodb nginx
+sudo apt-get install build-essential redis-server mongodb nginx python
 ```
 
 Now you need install git and clone the openHAB Cloud repository to your
@@ -77,6 +77,15 @@ drwx------  2 ubuntu ubuntu 4096 Jun  4 12:34 .ssh
 ```
 
 
+Now we need to change into the openhabcloud directory and check if node is installed:
+
+```
+node --version
+```
+
+
+If you see the node version, you are fine to continue.
+
 To run openHAB Cloud you need to install the required software bundles/stacks:
 
 ```
@@ -90,15 +99,6 @@ and all the module dependencies from **package.json** will be resolved and neede
 
 
 
-Now we need to change into the openhabcloud directory and check if node is installed:
-
-```
-ls -al
-node --version
-```
-
-
-If you see the node version, you are fine to continue.
 
 
 
