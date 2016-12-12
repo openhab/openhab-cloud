@@ -40,6 +40,7 @@
                     <div id="message"></div>
                 </div>
                 <div class="span4">
+                   <% if (terms && policy) { %>
                     <form method="post" action="/register" id="contactform">
                         <input type="hidden" name="_csrf" value="<%= token %>" class="form-control">
                         <label for="username"></label>
@@ -51,12 +52,25 @@
                         <label for="openhabsecret"></label>
                         <input type="text" name="openhabsecret" <% if (typeof openhabsecret != 'undefined') { %>value="<%=openhabsecret%>"<% } %> placeholder="openHAB Secret" data-toggle="tooltip" title="You will find Secret in 'webapps/static/secret' file">
                         <label for="agree" class="checkbox">I have read and accepted
-                        <input type="checkbox"  name="agree" id="agree">
-                        <a href="http://www.openhab.org/terms.html" target="_blank" class="moreLink" title="read our terms"> the Terms of Use</a> and
-                        <a href="http://www.openhab.org/privacy.html" target="_blank" class="moreLink" title="privacy policy">the Privacy Policy</a>.</label>
-                        <br />
+                       	<input type="checkbox"  name="agree" id="agree">
+	                    <a href="<%=terms%>" target="_blank" class="moreLink" title="read our terms"> the Terms of Use</a> and
+	                    <a href="<%=policy%>" target="_blank" class="moreLink" title="privacy policy">the Privacy Policy</a>.</label>
                         <button name="submit" type="submit" class="btn" id="submit">Register</button>
-                    </form>
+                     </form>
+                  <% } else { %>
+                  	 <form method="post" action="/register" id="contactform">
+                        <input type="hidden" name="_csrf" value="<%= token %>" class="form-control">
+                        <label for="username"></label>
+                        <input type="text" name="username" <% if (typeof username != 'undefined') { %>value="<%=username%>"<% } %> placeholder="Email address">
+                        <label for="password"></label>
+                        <input type="password" name="password" <% if (typeof password != 'undefined') { %>value="<%=password%>"<% } %> placeholder="Password">
+                        <label for="openhabuuid"></label>
+                        <input type="text" name="openhabuuid" <% if (typeof openhabuuid != 'undefined') { %>value="<%=openhabuuid%>"<% } %> placeholder="openHAB UUID" data-toggle="tooltip" title="You will find UUID in 'webapps/static/uuid' file">
+                        <label for="openhabsecret"></label>
+                        <input type="text" name="openhabsecret" <% if (typeof openhabsecret != 'undefined') { %>value="<%=openhabsecret%>"<% } %> placeholder="openHAB Secret" data-toggle="tooltip" title="You will find Secret in 'webapps/static/secret' file">
+                        <button name="submit" type="submit" class="btn" id="submit">Register</button>
+                     </form>
+                    <% } %>
                     <div id="message"></div>
                 </div>
             </div>

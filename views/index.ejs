@@ -1,43 +1,83 @@
 <% section = 'index' %>
 <%- include header.ejs %>
       <% if (!user) { %>
-<!-- page content -->
-<section id="content" class="fullWidth">
+
+<section id="content">
     <header class="headerPage">
         <div class="container clearfix">
             <div class="row">
-                <h1 class="span8">openHAB Cloud</h1>
-                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a> </div>
+                <h1 class="span8">Login or <span>Register</span></h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>Login</div>
             </div>
         </div>
     </header>
-    <section class="slice clearfix">
+    <div class="slice clearfix">
         <div class="container">
             <%- include alerts.ejs %>
             <div class="row">
-                <section class="span12 mb15 clearfix">
-                    <h2>What is openHAB Cloud?</h2>
+                <div class="span2"></div>
+                <div class="span4">
+                    <h3>Registered users, please log in.</h3>
                     <div class="divider"><span></span></div>
-                    <p>
-                        openHAB Cloud is a companion cloud service for <a href="http://www.openhab.org">openHAB</a> open
-                        source home automation software. This service provides openHAB users ability to remotely monitor
-                        their homes through the Internet, collect and visualize data, receive notifications and much
-                        more.
-                    </p>
-                </section>
-                <section class="span12 mb15 clearfix">
-                    <blockquote>
-                        To connect your openHAB with openHAB Cloud service you need to <a href="https://bintray.com/artifact/download/openhab/mvn/org/openhab/io/org.openhab.io.myopenhab/1.8.2/org.openhab.io.myopenhab-1.8.2.jar">download and install</a> a special bundle to your
-                        openHAB addons directory.
-                        After installing the bundle hava a look at our <a href="/docs">Getting started</a> guide, collect all data needed and <a href="/login">register your account!</a>
-                    </blockquote>
-                </section>
+                </div>
+                <div class="span4">
+                    <h3>If you are a new user, please register.</h3>
+                    <div class="divider"><span></span></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="span2"></div>
+                <div class="span4">
+                    <form method="post" action="/login" id="contactform">
+                        <input type="hidden" name="_csrf" value="<%= token %>" class="form-control">
+                        <label for="username"></label>
+                        <input type="text" name="username" id="username" placeholder="E-Mail" class=""/>
+                        <label for="password"></label>
+                        <input type="password" name="password" id="password" placeholder="Password" class=""/>
+                        <a href="/lostpassword">Forgot your password?</a>
+                        <p></p>
+                        <button name="submit" type="submit" class="btn" id="submit">Sign in</button>
+                    </form>
+                    <div id="message"></div>
+                </div>
+                <div class="span4">
+                <% if (terms && policy) { %>
+                    <form method="post" action="/register" id="contactform">
+                        <input type="hidden" name="_csrf" value="<%= token %>" class="form-control">
+                        <label for="username"></label>
+                        <input type="text" name="username" <% if (typeof username != 'undefined') { %>value="<%=username%>"<% } %> placeholder="Email address">
+                        <label for="password"></label>
+                        <input type="password" name="password" <% if (typeof password != 'undefined') { %>value="<%=password%>"<% } %> placeholder="Password">
+                        <label for="openhabuuid"></label>
+                        <input type="text" name="openhabuuid" <% if (typeof openhabuuid != 'undefined') { %>value="<%=openhabuuid%>"<% } %> placeholder="openHAB UUID" data-toggle="tooltip" title="You will find UUID in 'webapps/static/uuid' file">
+                        <label for="openhabsecret"></label>
+                        <input type="text" name="openhabsecret" <% if (typeof openhabsecret != 'undefined') { %>value="<%=openhabsecret%>"<% } %> placeholder="openHAB Secret" data-toggle="tooltip" title="You will find Secret in 'webapps/static/secret' file">
+                        <label for="agree" class="checkbox">I have read and accepted
+                       	<input type="checkbox"  name="agree" id="agree">
+	                    <a href="<%=terms%>" target="_blank" class="moreLink" title="read our terms"> the Terms of Use</a> and
+	                    <a href="<%=policy%>" target="_blank" class="moreLink" title="privacy policy">the Privacy Policy</a>.</label>
+                        <button name="submit" type="submit" class="btn" id="submit">Register</button>
+                     </form>
+                  <% } else { %>
+                  	 <form method="post" action="/register" id="contactform">
+                        <input type="hidden" name="_csrf" value="<%= token %>" class="form-control">
+                        <label for="username"></label>
+                        <input type="text" name="username" <% if (typeof username != 'undefined') { %>value="<%=username%>"<% } %> placeholder="Email address">
+                        <label for="password"></label>
+                        <input type="password" name="password" <% if (typeof password != 'undefined') { %>value="<%=password%>"<% } %> placeholder="Password">
+                        <label for="openhabuuid"></label>
+                        <input type="text" name="openhabuuid" <% if (typeof openhabuuid != 'undefined') { %>value="<%=openhabuuid%>"<% } %> placeholder="openHAB UUID" data-toggle="tooltip" title="You will find UUID in 'webapps/static/uuid' file">
+                        <label for="openhabsecret"></label>
+                        <input type="text" name="openhabsecret" <% if (typeof openhabsecret != 'undefined') { %>value="<%=openhabsecret%>"<% } %> placeholder="openHAB Secret" data-toggle="tooltip" title="You will find Secret in 'webapps/static/secret' file">
+                        <button name="submit" type="submit" class="btn" id="submit">Register</button>
+                     </form>
+                    <% } %>
+                    <div id="message"></div>
+                </div>
             </div>
         </div>
-    </section>
+    </div>
 </section>
-<!-- page content -->
-
     <% } else { %>
 <section id="content" class="portfolio">
     <header class="headerPage">
@@ -53,7 +93,7 @@
         <div class=" clearfix">
             <div class="container" id="threeColumns">
                 <% if (openhabMajorVersion == '2') { %>
-                    You are using openHAB 2.x. <a href="https://myopenhab.org/start/index">Click here to access your openHAB's dashboard</a>
+                    You are using openHAB 2.x. <a href="https://home.myopenhab.org/start/index">Click here to access your openHAB's dashboard</a>
                 <% } else { %>
                     You are using openHAB 1.x. To remotely access your openHAB's web interface go to <code>https://myopenhab.org/openhab.app?sitemap=yoursitemapname</code>
                 <% } %>
@@ -61,7 +101,6 @@
         </div>
     </section>
 </section>
-
       <% } %>
   </div>
 <%- include footer.ejs %>

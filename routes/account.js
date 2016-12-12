@@ -305,13 +305,20 @@ exports.accountdeletepost = function(req, res) {
     });
 }
 
-exports.registerpostvalidate =     form(
+exports.registerpostvalidateall =     form(
     field("agree", "Agreeing to terms and privacy policy").trim().required(),
     field("username", "Username").trim().isEmail().required(),
     field("password", "Password").trim().required(),
     field("openhabuuid", "openHAB UUID").trim().required(),
     field("openhabsecret", "openHAB secret").trim().required()
 );
+
+exports.registerpostvalidate =     form(
+	    field("username", "Username").trim().isEmail().required(),
+	    field("password", "Password").trim().required(),
+	    field("openhabuuid", "openHAB UUID").trim().required(),
+	    field("openhabsecret", "openHAB secret").trim().required()
+	);
 
 exports.registerpost = function(req, res) {
     if (!req.form.isValid) {

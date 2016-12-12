@@ -290,6 +290,13 @@ app.configure(function(){
         }
         res.locals.moment = moment;
         res.locals.date_util = date_util;
+        
+        res.locals.legal = false;
+        if(config.legal){
+        	res.locals.legal = true;
+        	res.locals.terms = config.legal.terms;
+        	res.locals.policy = config.legal.policy;
+        }
         next();
     });
     app.use(function(req, res, next) {
@@ -392,7 +399,10 @@ app.get('/applications', ensureAuthenticated, applications_routes.applicationsge
 app.get('/applications/:id/delete', ensureAuthenticated, applications_routes.applicationsdelete);
 
 // New user registration
-app.post('/register', account_routes.registerpostvalidate, account_routes.registerpost);
+if(!config.legal.terms && !config.legal.policy){
+	app.post('/register', account_routes.registerpostvalidate, account_routes.registerpost);
+}
+app.post('/register', account_routes.registerpostvalidateall, account_routes.registerpost);
 app.get('/verify', account_routes.verifyget);
 
 // Enroll for beta - old URLs, both of them respond with redirects to /login
