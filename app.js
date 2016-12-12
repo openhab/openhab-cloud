@@ -92,7 +92,7 @@ var ObjectId = mongoose.SchemaTypes.ObjectId;
 
 require('mongoose-cache').install(mongoose, cacheOpts);
 
-var mongoUri = 'mongodb://' ;
+var mongoUri = 'mongodb://' + config.mongodb.user + ':' + config.mongodb.password + '@';
 for (host in config.mongodb.hosts) {
     mongoUri += config.mongodb.hosts[host];
     if (host < config.mongodb.hosts.length - 1) {
