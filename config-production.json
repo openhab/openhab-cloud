@@ -46,7 +46,7 @@
         "from": "openHAB Cloud <your@email.address>"
     },
     "legal": {
-    	"terms" : "<your-terms-conditions-link>",
-        "policy": "<your-privacy-link>"
+    	"terms" : "",
+        "policy": ""
     }
 }
