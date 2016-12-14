@@ -18,7 +18,7 @@
  */
 
  // TODO: Move all request handlers out of here, move authentication to auth.js
- 
+
 // Main Logging setup
 var logger = require('./logger.js');
 
@@ -92,7 +92,10 @@ var ObjectId = mongoose.SchemaTypes.ObjectId;
 
 require('mongoose-cache').install(mongoose, cacheOpts);
 
-var mongoUri = 'mongodb://' + config.mongodb.user + ':' + config.mongodb.password + '@';
+var mongoUri = 'mongodb://' +
+(config.mongodb.user && config.mongodb.user.length > 0 ?
+  ( config.mongodb.user + ':' + config.mongodb.password + '@') : + "");
+  
 for (host in config.mongodb.hosts) {
     mongoUri += config.mongodb.hosts[host];
     if (host < config.mongodb.hosts.length - 1) {
@@ -290,7 +293,7 @@ app.configure(function(){
         }
         res.locals.moment = moment;
         res.locals.date_util = date_util;
-        
+
         res.locals.legal = false;
         if(config.legal){
         	res.locals.legal = true;
