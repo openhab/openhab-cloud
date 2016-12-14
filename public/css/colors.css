@@ -231,7 +231,7 @@ a.iconWrapper:hover{
 	background:url(../img/textures/bg-footer.png) #252525;
 }
 .footer2 {
-    background: #ff6600;color: #fff;
+    background:url(../img/textures/bg-texture-orange.png) #EDEDED center top; color: #fff;
 }
 #footer h2 {
     color:#BBBBBB;
