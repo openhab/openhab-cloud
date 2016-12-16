@@ -206,7 +206,7 @@ exports.v1triggeritemstate = [
 					    var edt = new Date(events[i].when);
                                             newEvent.meta = {
                                                 id: events[i]._id,
-                                                timestamp: edt.getTime()
+                                                timestamp: Math.round(edt.getTime() / 1000)
                                             };
                                             responseData.push(newEvent);
                                         }
@@ -265,7 +265,7 @@ exports.v1triggeritem_raised_above = [
 					    var edt = new Date(events[i].when);
                                             newEvent.meta = {
                                                 id: events[i]._id,
-                                                timestamp: edt.getTime()
+                                                timestamp: Math.round(edt.getTime() / 1000)
                                             };
                                             responseData.push(newEvent);
                                         }
@@ -324,7 +324,7 @@ exports.v1triggeritem_dropped_below = [
 					    var edt = new Date(events[i].when);
                                             newEvent.meta = {
                                                 id: events[i]._id,
-                                                timestamp: edt.getTime()
+                                                timestamp: Math.round(edt.getTime() / 1000)
                                             };
                                             responseData.push(newEvent);
                                         }
