@@ -53,7 +53,7 @@ function iftttAuthenticate (req, res, next) {
 exports.userinfo = [
     iftttAuthenticate,
     function(req, res){
-        res.json({data: {name: req.user.username, id: req.user._id, url: "https://" + config.system.baseurl + "/account"}});
+        res.json({data: {name: req.user.username, id: req.user._id, url: "https://" + app.config.system.baseurl + "/account"}});
     }
 ]
 
