@@ -24,7 +24,7 @@ openHAB Cloud is mainly based on the following frameworks and technologies:
 
 
 * [Node.js](https://nodejs.org/en/) - Server-side Javascript-framework
-* [Express.js](http://redis.io) - Web application framework for Node.js
+* [Express.js](http://expressjs.com/) - Web application framework for Node.js
 * [Nginx](https://www.nginx.com/resources/wiki/) - Web server & reverse proxy
 * [MongoDB](https://www.mongodb.com/) - NoSQL database
 * [redis](http://redis.io) - Session Manager & data structure server
