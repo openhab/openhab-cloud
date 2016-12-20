@@ -6,8 +6,8 @@
     "mongodb": {
         "hosts": ["127.0.0.1"],
         "db": "openhab",
-        "user": "someuser",
-        "password": "somepass"
+        "user": "",
+        "password": ""
     },
     "redis": {
         "host": "127.0.0.1",
