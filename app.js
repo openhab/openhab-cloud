@@ -847,19 +847,19 @@ io.use(function(socket, next) {
     logger.info("openHAB-cloud: Authorizing incoming openHAB connection");
     handshakeData.uuid = handshakeData.query['uuid'];
     handshakeData.openhabVersion = handshakeData.query['openhabversion'];
-    handshakeData.myohVersion = handshakeData.query['myohversion'];
+    handshakeData.clientVersion = handshakeData.query['clientVersion'];
     handshakeSecret = handshakeData.query['secret'];
     if (!handshakeData.uuid) {
         handshakeData.uuid = handshakeData.headers['uuid'];
         handshakeSecret = handshakeData.headers['secret'];
         handshakeData.openhabVersion = handshakeData.headers['openhabversion'];
-        handshakeData.myohVersion = handshakeData.headers['myohversion'];
+        handshakeData.clientVersion = handshakeData.headers['clientVersion'];
     }
     if (!handshakeData.openhabVersion) {
         handshakeData.openhabVersion = 'unknown';
     }
-    if (!handshakeData.myohVersion) {
-        handshakeData.myohVersion = 'unknown';
+    if (!handshakeData.clientVersion) {
+        handshakeData.clientVersion = 'unknown';
     }
     Openhab.findOne({uuid: handshakeData.uuid, secret: handshakeSecret}, function(error, openhab) {
         if (error) {
@@ -888,7 +888,7 @@ io.sockets.on('connection',function(socket){
             // Make an openhabaccesslog entry anyway
             var remoteHost = socket.handshake.headers['x-forwarded-for'] || socket.client.conn.remoteAddress;
             var newOpenhabAccessLog = new OpenhabAccessLog({openhab: openhab.id, remoteHost: remoteHost,
-                remoteVersion: socket.handshake.openhabVersion, remoteMyohVersion: socket.handshake.myohVersion});
+                remoteVersion: socket.handshake.openhabVersion, remoteClientVersion: socket.handshake.clientVersion});
             newOpenhabAccessLog.save(function(error) {
         		if (error) {
 		        	logger.error("openHAB-cloud: Error saving openHAB access log: " + error);
@@ -901,7 +901,7 @@ io.sockets.on('connection',function(socket){
                 openhab.status = 'online';
                 openhab.last_online = new Date;
                 openhab.openhabVersion = socket.handshake.openhabVersion;
-                openhab.myohVersion = socket.handshake.myohVersion;
+                openhab.clientVersion = socket.handshake.clientVersion;
                 openhab.save(function(error) {
 			        if (error) {
 				        logger.error("openHAB-cloud: Error saving openHAB: " + error);
@@ -916,7 +916,7 @@ io.sockets.on('connection',function(socket){
                 notifyOpenHABStatusChange(openhab, "online");
             } else {
                 openhab.openhabVersion = socket.handshake.openhabVersion;
-                openhab.myohVersion = socket.handshake.myohVersion;
+                openhab.clientVersion = socket.handshake.clientVersion;
                 openhab.save(function(error) {
 			        if (error) {
 				    logger.error("openHAB-cloud: Error saving openhab: " + error);
