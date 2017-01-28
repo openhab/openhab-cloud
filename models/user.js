@@ -44,7 +44,7 @@ UserSchema.static('register', function(username, password, cb) {
     newAccount.save(function(error) {
         if (!error) {
             var user = new self();
-            user.username = username;
+            user.username = username.trim().toLowerCase();
             user.password = password;
             user.role = 'master';
             user.account = newAccount.id;

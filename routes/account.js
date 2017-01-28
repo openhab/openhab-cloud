@@ -325,51 +325,59 @@ exports.registerpost = function(req, res) {
         res.render('login', { title: "Login / Sign up", user: req.user,
             errormessages:req.flash('error'), infomessages:req.flash('info') });
     } else {
-        User.findOne({username: req.body.username}, function(err, existingUser) {
+        User.findOne({username: req.body.username.trim().toLowerCase()}, function(err, existingUser) {
             if (existingUser) {
                 req.flash('error', "A user with this e-mail is already registered.");
                 res.render('login', { title: "Login / Sign up", user: req.user,
                     errormessages:req.flash('error'), infomessages:req.flash('info') });
             } else if (!err) {
-                User.register(req.body.username, req.body.password, function(err, user) {
-                    if (err) {
-                        req.flash('error', "An error occured during registration, please contact support");
-                        logger.error(err);
-                        res.render('login', { title: "Login / Sign up", user: req.user,
-                            errormessages:req.flash('error'), infomessages:req.flash('info') });
+                Openhab.findOne({uuid: req.body.openhabuuid},function(err, existingOpenhab) {
+                    if (existingOpenhab) {
+                      req.flash('error', "UUID is already in use on another account.");
+                      res.render('login', { title: "Login / Sign up", user: req.user,
+                          errormessages:req.flash('error'), infomessages:req.flash('info') });
                     } else {
-                        req.login(user, function (error) {
-                            if (error) {
-                                logger.error(error);
-                                req.flash('error', "An error occured during registration, please contact support");
-                                res.render('login', { title: "Login / Sign up", user: req.user,
-                                    errormessages:req.flash('error'), infomessages:req.flash('info') });
-                            } else {
-                                var openhab = new Openhab({
-                                    account: user.account, uuid: req.body.openhabuuid,
-                                    secret: req.body.openhabsecret
-                                });
-                                openhab.save(function (error) {
-                                    if (error) {
-                                        logger.error('Error: ' + error);
-                                        req.flash('error', 'An error occured during registration, please contact support');
-                                        res.redirect('/');
-                                    } else {
-                                        EmailVerification.send(req.user, function (error, verification) {
-                                            if (error) {
-                                                logger.error('Error: ' + error);
-                                            } else {
-                                                logger.info('Successfully sent verification email to ' + req.user.username);
-                                            }
-                                        });
-                                        req.flash('info', 'Your account successfully registered. Welcome to the openHAB cloud!');
-                                        res.redirect('/');
-                                    }
-                                });
-                            }
-                        });
-                    }
-                });
+                  User.register(req.body.username, req.body.password, function(err, user) {
+                      if (err) {
+                          req.flash('error', "An error occured during registration, please contact support");
+                          logger.error(err);
+                          res.render('login', { title: "Login / Sign up", user: req.user,
+                              errormessages:req.flash('error'), infomessages:req.flash('info') });
+                      } else {
+                          req.login(user, function (error) {
+                              if (error) {
+                                  logger.error(error);
+                                  req.flash('error', "An error occured during registration, please contact support");
+                                  res.render('login', { title: "Login / Sign up", user: req.user,
+                                      errormessages:req.flash('error'), infomessages:req.flash('info') });
+                              } else {
+                                  var openhab = new Openhab({
+                                      account: user.account, uuid: req.body.openhabuuid,
+                                      secret: req.body.openhabsecret
+                                  });
+                                  openhab.save(function (error) {
+                                      if (error) {
+                                          logger.error('Error: ' + error);
+                                          req.flash('error', 'An error occured during registration, please contact support');
+                                          res.redirect('/');
+                                      } else {
+                                          EmailVerification.send(req.user, function (error, verification) {
+                                              if (error) {
+                                                  logger.error('Error: ' + error);
+                                              } else {
+                                                  logger.info('Successfully sent verification email to ' + req.user.username);
+                                              }
+                                          });
+                                          req.flash('info', 'Your account successfully registered. Welcome to the openHAB cloud!');
+                                          res.redirect('/');
+                                      }
+                                  });
+                              }
+                          });
+                      }
+                  });
+                }
+              });
             } else {
                 req.flash('error', "Registration error occured");
                 logger.error(err);
