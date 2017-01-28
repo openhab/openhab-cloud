@@ -92,11 +92,30 @@
     <section class="slice clearfix">
         <div class=" clearfix">
             <div class="container" id="threeColumns">
-                <% if (openhabMajorVersion == '2') { %>
-                    You are using openHAB 2.x. <a href="https://home.myopenhab.org/start/index">Click here to access your openHAB's dashboard</a>
-                <% } else { %>
-                    You are using openHAB 1.x. To remotely access your openHAB's web interface go to <code>https://myopenhab.org/openhab.app?sitemap=yoursitemapname</code>
-                <% } %>
+                <%
+                    switch (openhabstatus) {
+                        case undefined:
+                %>
+                            You do not have an openHAB installation connected with your account. Please go to your <a href="/account">account settings</a> to add your openHAB installation.
+                <%
+                            break;
+                        case 'online':
+                            if (openhabMajorVersion == '2') {
+                %>
+                                You are using openHAB 2.x. <a href="https://home.myopenhab.org/start/index">Click here to access your openHAB's dashboard</a>
+                <%
+                            } else {
+                %>
+                                You are using openHAB 1.x. To remotely access your openHAB's web interface go to <code>https://myopenhab.org/openhab.app?sitemap=yoursitemapname</code>
+                <%
+                            }
+                            break;
+                        default:
+                %>
+                            Your openHAB is not online. Please check if your installation is running or recheck the openHAB settings in your  <a href="/account">account</a>.
+                <%
+                    }
+                %>
             </div>
         </div>
     </section>
