@@ -95,7 +95,7 @@ require('mongoose-cache').install(mongoose, cacheOpts);
 var mongoUri = 'mongodb://' +
 ((config.mongodb.user && config.mongodb.user.length > 0) ?
   config.mongodb.user + ':' + config.mongodb.password + '@' : "");
-  
+
 for (host in config.mongodb.hosts) {
     mongoUri += config.mongodb.hosts[host];
     if (host < config.mongodb.hosts.length - 1) {
@@ -583,7 +583,7 @@ function proxyRouteOpenhab(req, res) {
         requestPath = requestPath.replace('/remote', '');
         // TODO: this is too dirty :-(
         delete requestHeaders['host'];
-        requestHeaders['host'] = "home.openhab.org:443";
+        requestHeaders['host'] = "home." + config.system.baseurl;
     }
     // console.log(requestPath);
     // Send a message with request to openhab agent module
