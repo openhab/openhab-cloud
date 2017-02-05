@@ -6,7 +6,7 @@ var OpenhabAccessLogSchema = new Schema({
     openhab: ObjectId,
     remoteHost: String,
     remoteVersion: String,
-    remoteMyohVersion: String,
+    remoteClientVersion: String,
     whenStarted: { type: Date, default: Date.now },
     whenFinished: Date
 });

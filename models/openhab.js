@@ -11,7 +11,7 @@ var OpenhabSchema = new Schema({
     owner: {type: ObjectId },                           // obsolate
     account: {type: ObjectId},                          // An account openHAB belongs to
     openhabVersion: String,                             // openHAB version
-    myohVersion: String,                                // myopenhab bundle version
+    clientVersion: String,                              // openhab-cloud bundle version
     global_location: {type: [Number], index: '2d'},     // openHAB's global location
     last_online: { type: Date },                        // last seen this openHAB online
     last_email_notification: {type: Date},              // last notification about openHAB being offline for long time

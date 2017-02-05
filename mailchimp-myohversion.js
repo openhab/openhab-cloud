@@ -9,7 +9,7 @@ mongoose.connect('mongodb://' + config.mongodb.user + ':' + config.mongodb.passw
         logger.error("openHAB-cloud: mongo connection error: " + err);
     } else {
         logger.info("openHAB-cloud: connected to mongodb");
-        Openhab.find({$or:[{myohVersion:'1.4.0.1'}, {myohVersion:'1.4.0.2'}]}, function(error, openhabs) {
+        Openhab.find({$or:[{clientVersion:'1.4.0.1'}, {clientVersion:'1.4.0.2'}]}, function(error, openhabs) {
             User.find({role:'master'}, function(error, users) {
                 var usersArray = {};
                 for (var j=0; j<users.length; j++) {
