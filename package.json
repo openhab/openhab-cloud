@@ -47,6 +47,7 @@
         "socket.io-redis": "1.0.0",
         "mongoose-cache": "0.1.4",
         "ratelimiter":"2.1.3",
-        "express-session":"1.14.1"
+        "express-session":"1.14.1",
+        "heapdump":"0.3.7"
     }
 }
