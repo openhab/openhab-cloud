@@ -30,8 +30,6 @@ openHAB Cloud is mainly based on the following frameworks and technologies:
 * [redis](http://redis.io) - Session Manager & data structure server
 * [Socket.IO](http://socket.io/) - Bi-directional communication between web clients and servers
 
-Note:
-At the moment openHAB Cloud needs a specific version (0.10.48) of Node.js installed. You can install [Node Version Manager](https://github.com/creationix/nvm) locally to manage the needed Node.js version.
 
 ### <a name="quickStart"></a> Quick start ###
 
