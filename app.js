@@ -594,13 +594,15 @@ function proxyRouteOpenhab(req, res) {
         headers: requestHeaders, path:requestPath, query: req.query, body: req.rawBody});
     res.openhab = req.openhab;
     restRequests[requestId] = res;
+
+    //when a response is closed by the requester
     res.on('close', function() {
     	// console.log("Request " + requestId + " was closed before serving");
         io.sockets.in(req.openhab.uuid).emit('cancel', {id:requestId});
+        delete restRequests[requestId];
     });
 
-    //this will get called when the response is finished and is the only function
-    //responsible for removing response objects from this map.
+    //when a response is closed by us
     res.on('finish', function() {
         delete restRequests[requestId];
     });
