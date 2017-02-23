@@ -92,7 +92,7 @@ xmppClient.on('stanza', function(stanza) {
                                 });
                                 gcmSender.send(gcmMessage, registrationIds, 4, function (err, result) {
                                     if (err) {
-                                        logger.error("mopenHAB-cloud: GCM send error: " + result);
+                                        logger.error("mopenHAB-cloud: GCM send error: " + err);
                                     }
                                 });
                             }
