@@ -21,6 +21,8 @@
 // Main Logging setup
 var logger = require('./logger.js');
 
+require('heapdump');
+
 logger.info('openHAB-cloud: Backend service is starting up...');
 
 process.on('uncaughtException', function (err) {
@@ -180,6 +182,27 @@ if (taskEnv == 'main') {
         }
     }, 60000);
 }
+
+//cancel restRequests that have become orphaned.  For some reason neither close
+//nor finish is being called on some response objects and we end up hanging on
+//to these in our restRequests map.  This goes through and finds those orphaned
+//responses and cleans them up, otherwise memory goes through the roof.
+
+setInterval(function () {
+  logger.debug("openHAB-cloud: Checking orphaned rest requests (" + Object.keys(restRequests).length + ")");
+  for (var requestId in restRequests) {
+    var res = restRequests[requestId];
+    if (res.finished){
+      logger.debug("openHAB-cloud: expiring orphaned response");
+      delete restRequests[requestId];
+      if(res.openhab){
+        io.sockets.in(res.openhab.uuid).emit('cancel', {
+          id: requestId
+        });
+      }
+    }
+  }
+}, 60000);
 
 // Setup mongoose data models
 var User = require('./models/user');
@@ -553,8 +576,18 @@ function setOpenhab(req, res, next) {
         } else {
             if (error) {
                 logger.error("openHAB-cloud: openHAB lookup error: " + error);
+                return res.status(500).json({
+                    errors: [{
+                        message: error
+                    }]
+                });
             } else {
                 logger.warn("openHAB-cloud: Can't find the openHAB of user which is unbelievable");
+                return res.status(500).json({
+                    errors: [{
+                        message: "openHAB not found"
+                    }]
+                });
             }
         }
         next();
@@ -626,9 +659,12 @@ function proxyRouteOpenhab(req, res) {
     res.openhab = req.openhab;
     restRequests[requestId] = res;
 
+    //we should only have to catch these two callbacks to hear about the response
+    //being close/finished, but thats not the case. Sometimes neither gets called
+    //and we have to manually clean up.  We have a interval for this above.
+
     //when a response is closed by the requester
     res.on('close', function () {
-        // console.log("Request " + requestId + " was closed before serving");
         io.sockets.in(req.openhab.uuid).emit('cancel', {
             id: requestId
         });
@@ -1254,7 +1290,7 @@ io.sockets.on('connection', function (socket) {
             var itemName = data.itemName;
             var itemStatus = data.itemStatus;
             // Find openhab
-            if (itemStatus.length < 100) {
+            if (itemStatus && itemStatus.length < 100) {
                 Openhab.findById(self.openhabId).cache().exec(function (error, openhab) {
                     // self.to(self.handshake.uuid).emit('itemupdate', data);
                     if (!error && openhab) {
@@ -1368,7 +1404,7 @@ io.sockets.on('connection', function (socket) {
                     }
                 });
             } else {
-                logger.info("openHAB-cloud: Item " + itemName + " status.length (" + itemStatus.length + ") is too big, ignoring update");
+                logger.info("openHAB-cloud: Item " + itemName + " status.length (" + (itemStatus && itemStatus.length ? itemStatus.length : 'null') + ") is too big or null, ignoring update");
             }
         });
     });
