@@ -25,6 +25,7 @@ var EventSchema = new Schema({
 // Index for event list reads
 EventSchema.index({openhab: 1, when: 1});
 EventSchema.index({openhab: 1, source: 1});
+EventSchema.index({openhab: 1, source: 1, status:1});
 EventSchema.index({openhab: 1, source: 1, numericStatus: 1, oldNumericStatus: 1});
 
 // Returns #xxxxxx color code based on event color
