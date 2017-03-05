@@ -1404,7 +1404,7 @@ io.sockets.on('connection', function (socket) {
                     }
                 });
             } else {
-                logger.info("openHAB-cloud: Item " + itemName + " status.length (" + (itemStatus && itemStatus.length ? itemStatus.length : 'null') + ") is too big or null, ignoring update");
+                logger.info("openHAB-cloud: Item " + itemName + " status.length (" + (itemStatus ? itemStatus.length : 'null') + ") is too big or null, ignoring update");
             }
         });
     });

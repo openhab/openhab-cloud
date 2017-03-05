@@ -14,7 +14,7 @@ var EventSchema = new Schema({
     numericStatus: Number,
     oldNumericStatus: Number,
     color: String,
-    when: {type: Date, default: Date.now}
+    when: {type: Date, default: Date.now, expires: '14d'}
 }, {
     versionKey: false,
     safe: false,
