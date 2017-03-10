@@ -321,7 +321,13 @@ exports.registerpostvalidate =     form(
 	);
 
 exports.registerpost = function(req, res) {
-    if (!req.form.isValid) {
+    var registration_enabled = ("registration_enabled" in app.config) ? app.config.registration_enabled : true; 
+
+    if (!registration_enabled) {
+	req.flash('error', "Registration is currently disabled.");
+        res.render('login', { title: "Login / Sign up", user: req.user,
+            errormessages:req.flash('error'), infomessages:req.flash('info') });
+    } else if (!req.form.isValid) {
         res.render('login', { title: "Login / Sign up", user: req.user,
             errormessages:req.flash('error'), infomessages:req.flash('info') });
     } else {

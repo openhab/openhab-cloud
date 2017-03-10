@@ -20,10 +20,11 @@
                     <h3>Registered users, please log in.</h3>
                     <div class="divider"><span></span></div>
                 </div>
+		<% if (registration_enabled) { %>
                 <div class="span4">
                     <h3>If you are a new user, please register.</h3>
                     <div class="divider"><span></span></div>
-                </div>
+                </div> <% } %>
             </div>
             <div class="row">
                 <div class="span2"></div>
@@ -41,6 +42,7 @@
                     <div id="message"></div>
                 </div>
                 <div class="span4">
+		<% if (registration_enabled) { %>
                 <% if (terms && policy) { %>
                     <form method="post" action="/register" id="contactform">
                         <input type="hidden" name="_csrf" value="<%= token %>" class="form-control">
@@ -72,6 +74,7 @@
                         <button name="submit" type="submit" class="btn" id="submit">Register</button>
                      </form>
                     <% } %>
+                    <% } %>
                     <div id="message"></div>
                 </div>
             </div>
@@ -102,7 +105,7 @@
                         case 'online':
                             if (openhabMajorVersion == '2') {
                 %>
-                                You are using openHAB 2.x. <a href="https://home.myopenhab.org/start/index">Click here to access your openHAB's dashboard</a>
+                                You are using openHAB 2.x. <a href="/start/index">Click here to access your openHAB's dashboard</a>
                 <%
                             } else {
                 %>

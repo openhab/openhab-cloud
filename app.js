@@ -40,6 +40,8 @@ if (config.gcm) {
     var gcmXmpp = require('./gcm-xmpp');
 }
 
+var registration_enabled = ("registration_enabled" in config) ? config.registration_enabled : true; 
+
 module.exports.config = config;
 
 // Setup all routes
@@ -335,6 +337,7 @@ app.configure(function () {
             res.locals.terms = config.legal.terms;
             res.locals.policy = config.legal.policy;
         }
+	res.locals.registration_enabled = registration_enabled;
         next();
     });
     app.use(function (req, res, next) {

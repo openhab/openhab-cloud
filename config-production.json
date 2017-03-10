@@ -48,5 +48,6 @@
     "legal": {
     	"terms" : "",
         "policy": ""
-    }
+    },
+    "registration_enabled": false
 }
