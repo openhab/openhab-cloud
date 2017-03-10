@@ -34,6 +34,9 @@ logger.info('openHAB-cloud: Backend logging initialized...');
 // Initialize the main configuration
 var taskEnv = process.env.TASK || 'main';
 var config = require('./config.json');
+var serverPort = process.env.PORT || 3000;
+var serverIp = process.env.IP || '127.0.0.1';
+var socketAddress = serverIp + ':' + serverPort;
 
 // If Google Cloud Messaging is configured set it up
 if (config.gcm) {
@@ -66,7 +69,7 @@ var flash = require('connect-flash'),
     ifttt_routes = require('./routes/ifttt'),
     session = require('express-session'),
     RedisStore = require('connect-redis')(session),
-    redis = require('./redis-helper'),
+    redis = require('./redis-helper')(config.redis),
     moment = require('moment'),
     date_util = require('./date_util.js'),
     cronJob = require('cron').CronJob,
@@ -145,7 +148,10 @@ var offlineOpenhabs = {};
 // Then it sends notifications to openHAB's owner if it is offline for more then 300 sec
 // This timer only runs on the main task
 
-if (taskEnv == 'main') {
+//disabling this for now, this could get complicated as we have multiple versions
+//of this app running on different ports/servers
+//if (taskEnv == 'main') {
+if (false) {
     setInterval(function () {
         logger.debug("openHAB-cloud: Checking for offline openHABs (" + Object.keys(offlineOpenhabs).length + ")");
         for (var offlineOpenhabUuid in offlineOpenhabs) {
@@ -257,7 +263,7 @@ app.configure('production', function () {});
 
 // App configuration for all environments
 app.configure(function () {
-    app.set('port', process.env.PORT || 3000);
+    app.set('port', serverPort);
     app.set('views', __dirname + '/views');
     app.set('view engine', 'ejs');
     app.use(express.favicon());
@@ -1017,8 +1023,9 @@ io.sockets.on('connection', function (socket) {
             // Make an event and notification only if openhab was offline
             // If it was marked online, means reconnect appeared because of my.oh fault
             // We don't want massive events and notifications when node is restarted
-            if (openhab.status == 'offline') {
+            if (openhab.status == 'offline' || openhab.socketServer != socketAddress) {
                 openhab.status = 'online';
+                openhab.socketServer = socketAddress;
                 openhab.last_online = new Date();
                 openhab.openhabVersion = socket.handshake.openhabVersion;
                 openhab.clientVersion = socket.handshake.clientVersion;
