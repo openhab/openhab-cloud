@@ -1,6 +1,6 @@
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
-    bcrypt = require('bcrypt-nodejs'),
+    bcrypt = require('bcrypt'),
     Openhab = require('./openhab'),
     Email = mongoose.SchemaTypes.Email,
     ObjectId = mongoose.SchemaTypes.ObjectId;
