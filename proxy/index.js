@@ -1,3 +1,16 @@
+/**
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
+
+/**
+ * Proxy server for routing requets to a openHAB cloud server.
+ **/
+
 var logger = require("../logger.js"),
     cluster = require('cluster'),
     http = require('http'),
@@ -13,11 +26,13 @@ var logger = require("../logger.js"),
     mongoose = require('mongoose'),
     User = require('../models/user');
 
-//var numCPUs = require('os').cpus().length;
-
-var numCPUs = 1;
+var numCPUs = require('os').cpus().length;
 
 var port = process.env.PORT || 3000;
+
+var basicAuth = express.basicAuth(function (username, password, callback) {
+    User.authenticate(username, password, callback);
+});
 
 // If the request contains a bearer token then do oauth2, otherwise try basic auth
 var auth = function (req, res, next) {
@@ -51,15 +66,12 @@ var auth = function (req, res, next) {
             });
         })(req, res, next);
     } else {
-        var ba = express.basicAuth(function (username, password, callback) {
-            User.authenticate(username, password, callback);
-        });
-        ba(req, res, next);
+        basicAuth(req, res, next);
     }
 };
 
 //find a openHAB entry for a given user
-var setOpenhab = function(req, res, next) {
+var setOpenhab = function (req, res, next) {
     req.user.openhab(function (error, openhab) {
         if (!error && openhab) {
             req.openhab = openhab;
@@ -86,9 +98,9 @@ var setOpenhab = function(req, res, next) {
 
 //proxies a request to a upstream cloud server
 var proxyRequest = function (req, res, next) {
+  logger.info("cloud-proxy: proxying  openhab to " + req.openhab.socketServer);
     proxy.web(req, res, {
-        target: req.openhab.proxyHost,
-        ws: true
+        target: 'http://' + req.openhab.socketServer
     });
 };
 
@@ -156,8 +168,10 @@ if (cluster.isMaster) {
     // Create http server
     var server = http.createServer(app);
 
+    logger.info('cloud-proxy: starting express server listening on port ' + port);
+
     server.listen(port, function () {
-        logger.info('cloud-proxy: express server listening on port ' + app.get('port'));
+        logger.info('cloud-proxy: express server listening on port ' + port);
     });
 
     // Local authentication strategy for passportjs
@@ -181,22 +195,27 @@ if (cluster.isMaster) {
         });
     });
 
-    //Configure express
-    app.configure(function () {
-        app.use(express.cookieParser(config.express.key));
-        app.use(express.session({
-            secret: config.express.key,
-            store: new RedisStore({
-                host: 'localhost',
-                port: 6379,
-                client: redis,
-                logErrors: true
-            })
-        }));
-        app.use(passport.initialize());
-        app.use(passport.session());
-    });
+    // //Configure express
+    // app.use(function(req, res, next){
+    //   logger.debug("request: " + JSON.stringify(req.headers));
+    //   next();
+    // });
+    app.use(express.cookieParser(config.express.key));
+    app.use(express.session({
+        secret: config.express.key,
+        store: new RedisStore({
+            host: 'localhost',
+            port: 6379,
+            client: redis,
+            logErrors: true
+        })
+    }));
+    app.use(passport.initialize());
+    app.use(passport.session());
+
 
     //Authorize user or oauth credentials
-    app.use(auth,setOpenhab,proxyRequest);
+    app.use(auth);
+    app.use(setOpenhab);
+    app.use(proxyRequest);
 }
