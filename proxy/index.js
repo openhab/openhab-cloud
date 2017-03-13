@@ -70,7 +70,6 @@ var setOpenhab = function (req, res, next) {
 
 //proxies a request to a upstream cloud server
 var proxyRequest = function (req, res, next) {
-    logger.info("cloud-proxy: proxying  openhab to " + req.openhab.socketServer);
     proxy.web(req, res, {
         target: 'http://' + req.openhab.socketServer
     });
@@ -86,6 +85,7 @@ if (cluster.isMaster) {
         max: 5000,
         maxAge: 1000 * 60 * 10
     };
+
     require('mongoose-cache').install(mongoose, cacheOpts);
 
     var mongoUri = 'mongodb://' +
@@ -166,9 +166,9 @@ if (cluster.isMaster) {
             domain: '.' + config.system.baseurl
         }
     }));
+    
     app.use(passport.initialize());
     app.use(passport.session());
-
 
     //Authorize user or oauth credentials
     app.use(ensureAuthenticated);
