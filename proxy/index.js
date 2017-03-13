@@ -24,50 +24,20 @@ var logger = require("../logger.js"),
     config = require('../config.json'),
     redis = require('../redis-helper')(config.redis),
     mongoose = require('mongoose'),
-    User = require('../models/user');
+    User = require('../models/user'),
+    auth = require('../auth.js');
 
 var numCPUs = require('os').cpus().length;
 
 var port = process.env.PORT || 3000;
 
-var basicAuth = express.basicAuth(function (username, password, callback) {
-    User.authenticate(username, password, callback);
-});
 
-// If the request contains a bearer token then do oauth2, otherwise try basic auth
-var auth = function (req, res, next) {
-    if (req.headers.authorization && req.headers.authorization.indexOf('Bearer') === 0) {
-        passport.authenticate('bearer', {
-            session: false
-        }, function (error, user, info) {
-            if (error) {
-                return res.status(401).json({
-                    errors: [{
-                        message: error
-                    }]
-                });
-            }
-            if (!user) {
-                return res.status(401).json({
-                    errors: [{
-                        message: "Authentication failed"
-                    }]
-                });
-            }
-            req.logIn(user, function (error) {
-                if (error) {
-                    return res.status(401).json({
-                        errors: [{
-                            message: error
-                        }]
-                    });
-                }
-                return next();
-            });
-        })(req, res, next);
-    } else {
-        basicAuth(req, res, next);
+// Ensure user is authenticated for REST or proxied requets
+var ensureAuthenticated = function(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
     }
+    return passport.authenticate(['basic','bearer'], {session: false})(req, res, next);
 };
 
 //find a openHAB entry for a given user
@@ -174,26 +144,6 @@ if (cluster.isMaster) {
         logger.info('cloud-proxy: express server listening on port ' + port);
     });
 
-    // Local authentication strategy for passportjs
-    passport.use(new LocalStrategy({
-            usernameField: 'username'
-        },
-        function (username, password, done) {
-            User.authenticate(username, password, function (err, user, params) {
-                // console.log(params);
-                return done(err, user, params);
-            });
-        }));
-
-    passport.serializeUser(function (user, done) {
-        done(null, user._id);
-    });
-
-    passport.deserializeUser(function (id, done) {
-        User.findById(id).cache().exec(function (err, user) {
-            done(err, user);
-        });
-    });
 
     // //Configure express
     // app.use(function(req, res, next){
@@ -215,7 +165,7 @@ if (cluster.isMaster) {
 
 
     //Authorize user or oauth credentials
-    app.use(auth);
+    app.use(ensureAuthenticated);
     app.use(setOpenhab);
     app.use(proxyRequest);
 }

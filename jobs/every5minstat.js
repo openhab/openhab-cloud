@@ -1,7 +1,7 @@
 var cronJob = require('cron').CronJob
     , logger = require('../logger')
     , config = require('../config.json')
-    , redis = require('../redis-helper')(config);
+    , redis = require('../redis-helper')(config.redis);
 // Mongoose models
 var User = require('../models/user');
 var Openhab = require('../models/openhab');
