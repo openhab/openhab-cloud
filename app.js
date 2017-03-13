@@ -72,6 +72,7 @@ var flash = require('connect-flash'),
     cronJob = require('cron').CronJob,
     appleSender = require('./aps-helper'),
     oauth2 = require('./oauth2'),
+    auth = require('./auth.js'),
     Limiter = require('ratelimiter');
 
 
@@ -226,28 +227,6 @@ every5MinStatJob.start();
 // Create http server
 var server = http.createServer(app);
 
-
-// Local authentication strategy for passportjs
-passport.use(new LocalStrategy({
-        usernameField: 'username'
-    },
-    function (username, password, done) {
-        User.authenticate(username, password, function (err, user, params) {
-            // console.log(params);
-            return done(err, user, params);
-        });
-    }));
-
-passport.serializeUser(function (user, done) {
-    done(null, user._id);
-});
-
-passport.deserializeUser(function (id, done) {
-    User.findById(id, function (err, user) {
-        done(err, user);
-    });
-});
-
 // Configure the openHAB-cloud for development or productive mode
 app.configure('development', function () {
     app.use(express.errorHandler());
@@ -366,13 +345,21 @@ var io = require('socket.io').listen(server, {
 // var ioredis = require('socket.io-redis');
 // io.adapter(ioredis({ host: 'localhost', port: 6379 }));
 
-// Ensure user is authenticated
+// Ensure user is authenticated for web requests
 function ensureAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
     req.session.returnTo = req.originalUrl || req.url;
-    res.redirect('/login')
+    res.redirect('/login');
+}
+
+// Ensure user is authenticated for REST or proxied requets
+function ensureRestAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    return passport.authenticate(['basic','bearer'], {session: false})(req, res, next);
 }
 
 // Ensure user have 'master' role for certain routes
@@ -527,47 +514,6 @@ function setSessionTimezone(req, res) {
 
 // REST routes
 app.get('/api/events', ensureAuthenticated, events_routes.eventsvaluesget);
-
-// Functions to process proxy requests to openHABs
-
-// If the request contains a bearer token then do oauth2, otherwise try basic auth
-var restAuth = function (req, res, next) {
-    if (req.headers['authorization'] && req.headers['authorization'].indexOf('Bearer') == 0) {
-        passport.authenticate('bearer', {
-            session: false
-        }, function (error, user, info) {
-            if (error) {
-                return res.status(401).json({
-                    errors: [{
-                        message: error
-                    }]
-                });
-            }
-            if (!user) {
-                return res.status(401).json({
-                    errors: [{
-                        message: "Authentication failed"
-                    }]
-                });
-            }
-            req.logIn(user, function (error) {
-                if (error) {
-                    return res.status(401).json({
-                        errors: [{
-                            message: error
-                        }]
-                    });
-                }
-                return next();
-            });
-        })(req, res, next);
-    } else {
-        var ba = express.basicAuth(function (username, password, callback) {
-            User.authenticate(username, password, callback);
-        });
-        ba(req, res, next);
-    }
-};
 
 function setOpenhab(req, res, next) {
     req.user.openhab(function (error, openhab) {
@@ -832,34 +778,34 @@ function addAndroidRegistration(req, res) {
 }
 
 // Process all requests from mobile apps to openHAB
-app.all('/rest*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/images/*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/static/*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/rrdchart.png*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/chart*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/openhab.app*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/WebApp*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/CMD*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/cometVisu*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/proxy*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/greent*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/jquery.*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/classicui/*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/ui/*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/basicui/*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/doc/*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/start/*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/icon*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/habmin/*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/remote*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/habpanel/*', restAuth, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/rest*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/images/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/static/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/rrdchart.png*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/chart*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/openhab.app*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/WebApp*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/CMD*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/cometVisu*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/proxy*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/greent*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/jquery.*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/classicui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/ui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/basicui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/doc/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/start/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/icon*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/habmin/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/remote*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/habpanel/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
 
 // myOH API for mobile apps
-app.all('/api/v1/notifications*', restAuth, preassembleBody, setOpenhab, api_routes.notificationsget);
+app.all('/api/v1/notifications*', ensureRestAuthenticated, preassembleBody, setOpenhab, api_routes.notificationsget);
 
 // Android app registration
-app.all('/addAndroidRegistration*', restAuth, preassembleBody, setOpenhab, addAndroidRegistration);
-app.all('/addAppleRegistration*', restAuth, preassembleBody, setOpenhab, addAppleRegistration);
+app.all('/addAndroidRegistration*', ensureRestAuthenticated, preassembleBody, setOpenhab, addAndroidRegistration);
+app.all('/addAppleRegistration*', ensureRestAuthenticated, preassembleBody, setOpenhab, addAppleRegistration);
 
 function sendSimpleNotificationToUser(user, message) {
     sendNotificationToUser(user, message, '', '');
