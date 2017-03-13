@@ -33,11 +33,13 @@ var port = process.env.PORT || 3000;
 
 
 // Ensure user is authenticated for REST or proxied requets
-var ensureAuthenticated = function(req, res, next) {
+var ensureAuthenticated = function (req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
-    return passport.authenticate(['basic','bearer'], {session: false})(req, res, next);
+    return passport.authenticate(['basic', 'bearer'], {
+        session: false
+    })(req, res, next);
 };
 
 //find a openHAB entry for a given user
@@ -68,7 +70,7 @@ var setOpenhab = function (req, res, next) {
 
 //proxies a request to a upstream cloud server
 var proxyRequest = function (req, res, next) {
-  logger.info("cloud-proxy: proxying  openhab to " + req.openhab.socketServer);
+    logger.info("cloud-proxy: proxying  openhab to " + req.openhab.socketServer);
     proxy.web(req, res, {
         target: 'http://' + req.openhab.socketServer
     });
@@ -158,7 +160,11 @@ if (cluster.isMaster) {
             port: 6379,
             client: redis,
             logErrors: true
-        })
+        }),
+        cookie: {
+            path: '/',
+            domain: '.' + config.system.baseurl
+        }
     }));
     app.use(passport.initialize());
     app.use(passport.session());
