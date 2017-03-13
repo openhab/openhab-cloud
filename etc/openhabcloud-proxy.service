@@ -5,7 +5,7 @@ Description=node.js openhab cloud server
 User=openhabcloud
 Group=openhabcloud
 LimitNOFILE=300000
-Environment=PORT=%i
+Environment=PORT=3000
 #Environment=DEBUG=oath2orize
 Restart=always
 RestartSec=10                       # Restart service after 10 seconds if node service crashes
