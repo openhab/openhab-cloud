@@ -6,6 +6,13 @@ var mongoose = require('mongoose'),
      UserAccount = require('./useraccount'),
      ObjectId = mongoose.SchemaTypes.ObjectId;
 
+var MemoryBcryptCache = require('bcrypt-cache').MemoryBcryptCache;
+var memCache = new MemoryBcryptCache({
+    ttl: 60,
+    pruneTimer: 60
+});
+
+
 var UserSchema = new Schema({
     username: {type: String, unique: true},
     firstName: {type: String},
@@ -25,7 +32,9 @@ var UserSchema = new Schema({
 /*userSchema.plugin(passportLocalMongoose);*/
 
 UserSchema.method('checkPassword', function (password, callback) {
-    bcrypt.compare(password, this.hash, callback);
+    memCache.compare(this.hash,password).then(function (result) {
+      callback(null,result);
+    });
 });
 
 UserSchema.virtual('password').get(function () {
