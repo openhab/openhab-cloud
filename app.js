@@ -252,7 +252,11 @@ app.configure(function () {
             port: 6379,
             client: redis,
             logErrors: true
-        })
+        }),
+        cookie: {
+        path: '/',
+        domain: '.' + config.system.baseurl
+      }
     }));
     app.use(flash());
     app.use(passport.initialize());
