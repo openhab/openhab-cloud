@@ -12,6 +12,15 @@ var oauth2orize = require('oauth2orize'),
 var logger = require('./logger.js');
 var server = oauth2orize.createServer();
 
+// An application must supply serialization functions, which determine how the
+// client object is serialized into the session.  Typically this will be a
+// simple matter of serializing the client's ID, and deserializing by finding
+// the client by ID from the database.
+
+server.serializeClient(function(client, done) {
+    return done(null, client._id);
+});
+
 server.deserializeClient(function (id, done) {
     OAuth2Client.findOne({
         _id: id
