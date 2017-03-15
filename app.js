@@ -245,6 +245,14 @@ app.configure(function () {
     app.use(express.bodyParser());
     app.use(express.methodOverride());
     app.use(express.cookieParser(config.express.key));
+    
+    // Configurable support for cross subdomain cookies
+    var cookie = {};
+    if(config.system.subDomainCookies){
+    	cookie.path = '/';
+    	cookie.domain = '.' + config.system.baseurl;
+        logger.info('openHAB-cloud: Cross sub domain cookie support is configured for domain: '+cookie.domain);
+    }
     app.use(express.session({
         secret: config.express.key,
         store: new RedisStore({
@@ -253,11 +261,9 @@ app.configure(function () {
             client: redis,
             logErrors: true
         }),
-        cookie: {
-        path: '/',
-        domain: '.' + config.system.baseurl
-      }
+        cookie: cookie
     }));
+   
     app.use(flash());
     app.use(passport.initialize());
     app.use(passport.session());

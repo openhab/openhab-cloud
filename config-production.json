@@ -1,7 +1,8 @@
 {
     "system": {
       "baseurl": "<your-openhab-cloud-host>:443",
-      "logging": "info"
+      "logging": "info",
+      "subDomainCookies": false
     },
     "express":{
       "key" : "some express key"
