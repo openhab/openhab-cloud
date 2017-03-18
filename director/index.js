@@ -73,7 +73,7 @@ var setOpenhab = function (req, res, next) {
 
 //redirect a request to a upstream cloud server
 var redirectRequest = function (req, res, next) {
-  res.redirect(301, 'http://' + req.openhab.socketServer);
+  res.redirect(301, 'http://' + req.openhab.socketServer + req.path);
 };
 
 if (cluster.isMaster) {
