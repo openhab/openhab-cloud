@@ -4,6 +4,7 @@ Description=node.js openhab cloud director server
 [Service]
 User=openhabcloud
 Group=openhabcloud
+Environment=NODE_ENV=production
 LimitNOFILE=300000
 Environment=PORT=3000
 #Environment=DEBUG=oath2orize
