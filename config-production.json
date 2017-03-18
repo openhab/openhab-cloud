@@ -1,6 +1,7 @@
 {
     "system": {
       "baseurl": "<your-openhab-cloud-host>:443",
+      "cookie_domain":  "<your-base-domain>",
       "logging": "info"
     },
     "express":{
