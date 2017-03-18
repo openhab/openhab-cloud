@@ -254,8 +254,6 @@ app.configure(function () {
     app.use(express.session({
         secret: config.express.key,
         store: new RedisStore({
-            host: 'localhost',
-            port: 6379,
             client: redis,
             logErrors: true
         }),
