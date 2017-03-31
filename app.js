@@ -801,7 +801,7 @@ app.all('/proxy*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRo
 app.all('/greent*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
 app.all('/jquery.*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
 app.all('/classicui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/ui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/paperui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
 app.all('/basicui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
 app.all('/doc/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
 app.all('/start/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
