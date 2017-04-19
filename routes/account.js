@@ -24,6 +24,7 @@ var uuid = require('uuid');
 var mailer = require('../mailer');
 var logger = require('../logger');
 var app = require('../app');
+var system = require('../system');
 
 exports.lostpasswordget = function(req, res) {
     res.render('lostpassword', {title: "Lost my password", user: req.user,
@@ -48,7 +49,7 @@ exports.lostpasswordpost = function(req, res) {
                     if (!error) {
                         var locals = {
                             email: lostUser.username,
-                            resetUrl: "https://" + app.config.system.baseurl + "/lostpasswordreset?resetCode=" + recoveryCode
+                            resetUrl: system.getBaseURL() + "/lostpasswordreset?resetCode=" + recoveryCode
                         };
                         mailer.sendEmail(lostUser.username, "Password recovery", 'lostpassword-email', locals, function(error) {
                             if (!error) {
