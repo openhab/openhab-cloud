@@ -41,6 +41,9 @@ exports.lostpasswordpost = function(req, res) {
         res.redirect('/lostpassword');
     } else {
         User.findOne({username: req.body.email}, function(error, lostUser) {
+            // resetSuccess indicates, if there's no technical error, only, it doesn't mean, thatan account with the e-mail address exists.
+            var resetSuccess = true;
+
             if (!error && lostUser) {
                 var recoveryCode = uuid.v1();
                 var newLostPassword = new LostPassword({user: lostUser.id, recoveryCode: recoveryCode});
@@ -51,25 +54,26 @@ exports.lostpasswordpost = function(req, res) {
                             resetUrl: "https://" + app.config.system.baseurl + "/lostpasswordreset?resetCode=" + recoveryCode
                         };
                         mailer.sendEmail(lostUser.username, "Password recovery", 'lostpassword-email', locals, function(error) {
-                            if (!error) {
-                                req.flash('info', 'We\'ve sent a password reset link to your e-mail address');
-                                res.redirect('/');
-                            } else {
-
+                            if (error) {
+                                resetSuccess = false;
                                 logger.error(error);
                             }
                         });
                     } else {
+                        resetSuccess = false;
                         req.flash('error', 'There was an error while processing your request');
                         res.redirect('/lostpassword');
                     }
                 });
             } else if (error) {
+                resetSuccess = false;
                 req.flash('error', 'There was an error while processing your request');
                 res.redirect('/lostpassword');
-            } else {
-                req.flash('error', 'Sorry, we were not able to find account for this email');
-                res.redirect('/lostpassword');
+            }
+
+            if (resetSuccess) {
+                req.flash('info', 'We\'ve sent a password reset link to your e-mail address, if an account with this address exists.');
+                res.redirect('/');
             }
         });
     }
