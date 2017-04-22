@@ -42,6 +42,8 @@
             <div class="span6">
                 <form method="post" action="/accountpassword" id="contactform">
                     <input type="hidden" name="_csrf" value="<%= token %>">
+                    <label for="oldpassword">Old password</label>
+                    <input id="oldpassword" name="oldpassword" type="password">
                     <label for="password">New password</label>
                     <input id="password" type="password" name="password">
                     <label for="password1">Re-type new password</label>

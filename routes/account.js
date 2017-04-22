@@ -174,6 +174,7 @@ exports.accountpost = function(req, res) {
 }
 
 exports.accountpasswordpostvalidate = form(
+    field("oldpassword", "Old password").trim().required(),
     field("password", "New password").trim().required(),
     field("password1", "Re-type new password").trim().required()
 );
@@ -181,18 +182,36 @@ exports.accountpasswordpostvalidate = form(
 exports.accountpasswordpost = function(req, res) {
     if (!req.form.isValid) {
         res.redirect('/account');
-    } else {
-        if (req.body.password == req.body.password1) {
-            user = req.user;
-            user.password = req.body.password;
-            user.save();
-            req.flash('info', 'Password successfully changed');
-            res.redirect('/account');
-        } else {
-            req.flash('error', 'Passwords don\'t match');
-            res.redirect('/account');
-        }
+        return;
     }
+
+    // first check, if both new passwords match each other
+    if (req.body.password !== req.body.password1) {
+        req.flash('error', 'Passwords don\'t match');
+        res.redirect('/account');
+        return;
+    }
+
+    // make sure, that the old password is correct before changing it
+    req.user.checkPassword(req.body.oldpassword, function (err, isCorrect) {
+        if (err) {
+            req.flash('error', 'Could not check old password due to an unknown authentication error.');
+            return;
+        }
+
+        if (!isCorrect) {
+            req.flash('error', 'Old password isn\'t correct.');
+            res.redirect('/account');
+            return;
+        }
+
+        // save the new password and redirect
+        user = req.user;
+        user.password = req.body.password;
+        user.save();
+        req.flash('info', 'Password successfully changed');
+        res.redirect('/account');
+    });
 }
 
 exports.itemsdeleteget = function(req, res) {
