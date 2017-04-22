@@ -24,6 +24,7 @@ var uuid = require('uuid');
 var mailer = require('../mailer');
 var logger = require('../logger');
 var app = require('../app');
+var UserPassword = require('../userpassword');
 
 exports.lostpasswordget = function(req, res) {
     res.render('lostpassword', {title: "Lost my password", user: req.user,
@@ -106,8 +107,10 @@ exports.lostpasswordresetpost = function(req, res) {
                 if (lostPassword && !error) {
                     User.findOne({_id: lostPassword.user}, function(error, lostUser) {
                         if (lostUser && !error) {
-                            lostUser.password = req.body.password;
-                            lostUser.save(function(error) {
+                            var userPassword, result;
+
+                            userPassword = new UserPassword(lostUser);
+                            result = userPassword.setPassword(req.body.password, function(error) {
                                 if (!error) {
                                     lostPassword.used = true;
                                     lostPassword.save();
@@ -118,6 +121,11 @@ exports.lostpasswordresetpost = function(req, res) {
                                     res.redirect('/');
                                 }
                             });
+
+                            if (!result) {
+                                UserPassword.printPasswordNotComplexEnoughError(req);
+                                res.redirect('/lostpasswordreset?resetCode=' + req.body.resetCode);
+                            }
                         } else {
                             req.flash('error', 'There was an error while processing your request');
                             res.redirect('/');
@@ -183,11 +191,14 @@ exports.accountpasswordpost = function(req, res) {
         res.redirect('/account');
     } else {
         if (req.body.password == req.body.password1) {
-            user = req.user;
-            user.password = req.body.password;
-            user.save();
-            req.flash('info', 'Password successfully changed');
-            res.redirect('/account');
+            userPassword = new UserPassword(req.user);
+            if (!userPassword.setPassword(req.body.password)) {
+                UserPassword.printPasswordNotComplexEnoughError(req);
+                res.redirect('/account');
+            } else {
+                req.flash('info', 'Password successfully changed');
+                res.redirect('/account');
+            }
         } else {
             req.flash('error', 'Passwords don\'t match');
             res.redirect('/account');
@@ -347,6 +358,12 @@ exports.registerpost = function(req, res) {
                       res.render('login', { title: "Login / Sign up", user: req.user,
                           errormessages:req.flash('error'), infomessages:req.flash('info') });
                     } else {
+                        if (!UserPassword.isComplexEnough(req.body.password)) {
+                            UserPassword.printPasswordNotComplexEnoughError(req);
+                            res.render('login', { title: "Login / Sign up", user: req.user,
+                                errormessages:req.flash('error'), infomessages:req.flash('info') });
+                            return;
+                        }
                   User.register(req.body.username, req.body.password, function(err, user) {
                       if (err) {
                           req.flash('error', "An error occured during registration, please contact support");

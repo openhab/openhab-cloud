@@ -2,6 +2,7 @@ var User = require('../models/user');
 var Openhab = require('../models/openhab');
 var UserDevice = require('../models/userdevice');
 var logger = require('../logger');
+var UserPassword = require('../userpassword');
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 var ObjectId = mongoose.SchemaTypes.ObjectId;
@@ -60,6 +61,11 @@ exports.usersaddpost = function(req, res) {
         res.redirect('/users/add');
     } else {
         if (req.body.password == req.body.password1) {
+            if (!UserPassword.isComplexEnough(req.body.password)) {
+                UserPassword.printPasswordNotComplexEnoughError(req);
+                res.redirect('/users/add');
+                return;
+            }
             User.findOne({username: req.body.username}, function(error, checkUser) {
                 if (!error) {
                     if (checkUser) {

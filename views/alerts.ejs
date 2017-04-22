@@ -3,7 +3,15 @@
     <div class="span12">
         <div class="alert alert-error fade in">
             <button type="button" class="close" data-dismiss="alert">×</button>
+            <% if(errormessages.length === 1) { %>
             <%= errormessages %>
+            <% } else { %>
+            <ul>
+                <% errormessages.forEach(function(err) { %>
+                <li><%= err %></li>
+                <% }) %>
+            </ul>
+            <% } %>
         </div>
     </div>
 </div>
