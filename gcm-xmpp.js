@@ -58,8 +58,9 @@ xmppClient.on('stanza', function(stanza) {
                         logger.warn('openHAB-cloud: Error finding user device: ' + error);
                         return;
                     }
-                    if (userDevice) {
+                    if (!userDevice) {
                         logger.warn('openHAB-cloud: Unable to find user device with reg id = ' + messageData.from);
+                        return;
                     }
 
                     userDevice.globalLocation = [messageData.data.latitude, messageData.data.longitude];
@@ -81,8 +82,10 @@ xmppClient.on('stanza', function(stanza) {
                         logger.warn('openHAB-cloud: Error finding user device: ' + error);
                         return;
                     }
-                    if (userDevice) {
+
+                    if (!userDevice) {
                         logger.warn('openHAB-cloud: Unable to find user device with reg id = ' + messageData.from);
+                        return;
                     }
 
                     UserDevice.find({owner: userDevice.owner}, function (error, userDevices) {
