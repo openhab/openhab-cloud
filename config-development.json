@@ -1,6 +1,8 @@
 {
     "system": {
-    	"baseurl": "<your-openhab-cloud-host>:443",
+        "host": "<your-openhab-cloud-host>",
+        "port": "443",
+        "protocol": "https",
         "logging": "debug"
     },
     "express":{
