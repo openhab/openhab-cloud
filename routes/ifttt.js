@@ -7,6 +7,7 @@ var Openhab = require('../models/openhab');
 var Item = require('../models/item');
 var Event = require('../models/event');
 var app = require('../app');
+var system = require('../system');
 
 // IFTTT openHAB channel key
 var iftttChannelKey = app.config.ifttt.iftttChannelKey
@@ -53,7 +54,7 @@ function iftttAuthenticate (req, res, next) {
 exports.userinfo = [
     iftttAuthenticate,
     function(req, res){
-        res.json({data: {name: req.user.username, id: req.user._id, url: "https://" + app.config.system.baseurl + "/account"}});
+        res.json({data: {name: req.user.username, id: req.user._id, url: system.getBaseURL() + "/account"}});
     }
 ]
 

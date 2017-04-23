@@ -75,8 +75,10 @@ var flash = require('connect-flash'),
     appleSender = require('./aps-helper'),
     oauth2 = require('./oauth2'),
     auth = require('./auth.js'),
-    Limiter = require('ratelimiter');
+    Limiter = require('ratelimiter'),
+    system = require('./system');
 
+system.setConfiguration(config);
 
 // Setup Google Cloud Messaging component
 var gcm = require('node-gcm');
@@ -251,8 +253,8 @@ app.configure(function () {
     // Configurable support for cross subdomain cookies
     var cookie = {};
     if(config.system.subDomainCookies){
-    	cookie.path = '/';
-    	cookie.domain = '.' + config.system.baseurl;
+        cookie.path = '/';
+        cookie.domain = '.' + system.getHost();
         logger.info('openHAB-cloud: Cross sub domain cookie support is configured for domain: '+cookie.domain);
     }
     app.use(express.session({
@@ -288,6 +290,7 @@ app.configure(function () {
             Openhab.findOne({
                 account: req.user.account
             }).lean().exec(function (error, openhab) {
+                res.locals.baseurl = system.getBaseURL();
                 if (!error && openhab) {
                     res.locals.openhab = openhab;
                     res.locals.openhabstatus = openhab.status;
@@ -591,7 +594,7 @@ function proxyRouteOpenhab(req, res) {
     delete requestHeaders['x-forwarded-for'];
     delete requestHeaders['x-forwarded-proto'];
     delete requestHeaders['connection'];
-    requestHeaders['host'] = req.headers.host || config.system.baseurl;
+    requestHeaders['host'] = req.headers.host || system.getHost() + ':' + system.getPort();
     requestHeaders['user-agent'] = "openhab-cloud/0.0.1";
     // console.log(req.path);
     // Strip off path prefix for remote vhosts hack
@@ -600,7 +603,7 @@ function proxyRouteOpenhab(req, res) {
         requestPath = requestPath.replace('/remote', '');
         // TODO: this is too dirty :-(
         delete requestHeaders['host'];
-        requestHeaders['host'] = "home." + config.system.baseurl;
+        requestHeaders['host'] = "home." + system.getHost() + ':' + system.getPort();
     }
     // console.log(requestPath);
     // Send a message with request to openhab agent module

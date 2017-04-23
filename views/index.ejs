@@ -105,11 +105,11 @@
                         case 'online':
                             if (openhabMajorVersion == '2') {
                 %>
-                                You are using openHAB 2.x. <a href="https://home.myopenhab.org/start/index">Click here to access your openHAB's dashboard</a>
+                                You are using openHAB 2.x. <a href="<%=baseurl%>/start/index">Click here to access your openHAB's dashboard</a>
                 <%
                             } else {
                 %>
-                                You are using openHAB 1.x. To remotely access your openHAB's web interface go to <code>https://myopenhab.org/openhab.app?sitemap=yoursitemapname</code>
+                                You are using openHAB 1.x. To remotely access your openHAB's web interface go to <code><%=baseurl%>/openhab.app?sitemap=yoursitemapname</code>
                 <%
                             }
                             break;
