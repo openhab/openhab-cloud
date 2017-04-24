@@ -23,6 +23,7 @@
     "express-session": "1.14.1",
     "heapdump": "0.3.7",
     "hiredis": "0.4",
+    "http-proxy": "^1.16.2",
     "less-middleware": "2.2.0",
     "memwatch-next": "0.3.0",
     "moment": "2.3.1",
