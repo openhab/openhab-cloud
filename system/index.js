@@ -21,7 +21,7 @@ System.prototype.setConfiguration = function(config) {
         // localhost/openhab
         // and so on. For these baseurl, for backward-compatibility, the protocol http: is prepended
         if (!baseurl.match(/^.*:?\/\/.*:[0-9]{1,5}/g)) {
-            baseurl = 'http:' + baseurl;
+            baseurl = 'http://' + baseurl;
         }
         parsedUrl = url.parse(baseurl, false, true);
         this.config.system.host = parsedUrl.hostname;
