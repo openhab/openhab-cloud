@@ -4,20 +4,15 @@ var oauth2orize = require('oauth2orize'),
     OAuth2Code = require('./models/oauth2code'),
     OAuth2Token = require('./models/oauth2token'),
     OAuth2Scope = require('./models/oauth2scope'),
-    User = require('./models/user'),
-    BasicStrategy = require('passport-http').BasicStrategy,
-    ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy,
-    BearerStrategy = require('passport-http-bearer').Strategy;
-
-var logger = require('./logger.js');
-var server = oauth2orize.createServer();
+    logger = require('./logger.js'),
+    server = oauth2orize.createServer();
 
 // An application must supply serialization functions, which determine how the
 // client object is serialized into the session.  Typically this will be a
 // simple matter of serializing the client's ID, and deserializing by finding
 // the client by ID from the database.
 
-server.serializeClient(function(client, done) {
+server.serializeClient(function (client, done) {
     return done(null, client._id);
 });
 
@@ -26,7 +21,7 @@ server.deserializeClient(function (id, done) {
         _id: id
     }, function (error, client) {
         if (error) {
-            logger.error("openHAB-cloud: deserializeClient: " + error);
+            logger.error('openHAB-cloud: deserializeClient: ' + error);
             return done(error);
         }
         return done(null, client);
@@ -41,8 +36,8 @@ server.deserializeClient(function (id, done) {
 // values, and will be exchanged for an access token.
 
 server.grant(oauth2orize.grant.code(function (client, redirectURI, user, ares, done) {
-    var code = uid(16);
-    var newOAuthCode = new OAuth2Code({
+    var code = uid(16),
+        newOAuthCode = new OAuth2Code({
         user: user._id,
         oAuthClient: client._id,
         code: code,
@@ -51,7 +46,7 @@ server.grant(oauth2orize.grant.code(function (client, redirectURI, user, ares, d
     });
     newOAuthCode.save(function (error) {
         if (error) {
-            logger.error("openHAB-cloud: server.grant: " + error);
+            logger.error('openHAB-cloud: server.grant: ' + error);
             return done(error);
         }
         done(null, code);
@@ -73,7 +68,7 @@ server.exchange(oauth2orize.exchange.code(function (client, code, redirectURI, d
         redirectURI: redirectURI
     }, function (error, oauth2code) {
         if (error) {
-            logger.error("openHAB-cloud: server.exchange: " + error);
+            logger.error('openHAB-cloud: server.exchange: ' + error);
             return done(error);
         }
         if (oauth2code === undefined) {
@@ -109,19 +104,21 @@ exports.authorization = [
             clientId: clientId
         }, function (error, client) {
             if (error) {
-                logger.error("openHAB-cloud: server.authorization " + error);
+                logger.error('openHAB-cloud: server.authorization ' + error);
                 return done(error);
             }
-            //            if (redirectURI !== client.redirectURI) {
-            //                return done(null, false);
-            //            }
+
             return done(null, client, redirectURI);
         });
     }),
     function (req, res) {
+        var errormessages,
+            infomessages,
+            scope;
+
         errormessages = req.flash('error');
         infomessages = req.flash('info');
-        var scope = req.oauth2.req.scope;
+        scope = req.oauth2.req.scope;
         OAuth2Scope.findOne({
             name: scope
         }, function (error, scope) {
@@ -133,7 +130,7 @@ exports.authorization = [
                 res.redirect('/');
             } else {
                 res.render('oauth2dialog', {
-                    title: "openHAB",
+                    title: 'openHAB',
                     user: req.user,
                     errormessages: errormessages,
                     infomessages: infomessages,
@@ -166,7 +163,7 @@ exports.token = [
  * Return a unique identifier with the given `len`.
  *
  *     utils.uid(10);
- *     // => "FDaS435D2z"
+ *     // => 'FDaS435D2z'
  *
  * @param {Number} len
  * @return {String}
