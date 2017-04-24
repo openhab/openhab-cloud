@@ -4,7 +4,8 @@
   "version": "0.0.2",
   "private": true,
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "test": "qunit tests/qunit/**/*.js"
   },
   "dependencies": {
     "apn": "1.7.6",
@@ -48,5 +49,8 @@
     "timezone": "0.0.23",
     "uuid": "3.0.1",
     "winston": "0.7.2"
+  },
+  "devDependencies": {
+    "qunitjs": "^2.3.2"
   }
 }
