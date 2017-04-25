@@ -1,8 +1,11 @@
-var config = require("./config.json")
+var config = require('./config.json'),
+    gcm, gcmSender;
+
 /*
  This module maintains GCM sender for openhab-cloud application and it's components
  */
 
-var gcm = require('node-gcm');
-var gcmSender = new gcm.Sender(config.gcm.password);
+gcm = require('node-gcm');
+gcmSender = new gcm.Sender(config.gcm.password);
+
 module.exports = gcmSender;

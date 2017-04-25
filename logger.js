@@ -4,9 +4,10 @@
     as plain text.
  */
 
-var winston = require('winston');
+var winston = require('winston'),
+    logger;
 
-var logger = new (winston.Logger)({
+logger = new (winston.Logger)({
     transports: [
         new (winston.transports.Console)({json: false, timestamp: true, level: "debug"})
     ],

@@ -19,13 +19,13 @@ passport.use(new LocalStrategy({
     }));
 
 // standard basic authentication strategy, used for REST based logins
-  passport.use(new BasicStrategy(
-      function (username, password, done) {
-          User.authenticate(username, password, function (err, user, params) {
-              return done(err, user, params);
-          });
-        }
-  ));
+passport.use(new BasicStrategy(
+    function (username, password, done) {
+        User.authenticate(username, password, function (err, user, params) {
+            return done(err, user, params);
+        });
+    }
+));
 
 // authentication strategy used by oauth clients, usess a custom name 'oAuthBasic'
 passport.use('oAuthBasic' , new BasicStrategy(
@@ -39,7 +39,7 @@ passport.use('oAuthBasic' , new BasicStrategy(
             if (!client) {
                 return done(null, false);
             }
-            if (client.clientSecret != password) {
+            if (client.clientSecret !== password) {
                 return done(null, false);
             }
             return done(null, client);
@@ -59,7 +59,7 @@ passport.use(new ClientPasswordStrategy(
             if (!client) {
                 return done(null, false);
             }
-            if (client.clientSecret != clientSecret) {
+            if (client.clientSecret !== clientSecret) {
                 return done(null, false);
             }
             return done(null, client);

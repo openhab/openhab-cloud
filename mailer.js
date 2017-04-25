@@ -1,21 +1,19 @@
 // This is an utility class to send e-mails to a user on behalf of openhab-cloud
-var path           = require('path')
-    , templatesDir   = path.resolve(__dirname, '.', 'templates')
-    , emailTemplates = require('email-templates')
-    , nodemailer     = require('nodemailer');
-var logger = require('./logger.js');
-var User = require('./models/user');
-var app = require('./app');
+var path = require('path'),
+    templatesDir   = path.resolve(__dirname, '.', 'templates'),
+    emailTemplates = require('email-templates'),
+    nodemailer     = require('nodemailer'),
+    logger = require('./logger.js'),
+    app = require('./app'),
+    productionEnv = process.env.NODE_ENV || 'dev';
 
-var productionEnv = process.env.NODE_ENV || 'dev';
-
-if (productionEnv == 'production') {
-    module.exports.sendEmail = function(email, subject, templateName, locals, cb) {
-        emailTemplates(templatesDir, function(err, template) {
+if (productionEnv === 'production') {
+    module.exports.sendEmail = function (email, subject, templateName, locals, cb) {
+        emailTemplates(templatesDir, function (err, template) {
             if (err) {
                 cb(err);
             } else {
-                var transport = nodemailer.createTransport("SMTP", {
+                var transport = nodemailer.createTransport('SMTP', {
                     host: app.config.mailer.host,
                     port: app.config.mailer.port,
                     secureConnection: app.config.mailer.secureConnection,
@@ -24,7 +22,7 @@ if (productionEnv == 'production') {
                         pass: app.config.mailer.password
                     }
                 });
-                template(templateName, locals, function(err, html, text) {
+                template(templateName, locals, function (err, html, text) {
                     if (err) {
                         cb(err);
                     } else {
@@ -47,9 +45,9 @@ if (productionEnv == 'production') {
         });
     }
 } else {
-    logger.info("openHAB-cloud: Mailer will emulate sending in development environment");
-    module.exports.sendEmail = function(email, subject, templateName, locals, cb) {
-        logger.info("openHAB-cloud: Emulating sendEmail to " + email + " about " + subject);
+    logger.info('openHAB-cloud: Mailer will emulate sending in development environment');
+    module.exports.sendEmail = function (email, subject, templateName, locals, cb) {
+        logger.info('openHAB-cloud: Emulating sendEmail to ' + email + ' about ' + subject);
         cb(null);
     }
 }
