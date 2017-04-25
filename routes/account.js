@@ -213,9 +213,6 @@ exports.accountpasswordpost = function(req, res) {
             res.redirect('/account');
             return;
         }
-            res.redirect('/account');
-            return;
-        }
 
         // save the new password and redirect
         userPassword = new UserPassword(req.user);
