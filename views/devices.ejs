@@ -33,10 +33,14 @@
                     <section id="widgetArea">
                         <div class="widget">
                             <h3>No Devices</h3>
-                            <p>You currently have no devices registered with openHAB Cloud.</p>
+                            <p>You currently have no devices registered with openHAB Cloud. To register a new device, download the openHAB app and set <i><%=baseUrl%></i> as the remote URL and your openHAB Cloud login data as username and password.</p>
                         </div>
                     </section>
                     <% } %>
+                    <div class="app-badges">
+                        <a href="<%=androidLink%>" target="_blank"><img src="/img/apps/google-play-badge.png" class="app-badge"></a>
+                        <a href="<%=appleLink%>" target="_blank"><img src="/img/apps/download-app-store.svg" class="app-badge"></a>
+                    </div>
                 </aside>
                 <div class="span9">
                     <% if (userDevices.length > 0 ) { %>

@@ -95,4 +95,32 @@ System.prototype.getBaseURL = function() {
     return this.getProtocol() + '://' + this.getHost() + ':' + this.getPort();
 };
 
+/**
+ * If configured, returns the link to the apple openHAB app or the default habdroid app link.
+ *
+ * @return {string}
+ */
+System.prototype.getAppleLink = function() {
+    var appleId = '492054521';
+    try {
+        appleId = this.getConfig(['apps', 'appleId']);
+    } catch (err) {}
+
+    return 'https://itunes.apple.com/app/id' + appleId;
+};
+
+/**
+ * If configured, returns the link to the Android openHAB app in the Google Play Store or the default habdroid app link.
+ *
+ * @return {string}
+ */
+System.prototype.getAndroidLink = function () {
+    var playStoreId = 'org.openhab.habdroid';
+    try {
+        playStoreId = this.getConfig(['apps', 'playStoreId']);
+    } catch (err) {}
+
+    return 'https://play.google.com/store/apps/details?id=' + playStoreId;
+};
+
 module.exports = new System();

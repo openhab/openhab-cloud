@@ -997,6 +997,14 @@ aside#sidebar {
 #widgetArea .widget p {
     margin:0;
 }
+#sidebar .app-badges {
+    text-align: center;
+    margin-top: 1em;
+}
+#sidebar .app-badge {
+    height: 40px;
+    margin-bottom: .5em;
+}
 /* fullWidth */
 #fullWidth {
 }
