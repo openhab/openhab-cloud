@@ -13,7 +13,7 @@ services:
         - mongodb
         - redis
         ports:
-        - "3000:3000"     
+        - "3000"     
         restart: always     
     mongodb:
         container_name: mongodb
@@ -24,7 +24,7 @@ services:
         networks:
         - ohcloud-network
         ports:
-        - "27017:27017"
+        - "27017"
         restart: always
     redis:
         container_name: redis
@@ -34,7 +34,7 @@ services:
         networks:
         - ohcloud-network
         ports:
-        - "6379:6379"
+        - "6379"
         restart: always
     nginx:
         container_name: nginx
