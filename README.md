@@ -215,6 +215,65 @@ You need to restart nginx:
 sudo service nginx restart
 ```
 
+## <a name="docker"></a> Docker ###
+ 
+The section describes how the openHAB-cloud docker images can be used with docker-compose
+to spin up the dockerized openhab-cloud backend.
+
+
+#### Architecture
+The dockerized openhab-cloud uses for each part of the overall system a separate docker image and container
+according to the following stack:
+* app-1: node.js and express.js (alpine-node:7.5)
+* mongodb: MongoDB database (mongo:3)
+* nginx: nginx proxy (nginx)
+* redis: redis session manager (redis:alpine)
+
+#### Prerequisites
+To run openhab-cloud make sure docker, docker-machine and docker-compose are installed on your machine.
+More information at [Docker's website](https://docs.docker.com/)
+
+#### Run
+To (force) create and run the composed application, use the following command: 
+```
+docker-compose up -d --force-recreate
+```
+
+#### Logs
+
+To make sure openhab-cloud is running, check the openhab-cloud app logs:
+```
+docker-compose logs app-1
+```
+
+#### Stop & Cleanup
+
+To stop and remove the openhab-cloud containers, use the following commands of docker-compose:
+```
+docker-compose stop
+docker-compose rm
+```
+
+To perform a reset of the complete setup you can additionally stop all docker containers and remove 
+the related images, volumes by the following commands:
+```
+docker stop $(docker ps -a -q)
+docker rmi -f $(docker images -q)
+docker volume rm $(docker volume ls |awk '{print $2}')
+```
+You can also use this command to delete all:
+```
+docker system prune
+```
+
+#### Access
+
+Navigate your browser to http://<your-openhab-cloud-host>:<port> and log in (e.g. http://localhost:80)
+
+#### Limitations
+* Lets Encrypt SSL is missing in the images and will be added soon
+* The nginx configuration at /etc/nginx_openhabcloud.conf will be reused
+* ...
 
 
 ## Installing openHAB Cloud on Amazon Web Services (AWS) ##
