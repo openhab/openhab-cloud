@@ -234,7 +234,11 @@ To run openhab-cloud make sure docker, docker-machine and docker-compose are ins
 More information at [Docker's website](https://docs.docker.com/)
 
 #### Run
-To (force) create and run the composed application, use the following command: 
+To create and run the composed application, use the following command: 
+```
+docker-compose up -d
+```
+or with forced recreate:
 ```
 docker-compose up -d --force-recreate
 ```
@@ -268,12 +272,12 @@ docker system prune
 
 #### Access
 
-Navigate your browser to http://<your-openhab-cloud-host>:<port> and log in (e.g. http://localhost:80)
+Navigate your browser to ```http://<your-openhab-cloud-host>:<port>``` and log in (e.g. http://localhost:80)
 
 #### Limitations
 * Lets Encrypt SSL is missing in the images and will be added soon
 * The nginx configuration at /etc/nginx_openhabcloud.conf will be reused
-* ...
+
 
 
 ## Installing openHAB Cloud on Amazon Web Services (AWS) ##
