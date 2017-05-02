@@ -38,12 +38,10 @@ RUN mkdir -p /opt/openhabcloud && cp -a /tmp/node_modules /opt/openhabcloud
 # From here we load our application's code in, therefore the previous docker
 # "layer" thats been cached will be used if possible
 WORKDIR /opt/openhabcloud
+
+USER openhabcloud
+
 ADD . /opt/openhabcloud
-
-#RUN chown -R openhabcloud:openhabcloud /opt/openhabcloud/*
-#USER openhabcloud
-
-ENV NODE_ENV production
 
 EXPOSE 3000
 

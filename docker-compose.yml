@@ -2,7 +2,9 @@ version: '2'
 services:
     app-1:
         container_name: app-1
-        build: ./
+        build: 
+           context: ./
+           dockerfile: ./docker/node/Dockerfile
         volumes:
         - /opt/openhabcloud
         networks:
@@ -15,7 +17,9 @@ services:
         restart: always     
     mongodb:
         container_name: mongodb
-        build: ./docker/mongo
+        build: 
+           context: ./
+           dockerfile: ./docker/mongo/Dockerfile
         command: mongod --smallfiles
         networks:
         - ohcloud-network
@@ -24,7 +28,9 @@ services:
         restart: always
     redis:
         container_name: redis
-        build: ./docker/redis
+        build: 
+           context: ./
+           dockerfile: ./docker/redis/Dockerfile
         networks:
         - ohcloud-network
         ports:
@@ -32,17 +38,18 @@ services:
         restart: always
     nginx:
         container_name: nginx
-        build: ./docker/nginx
+        build: 
+           context: ./
+           dockerfile: ./docker/nginx/Dockerfile
         networks:
         - ohcloud-network
         ports:
-        - "8080:8080"
+        - "80:80"
         - "443:443"
         links:
         - app-1:app-1
         volumes_from:
         - app-1
-
 networks:
   ohcloud-network:
     driver: bridge
