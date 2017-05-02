@@ -233,6 +233,25 @@ according to the following stack:
 To run openhab-cloud make sure docker, docker-machine and docker-compose are installed on your machine.
 More information at [Docker's website](https://docs.docker.com/)
 
+#### Configuration
+You need to modify the ```config.json``` and adjust the hosts of mongodb and redis to match to the corresponding
+container services of docker-compose:
+```
+    "mongodb": {
+        "hosts": ["mongodb"],
+        "db": "openhab",
+        "user": "",
+        "password": ""
+    },
+    "redis": {
+        "host": "redis",
+        "port": "6379",
+        "password": "password"
+    },
+```
+
+To change the server IP/DNS matching your installation, please refer to [Setting up Nginx](#setupNginx)
+
 #### Run
 To create and run the composed application, use the following command: 
 ```
