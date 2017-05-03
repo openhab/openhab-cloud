@@ -174,9 +174,7 @@
                             <a href="/staff/stats" class="firstLevel <% if (section == 'staff')  { %>active<% } %>">Staff</a>
                         </li>
                         <% } %>
-                        <% if (!user) { %>
-                        <li><a href="/login" section="<%=section%>" class="firstLevel <% if (['login', 'index'].indexOf(section) !== -1)  { %>active<% } %>">Login / Sign up</a></li>
-                        <% } else { %>
+                        <% if (user) { %>
                         <li>
                             <a href="#" class="firstLevel <% if (['account', 'devices', 'applications', 'users'].indexOf(section) !== -1) { %>active<% } %>" data-toggle="dropdown"><%= user.username %></a>
                             <ul>
