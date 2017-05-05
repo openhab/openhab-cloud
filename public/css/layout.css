@@ -282,14 +282,15 @@ width: 20px;
 
 #mainHeader .navbar-inner {
     filter:none;
-    min-height:66px;
+    min-height:1em;
     border:none !important;
 }
 #mainHeader .navbar .nav {
     margin-top:16px;
 }
 #mainHeader .brand {
-    margin-top:0.3em;
+    margin-top: 0.3em;
+    padding: 0 20px 0;
 }
 #mainHeader .navbar .nav > li > a {
     text-shadow: none;
@@ -368,7 +369,7 @@ width: 20px;
     display:block;
     text-decoration: none;
     font-size:1.1em;
-    padding:1em 1em 0 1em;
+    padding:1em;
     line-height:2.5em;
 }
 #mainMenu ul li a.last {
@@ -379,7 +380,6 @@ width: 20px;
     display: none;
     padding:0.46em 0;
     position: absolute;
-    top: 50px;
     left:0;
     width: 154px;
     z-index: 1024;
