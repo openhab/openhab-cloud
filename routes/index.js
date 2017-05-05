@@ -19,16 +19,12 @@ var system = require('../system'),
 /**
  * Constructs the Routes object.
  *
- * @param {Object} restRequests
+ * @param {RequestTracker} requestTracker
  * @param {logger} logger
  * @constructor
  */
-var Routes = function (restRequests, logger) {
-    // TODO: Don't use a plain shared object. Maybe an instance of an object with defined functions would be better to
-    // understand.
-    this.requests = restRequests;
-    // A request counter for issuing a uniqe ID to every request when sending them to openHABs
-    this.requestCounter = 0;
+var Routes = function (requestTracker, logger) {
+    this.requestTracker = requestTracker;
     this.logger = logger;
 };
 
@@ -506,10 +502,7 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
         return;
     }
 
-    // TODO: migrate this to redis incr?
-    // increment request id and fix it
-    this.requestCounter++;
-    var requestId = this.requestCounter;
+    var requestId = this.requestTracker.acquireRequestId();
     // make a local copy of request headers to modify
     var requestHeaders = req.headers;
     // We need to remove and modify some headers here
@@ -541,7 +534,7 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
         body: req.rawBody
     });
     res.openhab = req.openhab;
-    this.requests[requestId] = res;
+    this.requestTracker.add(res, requestId);
 
     //we should only have to catch these two callbacks to hear about the response
     //being close/finished, but thats not the case. Sometimes neither gets called
@@ -552,12 +545,12 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
         self.io.sockets.in(req.openhab.uuid).emit('cancel', {
             id: requestId
         });
-        delete self.requests[requestId];
+        self.requestTracker.remove(requestId);
     });
 
     //when a response is closed by us
     res.on('finish', function () {
-        delete self.requests[requestId];
+        self.requestTracker.remove(requestId);
     });
 };
 

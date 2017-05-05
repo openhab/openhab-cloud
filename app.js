@@ -61,6 +61,7 @@ var flash = require('connect-flash'),
     auth = require('./auth.js'),
     Limiter = require('ratelimiter'),
     system = require('./system'),
+    requesttracker = require('./requesttracker'),
     routes = require('./routes');
 
 system.setConfiguration(config);
@@ -109,7 +110,7 @@ mongooseTypes.loadTypes(mongoose);
 var app = express();
 
 // A list of requests which are awaiting for responses from openHABs
-var restRequests = {};
+var requestTracker = new requesttracker();
 
 // A list of openHABs which lost their socket.io connection and are due for offline notification
 // key is openHAB UUID, value is Date when openHAB was disconnected
@@ -171,19 +172,20 @@ if (taskEnv === 'main') {
 //to these in our restRequests map.  This goes through and finds those orphaned
 //responses and cleans them up, otherwise memory goes through the roof.
 setInterval(function () {
-  logger.debug('openHAB-cloud: Checking orphaned rest requests (' + Object.keys(restRequests).length + ')');
-  for (var requestId in restRequests) {
-    var res = restRequests[requestId];
-    if (res.finished) {
-      logger.debug('openHAB-cloud: expiring orphaned response');
-      delete restRequests[requestId];
-      if(res.openhab) {
-        io.sockets.in(res.openhab.uuid).emit('cancel', {
-          id: requestId
-        });
-      }
+    var requests = requestTracker.getAll();
+    logger.debug('openHAB-cloud: Checking orphaned rest requests (' + requestTracker.size() + ')');
+    for (var requestId in requests) {
+        var res = requestTracker.get(requestId);
+        if (res.finished) {
+            logger.debug('openHAB-cloud: expiring orphaned response');
+            requestTracker.remove(requestId);
+            if(res.openhab) {
+                io.sockets.in(res.openhab.uuid).emit('cancel', {
+                    id: requestId
+                });
+            }
+        }
     }
-  }
 }, 60000);
 
 // Setup mongoose data models
@@ -330,7 +332,7 @@ var io = require('socket.io').listen(server, {
 });
 
 // setup the routes for the app
-var rt = new routes(restRequests, logger);
+var rt = new routes(requestTracker, logger);
 rt.setSocketIO(io);
 rt.setupRoutes(app);
 
@@ -526,18 +528,19 @@ io.sockets.on('connection', function (socket) {
 
     socket.on('response', function (data) {
         var self = this;
-        var requestId = data.id;
-        if (restRequests[requestId] !== null) {
-            if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
-                // self.to(self.handshake.uuid).emit('response', data);
+        var requestId = data.id,
+            request;
+        if (requestTracker.has(requestId)) {
+            request = requestTracker.get(requestId);
+            if (self.handshake.uuid === request.openhab.uuid) {
                 if (data.error !== null) {
-                    restRequests[requestId].send(500, 'Timeout in transit');
+                    request.send(500, 'Timeout in transit');
                 } else {
                     if (data.headers['Content-Type'] !== null) {
                         var contentType = data.headers['Content-Type'];
-                        restRequests[requestId].contentType(contentType);
+                        request.contentType(contentType);
                     }
-                    restRequests[requestId].send(data.responseStatusCode, new Buffer(data.body, 'base64'));
+                    request.send(data.responseStatusCode, new Buffer(data.body, 'base64'));
                 }
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
@@ -550,10 +553,12 @@ io.sockets.on('connection', function (socket) {
     });
     socket.on('responseHeader', function (data) {
         var self = this;
-        var requestId = data.id;
-        if (restRequests[requestId] !== null) {
-            if (self.handshake.uuid === restRequests[requestId].openhab.uuid && !restRequests[requestId].headersSent) {
-                restRequests[requestId].writeHead(data.responseStatusCode, data.responseStatusText, data.headers);
+        var requestId = data.id,
+            request;
+        if (requestTracker.has(requestId)) {
+            request = requestTracker.get(requestId);
+            if (self.handshake.uuid === request.openhab.uuid && !request.headersSent) {
+                request.writeHead(data.responseStatusCode, data.responseStatusText, data.headers);
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
             }
@@ -566,10 +571,12 @@ io.sockets.on('connection', function (socket) {
     // This is a method for old versions of openHAB-cloud bundle which use base64 encoding for binary
     socket.on('responseContent', function (data) {
         var self = this;
-        var requestId = data.id;
-        if (restRequests[requestId] !== null) {
-            if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
-                restRequests[requestId].write(new Buffer(data.body, 'base64'));
+        var requestId = data.id,
+            request;
+        if (requestTracker.has(requestId)) {
+            request = requestTracker.get(requestId);
+            if (self.handshake.uuid === request.openhab.uuid) {
+                request.write(new Buffer(data.body, 'base64'));
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
             }
@@ -582,10 +589,12 @@ io.sockets.on('connection', function (socket) {
     // This is a method for new versions of openHAB-cloud bundle which use bindary encoding
     socket.on('responseContentBinary', function (data) {
         var self = this;
-        var requestId = data.id;
-        if (restRequests[requestId] !== null) {
-            if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
-                restRequests[requestId].write(data.body);
+        var requestId = data.id,
+            request;
+        if (requestTracker.has(requestId)) {
+            request = requestTracker.get(requestId);
+            if (self.handshake.uuid === request.openhab.uuid) {
+                request.write(data.body);
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
             }
@@ -597,11 +606,12 @@ io.sockets.on('connection', function (socket) {
     });
     socket.on('responseFinished', function (data) {
         var self = this;
-        var requestId = data.id;
-        if (restRequests[requestId] !== null) {
-            if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
-                // self.to(self.handshake.uuid).emit('responseFinished', data);
-                restRequests[requestId].end();
+        var requestId = data.id,
+            request;
+        if (requestTracker.has(requestId)) {
+            request = requestTracker.get(requestId);
+            if (self.handshake.uuid === request.openhab.uuid) {
+                request.end();
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
             }
@@ -609,11 +619,12 @@ io.sockets.on('connection', function (socket) {
     });
     socket.on('responseError', function (data) {
         var self = this;
-        var requestId = data.id;
-        if (restRequests[requestId] !== null) {
-            if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
-                // self.to(self.handshake.uuid).emit('responseError', data);
-                restRequests[requestId].send(500, data.responseStatusText);
+        var requestId = data.id,
+            request;
+        if (requestTracker.has(requestId)) {
+            request = requestTracker.get(requestId);
+            if (self.handshake.uuid === request.openhab.uuid) {
+                request.send(500, data.responseStatusText);
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
             }
