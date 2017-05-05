@@ -222,7 +222,7 @@ to spin up the dockerized openhab-cloud backend.
 
 
 #### Architecture
-The dockerized openhab-cloud uses for each part of the overall system a separate docker image and container
+The dockerized openhab-cloud uses a separate docker image and container for each part of the overall system
 according to the following stack:
 * app-1: node.js and express.js (alpine-node:7.5)
 * mongodb: MongoDB database (mongo:3)
@@ -278,7 +278,7 @@ docker-compose rm
 ```
 
 To perform a reset of the complete setup you can additionally stop all docker containers and remove 
-the related images, volumes by the following commands:
+the related images and volumes by the following commands:
 ```
 docker stop $(docker ps -a -q)
 docker rmi -f $(docker images -q)
