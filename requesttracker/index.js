@@ -44,7 +44,6 @@ RequestTracker.prototype.getAll = function () {
  * @return {number}
  */
 RequestTracker.prototype.acquireRequestId = function () {
-    console.log('ID acquired');
     return this.requestCounter++;
 
 };

@@ -14,6 +14,8 @@ var system = require('../system'),
     api_routes = require('./api'),
     oauth2 = require('./oauth2'),
     setSessionTimezone = require('./setTimezone'),
+    AndroidRegistrationService = require('../mobileregistrationservice/AndroidRegistrationService'),
+    AppleRegistrationService = require('../mobileregistrationservice/AppleRegistrationService');
     ifttt_routes = require('./ifttt');
 
 /**
@@ -230,192 +232,15 @@ Routes.prototype.setupProxyRoutes = function (app) {
 };
 
 Routes.prototype.setupAppRoutes = function (app) {
+    var appleRegistration = new AppleRegistrationService(this.logger),
+        androidRegistration = new AndroidRegistrationService(this.logger);
+
     // myOH API for mobile apps
     app.all('/api/v1/notifications*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, api_routes.notificationsget);
 
     // Android app registration
-    app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.addAndroidRegistration);
-    app.all('/addAppleRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.addAppleRegistration);
-};
-
-/**
- * TODO: Extract this function to it's own helper module.
- *
- * @param req
- * @param res
- */
-Routes.prototype.addAndroidRegistration = function (req, res) {
-    var self = this;
-
-    if (!req.query.hasOwnProperty('regId')) {
-        res.send(404, 'Parameters missing');
-        return;
-    }
-    var registrationId = req.query['regId'];
-    var deviceId;
-    var deviceModel;
-    if (req.query.hasOwnProperty('deviceId')) {
-        deviceId = req.query['deviceId'];
-    } else {
-        deviceId = 'unknown';
-    }
-    if (req.query.hasOwnProperty('deviceModel')) {
-        deviceModel = req.query['deviceModel'];
-    } else {
-        deviceModel = 'unknown';
-    }
-    // Try to find user device by device Id
-    UserDevice.findOne({
-        owner: req.user.id,
-        deviceType: 'android',
-        deviceId: deviceId
-    }, function (error, userDevice) {
-        if (error) {
-            self.logger.warn('openHAB-cloud: Error looking up device: ' + error);
-            res.send(500, 'Internal server error');
-            return;
-        }
-
-        if (userDevice) {
-            // If found, update the changed registration id
-            self.logger.info('openHAB-cloud: Found an Android device for user ' + req.user.username + ', updating');
-            userDevice.androidRegistration = registrationId;
-            userDevice.lastUpdate = new Date();
-            userDevice.save(function (error) {
-                if (error) {
-                    self.logger.error('openHAB-cloud: Error saving user device: ' + error);
-                }
-            });
-            res.send(200, 'Updated');
-        } else {
-            // If not found, try to find device by registration id. Sometimes android devices change their
-            // ids dynamically, while google play services continue to return the same registration id
-            // so this is still the same device and we don't want any duplicates
-            self.findAndroidDeviceByRegistrationId(req, registrationId, res, deviceId, deviceModel);
-        }
-    });
-};
-/**
- * Tries to find an android device using the registration ID and sets the given deviceId to this UserDevice.
- *
- * @param req
- * @param registrationId
- * @param res
- * @param deviceId
- * @param deviceModel
- */
-Routes.prototype.findAndroidDeviceByRegistrationId = function (req, registrationId, res, deviceId, deviceModel) {
-    var self = this;
-
-    UserDevice.findOne({
-            owner: req.user.id,
-            deviceType: 'android',
-            androidRegistration: registrationId
-        },
-        function (error, userDevice) {
-            if (error) {
-                self.logger.warn('openHAB-cloud: Error looking up device: ' + error);
-                res.send(500, 'Internal server error');
-                return;
-            }
-            if (userDevice) {
-                // If found, update the changed device id
-                userDevice.deviceId = deviceId;
-                userDevice.lastUpdate = new Date();
-                userDevice.save(function (error) {
-                    if (error) {
-                        self.logger.error('openHAB-cloud: Error saving user device: ' + error);
-                    }
-                });
-                res.send(200, 'Updated');
-            } else {
-                // If not found, finally register a new one
-                userDevice = new UserDevice({
-                    owner: req.user.id,
-                    deviceType: 'android',
-                    deviceId: deviceId,
-                    androidRegistration: registrationId,
-                    deviceModel: deviceModel,
-                    lastUpdate: new Date(),
-                    registered: new Date()
-                });
-                userDevice.save(function (error) {
-                    if (error) {
-                        self.logger.error('openHAB-cloud: Error saving user device: ' + error);
-                    }
-                });
-                res.send(200, 'Added');
-            }
-        });
-};
-
-/**
- * TODO: Extract this method to it's own helper module.
- *
- * @param req
- * @param res
- */
-Routes.prototype.addAppleRegistration = function (req, res) {
-    var self = this;
-
-    if (!req.query.hasOwnProperty('regId')) {
-        res.send(404, 'Parameters missing');
-        return;
-    }
-    var registrationId = req.query['regId'];
-    var deviceId;
-    var deviceModel;
-    if (req.query.hasOwnProperty('deviceId')) {
-        deviceId = req.query['deviceId'];
-    } else {
-        deviceId = 'unknown';
-    }
-    if (req.query.hasOwnProperty('deviceModel')) {
-        deviceModel = req.query['deviceModel'];
-    } else {
-        deviceModel = 'unknown';
-    }
-    UserDevice.findOne({
-        owner: req.user.id,
-        deviceType: 'ios',
-        deviceId: deviceId
-    }, function (error, userDevice) {
-        if (error) {
-            self.logger.warn('openHAB-cloud: Error looking up device: ' + error);
-            res.send(500, 'Internal server error');
-            return;
-        }
-        if (userDevice) {
-            // If found, update device token and save
-            self.logger.info('openHAB-cloud: Found iOS device for user ' + req.user.username + ', updating');
-            userDevice.iosDeviceToken = registrationId;
-            userDevice.lastUpdate = new Date();
-            userDevice.save(function (error) {
-                if (error) {
-                    self.logger.error('openHAB-cloud: Error saving user device: ' + error);
-                }
-            });
-            res.send(200, 'Updated');
-        } else {
-            // If not found, add new device registration
-            self.logger.info('openHAB-cloud: Registering new iOS device for user ' + req.user.username);
-            userDevice = new UserDevice({
-                owner: req.user.id,
-                deviceType: 'ios',
-                deviceId: deviceId,
-                iosDeviceToken: registrationId,
-                deviceModel: deviceModel,
-                lastUpdate: new Date(),
-                registered: new Date()
-            });
-            userDevice.save(function (error) {
-                if (error) {
-                    self.logger.error('openHAB-cloud: Error saving user device: ' + error);
-                }
-            });
-            res.send(200, 'Added');
-        }
-    });
+    app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, androidRegistration.register.bind(androidRegistration));
+    app.all('/addAppleRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, appleRegistration.register.bind(appleRegistration));
 };
 
 // Ensure user is authenticated for web requests
