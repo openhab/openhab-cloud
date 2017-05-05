@@ -68,3 +68,82 @@ QUnit.test('#getBaseUrl', function (assert) {
 
     assert.equal(system.getBaseURL(), 'http://localhost:1000');
 });
+
+QUnit.test('#isUserRegistrationEnabled default=true', function (assert) {
+    system.setConfiguration(globalExampleConfig);
+
+    assert.equal(system.isUserRegistrationEnabled(), true);
+});
+
+QUnit.test('#isUserRegistrationEnabled false', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.registration_enabled = false;
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.isUserRegistrationEnabled(), false);
+});
+
+QUnit.test('#isUserRegistrationEnabled true', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.registration_enabled = true;
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.isUserRegistrationEnabled(), true);
+});
+
+QUnit.test('#hasLegalTerms & #hasLegalPolicy default', function (assert) {
+    system.setConfiguration(globalExampleConfig);
+
+    assert.equal(system.hasLegalTerms(), false);
+    assert.equal(system.hasLegalPolicy(), false);
+});
+
+QUnit.test('#hasLegalTerms true', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.legal = {
+        terms: 'http://example.com'
+    };
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.hasLegalTerms(), true);
+});
+
+QUnit.test('#hasLegalTerms false', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.legal = {};
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.hasLegalTerms(), false);
+});
+
+QUnit.test('#hasLegalPolicy true', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.legal = {
+        policy: 'http://example.com'
+    };
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.hasLegalPolicy(), true);
+});
+
+QUnit.test('#hasLegalPolicy false', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.legal = {};
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.hasLegalPolicy(), false);
+});
+
+QUnit.test('#isIFTTTEnabled true', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.ifttt = true;
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.isIFTTTEnabled(), true);
+});
+
+QUnit.test('#isIFTTTEnabled default', function (assert) {
+    system.setConfiguration(globalExampleConfig);
+
+    assert.equal(system.isIFTTTEnabled(), false);
+});

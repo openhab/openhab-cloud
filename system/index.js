@@ -94,5 +94,57 @@ System.prototype.getProtocol = function() {
 System.prototype.getBaseURL = function() {
     return this.getProtocol() + '://' + this.getHost() + ':' + this.getPort();
 };
+/**
+ * Checks, if new user registration should be enabled or not.
+ *
+ * @return {boolean}
+ */
+System.prototype.isUserRegistrationEnabled = function() {
+    try {
+        return this.getConfig(['registration_enabled']);
+    } catch (err) {
+        return true;
+    }
+};
+
+/**
+ * Checks, if there's a legal terms or service link configured or not.
+ *
+ * @return {boolean}
+ */
+System.prototype.hasLegalTerms = function() {
+    try {
+        return this.getConfig(['legal', 'terms']) !== false;
+    } catch (err) {
+        return false;
+    }
+};
+
+/**
+ * Checks, is there's a policy link configured or not.
+ *
+ * @return {boolean}
+ */
+System.prototype.hasLegalPolicy = function() {
+    try {
+        return this.getConfig(['legal', 'policy']) !== false;
+    } catch (err) {
+        return false;
+    }
+};
+
+/**
+ * Checks, if IFTTT is configured and enabled or not.
+ *
+ * @return {boolean}
+ */
+System.prototype.isIFTTTEnabled = function() {
+    try {
+        this.getConfig(['ifttt']);
+        return true;
+    } catch (err) {
+        return false;
+    }
+};
 
 module.exports = new System();
