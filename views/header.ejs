@@ -60,8 +60,6 @@
 
     </style>
     <script src="/js/jquery.js"></script>
-    <script src="/js/codemirror.js"></script>
-    <script src="/js/javascript.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jstimezonedetect/1.0.4/jstz.min.js"></script>
     <script type="text/javascript"
             src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCh6fTzWwOMbplxEyNTZSLIn4mxEE3sraE&sensor=false">
@@ -139,18 +137,6 @@
                     <ul>
                         <% if (user) { %>
                         <li><a href="/" class="firstLevel <% if (section == 'index')  { %>active<% } %>">Home</a></li>
-<!--                        <li>
-                            <a href="#" class="firstLevel <% if (section == 'config')  { %>active<% } %>" data-toggle="dropdown">Configuration</a>
-                            <ul>
-                                <li><a href="/config/system">System</a></li>
-                                <li><a href="">Items</a></li>
-                                <li><a href="">Sitemaps</a></li>
-                                <li><a href="">Rules</a></li>
-                                <li><a href="">Persist</a></li>
-                                <li><a href="">Scripts</a></li>
-                                <li><a href="">Translations</a></li>
-                            </ul>
-                        </li> -->
                         <% if (!user.parent) { %>
                         <li><a href="/items" class="firstLevel <% if (section == 'items')  { %>active<% } %>">Items</a></li>
                         <li><a href="/events" class="firstLevel <% if (section == 'events')  { %>active<% } %>">Event log</a></li>
