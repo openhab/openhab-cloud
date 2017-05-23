@@ -106,7 +106,7 @@ UserSchema.static('authenticate', function (username, password, callback) {
 });
 
 UserSchema.methods.openhab = function(callback) {
-    Openhab.findOne({account: this.account}).cache().exec(callback);
+    Openhab.findOne({account: this.account}).exec(callback);
 }
 
 UserSchema.index({account:1, role:1});
