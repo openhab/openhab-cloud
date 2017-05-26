@@ -821,43 +821,18 @@ function animateTxt(curSlide, state){
         if( $subMenu.length ) $this.addClass('hover').stop();
         else {
             if($this.parent().is($(':gt(1)', $mainMenu))){
-                $this.addClass('Shover').stop(false, true).hide().fadeIn('slow');
+                $this.addClass('Shover');
             }else{
-                $this.addClass('Shover').stop(false, true);
+                $this.addClass('Shover');
             }
         }
 
-
-        if($this.parent().is($(':gt(1)', $mainMenu))){
-
-            $subMenu.css('display', 'block');
-            $subMenu.stop(false, true).animate({
-                left:144, 
-                opacity:1
-            }, 300,'easeOutQuad');
-
-
-
-            
-        }else{
-
-            $subMenu.stop(false, true).slideDown('fast','easeInQuad'); 
-            
-        }
-
-
+        $subMenu.show();
     }).on('mouseleave', 'li', function() {
 
 
         var $nthis = $(this);
-        if($nthis.parent().is($(':gt(1)', $mainMenu))){
-
-            $nthis.children('ul').stop(false, true).css('left', 130).css('opacity', 0).css('display', 'none');
-
-        }else{
-
-            $nthis.removeClass('hover').removeClass('Shover').children('ul').stop(false, true).hide();
-        }
+        $nthis.removeClass('hover').removeClass('Shover').children('ul').stop(false, true).hide();
         
         $subMenu = $nthis.children('ul');
         

@@ -19,7 +19,11 @@
 // TODO: Move all request handlers out of here, move authentication to auth.js
 
 // Main Logging setup
-var logger = require('./logger.js');
+var logger = require('./logger.js'),
+    config = require('./config.json'),
+    system = require('./system');
+
+system.setConfiguration(config);
 
 require('heapdump');
 
@@ -33,10 +37,9 @@ logger.info('openHAB-cloud: Backend logging initialized...');
 
 // Initialize the main configuration
 var taskEnv = process.env.TASK || 'main';
-var config = require('./config.json');
 
 // If Google Cloud Messaging is configured set it up
-if (config.gcm) {
+if (system.isGcmConfigured()) {
     require('./gcm-xmpp');
 }
 
@@ -60,11 +63,8 @@ var flash = require('connect-flash'),
     oauth2 = require('./routes/oauth2'),
     auth = require('./auth.js'),
     Limiter = require('ratelimiter'),
-    system = require('./system'),
     requesttracker = require('./requesttracker'),
     routes = require('./routes');
-
-system.setConfiguration(config);
 
 // Setup Google Cloud Messaging component
 var gcm = require('node-gcm');
