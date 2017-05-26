@@ -60,8 +60,6 @@
 
     </style>
     <script src="/js/jquery.js"></script>
-    <script src="/js/codemirror.js"></script>
-    <script src="/js/javascript.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jstimezonedetect/1.0.4/jstz.min.js"></script>
     <script type="text/javascript"
             src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCh6fTzWwOMbplxEyNTZSLIn4mxEE3sraE&sensor=false">
@@ -117,23 +115,6 @@
             margin-bottom: 15px;
             padding: 7px 9px;
         }
-        .openhab-online {
-            background: #e0f0d5;
-        }
-
-        .openhab-online:hover {
-            background: #e0f0d5 !important;
-            background-image: "" !important;
-        }
-
-        .openhab-offline {
-            background: #f1dede;
-        }
-
-        .openhab-offline:hover {
-            background: #f1dede !important;
-            background-image: "" !important;
-        }
 
         .sidebar-nav {
             display: block;
@@ -156,18 +137,6 @@
                     <ul>
                         <% if (user) { %>
                         <li><a href="/" class="firstLevel <% if (section == 'index')  { %>active<% } %>">Home</a></li>
-<!--                        <li>
-                            <a href="#" class="firstLevel <% if (section == 'config')  { %>active<% } %>" data-toggle="dropdown">Configuration</a>
-                            <ul>
-                                <li><a href="/config/system">System</a></li>
-                                <li><a href="">Items</a></li>
-                                <li><a href="">Sitemaps</a></li>
-                                <li><a href="">Rules</a></li>
-                                <li><a href="">Persist</a></li>
-                                <li><a href="">Scripts</a></li>
-                                <li><a href="">Translations</a></li>
-                            </ul>
-                        </li> -->
                         <% if (!user.parent) { %>
                         <li><a href="/items" class="firstLevel <% if (section == 'items')  { %>active<% } %>">Items</a></li>
                         <li><a href="/events" class="firstLevel <% if (section == 'events')  { %>active<% } %>">Event log</a></li>
@@ -176,13 +145,13 @@
                         <% } %>
                         <% if (user) if (openhabstatus) { %>
                         <% if (openhabstatus == 'online') { %>
-                        <li>
-                            <a class="openhab-online" href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).calendar()%>">Online</a>
+                        <li class="openhab-online">
+                            <a href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).calendar()%>">Online</a>
                         </li>
                         <% } else { %>
-                        <li>
+                        <li class="openhab-offline">
                             <!-- <a data-toggle="tooltip" data-placement="left" title data-original-title="Last seen on xxx">openHAB <%= openhabstatus %></a> -->
-                            <a class="openhab-offline" href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).calendar()%>">Offline</a>
+                            <a href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).calendar()%>">Offline</a>
                         </li>
                         <% } %>
                         <% } %>
@@ -191,18 +160,28 @@
                             <a href="/staff/stats" class="firstLevel <% if (section == 'staff')  { %>active<% } %>">Staff</a>
                         </li>
                         <% } %>
-                        <% if (!user) { %>
-                        <li><a href="/login" class="firstLevel <% if (section == 'login')  { %>active<% } %>">Login / Sign up</a></li>
-                        <% } else { %>
+                        <% if (user) { %>
                         <li>
-                            <a href="#" class="firstLevel" data-toggle="dropdown"><%= user.username %></a>
+                            <a href="#" class="firstLevel <% if (['account', 'devices', 'applications', 'users'].indexOf(section) !== -1) { %>active<% } %>" data-toggle="dropdown"><%= user.username %></a>
                             <ul>
-                                <li><a href="/account">Account</a></li>
-                                <li><a href="/devices">Devices</a></li>
-                                <li><a href="/applications">Applications</a></li></li>
-                                <% if (user.role == "master") { %><li><a href="/users">Users</a></li> <% } %>
+                                <li <% if (section == 'account')  { %>class="active"<% } %>>
+                                    <a href="/account">Account</a>
+                                </li>
+                                <li <% if (section == 'devices')  { %>class="active"<% } %>>
+                                    <a href="/devices">Devices</a>
+                                </li>
+                                <li <% if (section == 'applications')  { %>class="active"<% } %>>
+                                    <a href="/applications">Applications</a>
+                                </li>
+                                <% if (user.role == "master") { %>
+                                    <li <% if (section == 'users')  { %>class="active"<% } %>>
+                                        <a href="/users">Users</a>
+                                    </li>
+                                <% } %>
                                 <li class="divider"></li>
-                                <li><a href="/logout">Logout</a></li>
+                                <li>
+                                    <a href="/logout">Logout</a>
+                                </li>
                             </ul>
                         </li>
                         <% } %>

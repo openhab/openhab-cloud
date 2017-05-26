@@ -282,14 +282,15 @@ width: 20px;
 
 #mainHeader .navbar-inner {
     filter:none;
-    min-height:66px;
+    min-height:1em;
     border:none !important;
 }
 #mainHeader .navbar .nav {
     margin-top:16px;
 }
 #mainHeader .brand {
-    margin-top:0.3em;
+    margin-top: 0.3em;
+    padding: 0 20px 0;
 }
 #mainHeader .navbar .nav > li > a {
     text-shadow: none;
@@ -367,65 +368,29 @@ width: 20px;
 #mainMenu ul li a {
     display:block;
     text-decoration: none;
-    margin: 0 5px 0 0;
     font-size:1.1em;
-    padding:1em 1em 0 1em;
-    /* height:27px;*/
+    padding:1em;
     line-height:2.5em;
-    -moz-border-radius:0 0 5px 5px;
-    -webkit-border-radius:0 0 5px 5px;
-    border-radius:0 0 5px 5px;
 }
 #mainMenu ul li a.last {
     margin-right:0;
 }
-/* ssmenu */
-#mainMenu ul li ul:before {
-    width:150px;
-    height:15px;
-    /*background: url(../images/sub-arrow.png) no-repeat left top;*/
-    content: "\25b4";
-    font-size:30px;
-    color:#454545;
-    display:block;
-    padding-top:5px;
-    position:absolute;
-    top:-20px;
-    left:10px;
-    cursor:pointer;
-}
-
-#mainMenu ul li ul li ul:before{
-    content: "";
-
-
-}
-
-#mainMenu ul li ul li ul{
-    -moz-border-radius:0 5px 5px 5px;
-    -webkit-border-radius:0 5px 5px 5px;
-    border-radius:0 5px 5px 5px;
-}
 
 #mainMenu ul ul {
     display: none;
-    left: 0px;
     padding:0.46em 0;
     position: absolute;
-    top:66px;
     left:0;
-    width: 150px;
+    width: 154px;
     z-index: 1024;
     color:white;
     float:left;
     margin:0;
-    -moz-border-radius:9px;
-    -webkit-border-radius:9px;
-    border-radius:9px;
+    box-shadow: 2px 2px 4px 2px rgba(0, 0, 0, 0.15);
 }
 #mainMenu ul ul li {
     float: none;
-    clear:both;
+    clear: both;
 }
 #mainMenu ul ul a {
     border: 0;
@@ -433,9 +398,6 @@ width: 20px;
     display: block;
     text-align: left;
     text-transform: none;
-    -moz-border-radius:0px;
-    -webkit-border-radius:0px;
-    border-radius:0px;
     font-size:0.9em;
     line-height:1.5em;
     padding-bottom:1em;
@@ -985,9 +947,6 @@ aside#sidebar {
     margin-right: 20px;
 }
 #widgetArea .widget {
-    -moz-border-radius:3px;
-    -webkit-border-radius:3px;
-    border-radius:3px;
     padding:1.5em 1.5em 1.5em 1.5em;
 }
 #widgetArea .widget h3 {
@@ -1905,21 +1864,34 @@ ol.iconsList {list-style:none; margin:0;}
 
 
 input[type="text"], input[type="password"], input[type="email"], textarea, select {
-    border: 1px solid #E4E4E4;
-    display:block;
+    display: block;
+    border-style: solid;
+    border-radius: 0;
+    border-width: 0 0 1px;
+    border-color: rgba(0,0,0,0.12);
+    background-color: #FAFAFA;
+    box-shadow: none;
+    padding-bottom: 1px;
+    -webkit-box-shadow: none;
+    transition: none;
+    -webkit-transition: none;
 }
-textarea {
-    background: #fff;
+input[type="text"], input[type="password"], input[type="email"], select {
+    height: 30px;
 }
-select {
+select, select:focus {
     padding: 0;
+    outline: 0;
 }
 input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus, textarea:focus {
-    -moz-box-shadow: 0 0 3px rgba(0, 0, 0, .2);
-    -webkit-box-shadow: 0 0 3px rgba(0, 0, 0, .2);
-    box-shadow:  0 0 3px rgba(0, 0, 0, .2);
-}
-textarea {
+    border-color: rgb(63,81,181);
+    display: block;
+    padding-bottom: 0;
+    border-radius: 0;
+    border-width: 0 0 2px;
+    outline: 0;
+    box-shadow: none;
+    -webkit-box-shadow: none;
 }
 label, legend {
     display: block;
@@ -2415,8 +2387,8 @@ form .error {
         body {
             padding-top:0;
 			padding-left: 0;
-			padding-right: 0;			
-			
+			padding-right: 0;
+
         }
 		 .container,  .navbar .container{
 		 margin-left:auto;
@@ -2431,24 +2403,24 @@ form .error {
         .navbar-fixed-top {
             margin-bottom:0;
         }
-		
+
 		#mainMenu .responsive-nav {
 			width:100%;
 			display:block;
 			margin-bottom:1em;
 		}
 		#mainHeader #mainMenu {float:none!important;}
-		
-		
+
+
 		.home .bloc .imgWrapper{height:auto;  }
-		
+
         .flexslider .slides .txt h2 {
             font-size:2em;
         }
 
 
         /* MAIN MENU */
-    
+
         .logoBig ul.socialNetwork {
             float:none;
             text-align: center;
@@ -2468,7 +2440,7 @@ form .error {
     #mainMenu ul {
         display:none;
     }
-  
+
 
     .awards{
         display:none;
@@ -2483,14 +2455,6 @@ form .error {
     height:200px;
 }
 
-
-
-.footer1{
-    margin-top:1em;
-	padding-top:1em;
-}
-
-
     .navbar .brand {
         float:none;
     }
@@ -2498,7 +2462,7 @@ form .error {
         margin-bottom:1.5em;
     }
     .mb15{margin-bottom:0!important;}
-   
+
     .headerPage #navTrail {
 	text-align:left;
     }
@@ -2610,14 +2574,14 @@ form .error {
         display:none;
     }
 
-  
+
 
     #mainMenu {
         border-top:none;
     }
-	
-	
-	
+
+
+
     .flexslider .slides .txt h2 {
         font-size:1.4em;
     }
@@ -2717,7 +2681,7 @@ form .error {
 @media (max-width: 320px) {
 
 
-    
+
     .home .bloc .imgWrapper{ height:auto; }
 	#mainHeader #mainMenu {float:left;}
     #sequence h2.title { font-size:1.5em;}
@@ -2739,7 +2703,7 @@ form .error {
 
     .imgRounded{ width: 180px; height: 180px; }
 	#mainHeader #mainMenu {float:left;}
- 
+
 
     .callToActionBoxed .btnWrapper{
         margin-right:12px;

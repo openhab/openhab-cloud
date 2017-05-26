@@ -19,7 +19,11 @@
 // TODO: Move all request handlers out of here, move authentication to auth.js
 
 // Main Logging setup
-var logger = require('./logger.js');
+var logger = require('./logger.js'),
+    config = require('./config.json'),
+    system = require('./system');
+
+system.setConfiguration(config);
 
 require('heapdump');
 
@@ -33,10 +37,9 @@ logger.info('openHAB-cloud: Backend logging initialized...');
 
 // Initialize the main configuration
 var taskEnv = process.env.TASK || 'main';
-var config = require('./config.json');
 
 // If Google Cloud Messaging is configured set it up
-if (config.gcm) {
+if (system.isGcmConfigured()) {
     require('./gcm-xmpp');
 }
 
@@ -73,10 +76,7 @@ var flash = require('connect-flash'),
     appleSender = require('./aps-helper'),
     oauth2 = require('./oauth2'),
     auth = require('./auth.js'),
-    Limiter = require('ratelimiter'),
-    system = require('./system');
-
-system.setConfiguration(config);
+    Limiter = require('ratelimiter');
 
 // Setup Google Cloud Messaging component
 var gcm = require('node-gcm');
@@ -806,6 +806,7 @@ app.all('/habpanel/*', ensureRestAuthenticated, preassembleBody, setOpenhab, pro
 
 // myOH API for mobile apps
 app.all('/api/v1/notifications*', ensureRestAuthenticated, preassembleBody, setOpenhab, api_routes.notificationsget);
+app.all('/api/v1/settings/notifications', ensureRestAuthenticated, preassembleBody, setOpenhab, api_routes.notificationssettingsget);
 
 // Android app registration
 app.all('/addAndroidRegistration*', ensureRestAuthenticated, preassembleBody, setOpenhab, addAndroidRegistration);
