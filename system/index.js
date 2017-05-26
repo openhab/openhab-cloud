@@ -153,4 +153,63 @@ System.prototype.getGcmPassword = function() {
     return this.getConfig(['gcm', 'password']);
 };
 
+/**
+ * Returns true, if credentials for the database access are set, false otherwise. This function will return true only,
+ * if both, a username and a password, if configured, not if only one of them is set.
+ *
+ * @return {boolean}
+ */
+System.prototype.hasDbCredentials = function() {
+    try {
+        this.getDbUser();
+        this.getDbPass();
+        return true;
+    } catch (e) {
+        return false;
+    }
+};
+
+/**
+ * Returns the user which should be used to connect to the database. If no user is set, this
+ * function will throw an error.
+ *
+ * @return {*}
+ */
+System.prototype.getDbUser = function() {
+    return this.getConfig(['mongodb', 'user']);
+};
+
+/**
+ * Returns the password which should be used to connect to the database. If no password is set, this
+ * function will throw an error.
+ *
+ * @return {*}
+ */
+System.prototype.getDbPass = function() {
+    return this.getConfig(['mongodb', 'password']);
+};
+
+/**
+ * Returns the string representation of the configured database hosts.
+ *
+ * @return {string}
+ */
+System.prototype.getDbHostsString = function() {
+    var dbHostsResult = '',
+        dbHosts = this.getConfig(['mongodb', 'hosts']);
+
+    dbHostsResult += dbHosts;
+
+    return dbHostsResult;
+};
+
+/**
+ * Returns the database name to use for the database connection.
+ *
+ * @return {*}
+ */
+System.prototype.getDbName = function() {
+    return this.getConfig(['mongodb', 'db']);
+};
+
 module.exports = new System();

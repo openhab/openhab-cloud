@@ -116,3 +116,132 @@ QUnit.test('#getBaseUrl', function (assert) {
 
     assert.equal(system.getBaseURL(), 'http://localhost:1000');
 });
+
+QUnit.test('#getDbUser without set', function (assert) {
+    system.setConfiguration(globalExampleConfig);
+
+    assert.throws(
+        function () { system.getDbUser(); },
+        Error,
+        'If db use ris not set, an error is thrown.'
+    );
+});
+
+QUnit.test('#getDbUser', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.mongodb = {
+        user: 'abc'
+    };
+
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.getDbUser(), 'abc');
+});
+
+QUnit.test('#getDbPass without set', function (assert) {
+    system.setConfiguration(globalExampleConfig);
+
+    assert.throws(
+        function () { system.getDbPass(); },
+        Error,
+        'If db use ris not set, an error is thrown.'
+    );
+});
+
+QUnit.test('#getDbPass', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.mongodb = {
+        password: 'abc'
+    };
+
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.getDbPass(), 'abc');
+});
+
+QUnit.test('#hasDbCredentials without set', function (assert) {
+    system.setConfiguration(globalExampleConfig);
+
+    assert.equal(system.hasDbCredentials(), false);
+});
+
+QUnit.test('#hasDbCredentials with pass only', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.mongodb = {
+        password: 'abc'
+    };
+
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.hasDbCredentials(), false);
+});
+
+QUnit.test('#hasDbCredentials with user only', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.mongodb = {
+        user: 'abc'
+    };
+
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.hasDbCredentials(), false);
+});
+
+QUnit.test('#hasDbCredentials with userand pass', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.mongodb = {
+        user: 'abc',
+        password: 'abc'
+    };
+
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.hasDbCredentials(), true);
+});
+
+QUnit.test('#getDbName without set', function (assert) {
+    system.setConfiguration(globalExampleConfig);
+
+    assert.throws(
+        function () { system.getDbName(); },
+        Error,
+        'If db use ris not set, an error is thrown.'
+    );
+});
+
+QUnit.test('#getDbName', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.mongodb = {
+        db: 'abc'
+    };
+
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.getDbName(), 'abc');
+});
+
+QUnit.test('#getDbHosts single host', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.mongodb = {
+        hosts: 'localhost:1234'
+    };
+
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.getDbHostsString(), 'localhost:1234');
+});
+
+QUnit.test('#getDbHosts multiple host', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.mongodb = {
+        hosts: [
+            'localhost:1234',
+            'localhost2:1234',
+            'localhost3:1234'
+        ]
+    };
+
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.getDbHostsString(), 'localhost:1234,localhost2:1234,localhost3:1234');
+});
