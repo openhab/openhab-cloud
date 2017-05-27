@@ -1005,7 +1005,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('response', function (data) {
         var self = this;
         var requestId = data.id;
-        if (restRequests[requestId] !== null) {
+        if (restRequests[requestId]) {
             if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
                 // self.to(self.handshake.uuid).emit('response', data);
                 if (data.error !== null) {
@@ -1029,7 +1029,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('responseHeader', function (data) {
         var self = this;
         var requestId = data.id;
-        if (restRequests[requestId] !== null) {
+        if (restRequests[requestId]) {
             if (self.handshake.uuid === restRequests[requestId].openhab.uuid && !restRequests[requestId].headersSent) {
                 restRequests[requestId].writeHead(data.responseStatusCode, data.responseStatusText, data.headers);
             } else {
@@ -1045,7 +1045,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('responseContent', function (data) {
         var self = this;
         var requestId = data.id;
-        if (restRequests[requestId] !== null) {
+        if (restRequests[requestId]) {
             if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
                 restRequests[requestId].write(new Buffer(data.body, 'base64'));
             } else {
@@ -1061,7 +1061,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('responseContentBinary', function (data) {
         var self = this;
         var requestId = data.id;
-        if (restRequests[requestId] !== null) {
+        if (restRequests[requestId]) {
             if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
                 restRequests[requestId].write(data.body);
             } else {
@@ -1076,7 +1076,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('responseFinished', function (data) {
         var self = this;
         var requestId = data.id;
-        if (restRequests[requestId] !== null) {
+        if (restRequests[requestId]) {
             if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
                 // self.to(self.handshake.uuid).emit('responseFinished', data);
                 restRequests[requestId].end();
@@ -1088,7 +1088,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('responseError', function (data) {
         var self = this;
         var requestId = data.id;
-        if (restRequests[requestId] !== null) {
+        if (restRequests[requestId]) {
             if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
                 // self.to(self.handshake.uuid).emit('responseError', data);
                 restRequests[requestId].send(500, data.responseStatusText);
