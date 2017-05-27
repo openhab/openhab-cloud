@@ -1069,6 +1069,9 @@ nav#projectsNav ul li a {
 #projectsNavAlt  ul li a:hover{text-decoration:none;}
 /* single project v2 */
 
+#deviceSendMessage {
+    float: right;
+}
 
 
 section#projectImages {
