@@ -1,4 +1,4 @@
-var config = require('./config.json');
+var system = require('./system');
 
 /*
  This module maintains XMPP connection to GCM to receive messages from Android
@@ -11,8 +11,8 @@ var UserDevice = require('./models/userdevice'),
     logger = require('./logger.js'),
     xmppOptions = {
         type: 'client',
-        jid: config.gcm.jid,
-        password: config.gcm.password,
+        jid: system.getGcmJid(),
+        password: system.getGcmPassword(),
         port: 5235,
         host: 'gcm.googleapis.com',
         legacySSL: true,

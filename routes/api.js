@@ -3,6 +3,7 @@ var Openhab = require('../models/openhab');
 var Notification = require('../models/notification');
 var logger = require('../logger');
 var moment = require('moment');
+var system = require('../system');
 
 exports.notificationsget = function(req, res) {
     var limit = req.param('limit') > 0 ? req.param('limit') : 10,
@@ -22,4 +23,15 @@ exports.notificationsget = function(req, res) {
             });
         }
     });
-}
+};
+
+exports.notificationssettingsget = function(req, res) {
+    var config = {};
+
+    if (system.isGcmConfigured()) {
+        config.gcm = {
+            "senderId": system.getGcmSenderId()
+        };
+    }
+    res.send(config);
+};
