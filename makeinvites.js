@@ -3,15 +3,13 @@ var config = require('./config.json'),
     uuid = require('uuid'),
     mongooseTypes = require('mongoose-types'),
     Invitation = require('./models/invitation'),
-    mongoConnectionString;
+    system = require('./system'),
+    MongoConnect = require('./system/mongoconnect'),
+    mongoConnect;
 
-// MongoDB connection
-mongoConnectionString = 'mongodb://' + config.mongodb.user +
-    ':' + config.mongodb.password +
-    '@' + config.mongodb.hosts[0] +
-    '/openhab';
-
-mongoose.connect(mongoConnectionString);
+system.setConfiguration(config);
+mongoConnect = new MongoConnect(system);
+mongoConnect.connect(mongoose);
 mongooseTypes.loadTypes(mongoose);
 
 console.log('Making 10 invitations!');

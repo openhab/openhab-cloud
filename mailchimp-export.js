@@ -2,12 +2,13 @@ var mongoose = require('mongoose'),
     logger = require('./logger.js'),
     User = require('./models/user'),
     config = require('./config.json'),
-    mongoConnectionString;
+    system = require('./system'),
+    MongoConnect = require('./system/mongoconnect'),
+    mongoConnect;
 
-mongoConnectionString = 'mongodb://' + config.mongodb.user +
-    ':' + config.mongodb.password +
-    '@' + config.mongodb.hosts[0] +
-    '/openhab';
+system.setConfiguration(config);
+mongoConnect = new MongoConnect(system);
+mongoConnect.connect(mongoose);
 
 mongoose.connect(mongoConnectionString, function (err) {
     if (err) {
