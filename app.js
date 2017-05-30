@@ -76,7 +76,8 @@ var flash = require('connect-flash'),
     appleSender = require('./aps-helper'),
     oauth2 = require('./oauth2'),
     auth = require('./auth.js'),
-    Limiter = require('ratelimiter');
+    Limiter = require('ratelimiter'),
+    MongoConnect = require('./system/mongoconnect');
 
 // Setup Google Cloud Messaging component
 var gcm = require('node-gcm');
@@ -91,30 +92,9 @@ var cacheOpts = {
 
 require('mongoose-cache').install(mongoose, cacheOpts);
 
-var mongoUri = 'mongodb://' +
-    ((config.mongodb.user && config.mongodb.user.length > 0) ?
-        config.mongodb.user + ':' + config.mongodb.password + '@' : '');
-
-for (var host in config.mongodb.hosts) {
-    mongoUri += config.mongodb.hosts[host];
-    if (host < config.mongodb.hosts.length - 1) {
-        mongoUri += ',';
-    }
-}
-
-mongoUri += '/' + config.mongodb.db + '?poolSize=100';
-
 // Try to setup a mongodb connection, otherwise stopping
-logger.info('opneHAB-cloud: Trying to connect to mongodb at: ' + mongoUri);
-mongoose.connect(mongoUri, function (err) {
-    if (err) {
-        logger.error('openHAB-cloud: Error while connecting from openHAB-cloud to mongodb: ' + err);
-        logger.error('openHAB-cloud: Stopping openHAB-cloud due to error with mongodb');
-        process.exit(1);
-    } else {
-        logger.info('openHAB-cloud: Successfully connected to mongodb');
-    }
-});
+var mongoConnect = new MongoConnect(system);
+mongoConnect.connect(mongoose);
 
 var mongooseTypes = require('mongoose-types');
 mongooseTypes.loadTypes(mongoose);
@@ -1005,7 +985,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('response', function (data) {
         var self = this;
         var requestId = data.id;
-        if (restRequests[requestId] !== null) {
+        if (restRequests[requestId]) {
             if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
                 // self.to(self.handshake.uuid).emit('response', data);
                 if (data.error !== null) {
@@ -1029,7 +1009,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('responseHeader', function (data) {
         var self = this;
         var requestId = data.id;
-        if (restRequests[requestId] !== null) {
+        if (restRequests[requestId]) {
             if (self.handshake.uuid === restRequests[requestId].openhab.uuid && !restRequests[requestId].headersSent) {
                 restRequests[requestId].writeHead(data.responseStatusCode, data.responseStatusText, data.headers);
             } else {
@@ -1045,7 +1025,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('responseContent', function (data) {
         var self = this;
         var requestId = data.id;
-        if (restRequests[requestId] !== null) {
+        if (restRequests[requestId]) {
             if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
                 restRequests[requestId].write(new Buffer(data.body, 'base64'));
             } else {
@@ -1061,7 +1041,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('responseContentBinary', function (data) {
         var self = this;
         var requestId = data.id;
-        if (restRequests[requestId] !== null) {
+        if (restRequests[requestId]) {
             if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
                 restRequests[requestId].write(data.body);
             } else {
@@ -1076,7 +1056,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('responseFinished', function (data) {
         var self = this;
         var requestId = data.id;
-        if (restRequests[requestId] !== null) {
+        if (restRequests[requestId]) {
             if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
                 // self.to(self.handshake.uuid).emit('responseFinished', data);
                 restRequests[requestId].end();
@@ -1088,7 +1068,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('responseError', function (data) {
         var self = this;
         var requestId = data.id;
-        if (restRequests[requestId] !== null) {
+        if (restRequests[requestId]) {
             if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
                 // self.to(self.handshake.uuid).emit('responseError', data);
                 restRequests[requestId].send(500, data.responseStatusText);
