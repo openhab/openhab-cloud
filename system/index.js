@@ -114,6 +114,34 @@ System.prototype.getBaseURL = function() {
 };
 
 /**
+ * If configured, returns the link to the apple openHAB app or the default habdroid app link.
+ *
+ * @return {string}
+ */
+System.prototype.getAppleLink = function() {
+    var appleId = '492054521';
+    try {
+        appleId = this.getConfig(['apps', 'appleId']);
+    } catch (err) {}
+
+    return 'https://itunes.apple.com/app/id' + appleId;
+};
+
+/**
+ * If configured, returns the link to the Android openHAB app in the Google Play Store or the default habdroid app link.
+ *
+ * @return {string}
+ */
+System.prototype.getAndroidLink = function () {
+    var playStoreId = 'org.openhab.habdroid';
+    try {
+        playStoreId = this.getConfig(['apps', 'playStoreId']);
+    } catch (err) {}
+
+    return 'https://play.google.com/store/apps/details?id=' + playStoreId;
+};
+
+/**
  * Returns true, if Google Cloud Message seems to be configured, false otherwise.
  * @return {boolean}
  */
@@ -124,7 +152,7 @@ System.prototype.isGcmConfigured = function() {
     } catch(e) {
         return false;
     }
-}
+};
 
 /**
  * Returns the sender ID of GCM, if it exists, throws an error otherwise.

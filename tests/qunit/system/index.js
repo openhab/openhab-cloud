@@ -117,6 +117,38 @@ QUnit.test('#getBaseUrl', function (assert) {
     assert.equal(system.getBaseURL(), 'http://localhost:1000');
 });
 
+QUnit.test('#getAppleLink without configuration', function (assert) {
+    system.setConfiguration(globalExampleConfig);
+
+    assert.equal(system.getAppleLink(), 'https://itunes.apple.com/app/id492054521');
+});
+
+QUnit.test('#getAndroidLink without configuration', function (assert) {
+    system.setConfiguration(globalExampleConfig);
+
+    assert.equal(system.getAndroidLink(), 'https://play.google.com/store/apps/details?id=org.openhab.habdroid');
+});
+
+QUnit.test('#getAppleLink with configuration', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.apps = {
+        appleId: '123456'
+    };
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.getAppleLink(), 'https://itunes.apple.com/app/id123456');
+});
+
+QUnit.test('#getAndroidLink with configuration', function (assert) {
+    var exampleConfig = Object.assign({}, globalExampleConfig);
+    exampleConfig.apps = {
+        playStoreId: 'org.example'
+    };
+    system.setConfiguration(exampleConfig);
+
+    assert.equal(system.getAndroidLink(), 'https://play.google.com/store/apps/details?id=org.example');
+});
+
 QUnit.test('#getDbUser without set', function (assert) {
     system.setConfiguration(globalExampleConfig);
 

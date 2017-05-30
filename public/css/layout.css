@@ -956,6 +956,14 @@ aside#sidebar {
 #widgetArea .widget p {
     margin:0;
 }
+.app-badges {
+    text-align: center;
+    margin-top: 1em;
+}
+.app-badge {
+    height: 40px;
+    margin-bottom: .5em;
+}
 /* fullWidth */
 #fullWidth {
 }
@@ -1069,7 +1077,7 @@ nav#projectsNav ul li a {
 #projectsNavAlt  ul li a:hover{text-decoration:none;}
 /* single project v2 */
 
-#deviceSendMessage {
+.deviceRightPane {
     float: right;
 }
 
