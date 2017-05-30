@@ -64,7 +64,7 @@
                     <% } %>
                 </div>
                 <% if (userDevices.length > 0 ) { %>
-                <div class="span9" id="deviceSendMessage">
+                <div class="span9 deviceRightPane">
                     <h3>Send a message to this device</h3>
                     <div class="divider"><span></span></div>
                     <form method="post" action="/devices/<%=userDevices[selectedDeviceArrayId].id%>/sendmessage">
@@ -74,7 +74,7 @@
                     </form>
                 </div>
                 <% } %>
-                <div class="span9">
+                <div class="span9 deviceRightPane">
                     <div class="app-badges">
                         <a href="<%=androidLink%>" target="_blank"><img src="/img/apps/google-play-badge.png" class="app-badge"></a>
                         <a href="<%=appleLink%>" target="_blank"><img src="/img/apps/download-app-store.svg" class="app-badge"></a>
