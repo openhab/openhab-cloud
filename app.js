@@ -777,6 +777,7 @@ app.all('/jquery.*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxy
 app.all('/classicui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
 app.all('/paperui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
 app.all('/basicui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
+app.all('/basicui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
 app.all('/doc/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
 app.all('/start/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
 app.all('/icon*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
