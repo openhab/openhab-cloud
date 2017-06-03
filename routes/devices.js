@@ -11,7 +11,8 @@ var gcmSender = require('../gcmsender.js')
     , appleSender = require('../aps-helper');
 var redis = require('../redis-helper');
 var form = require('express-form'),
-    field = form.field;
+    field = form.field,
+    system = require('../system');
 
 exports.devicesget = function(req, res) {
     UserDevice.find({owner: req.user.id}, function(error, userDevices) {
@@ -39,6 +40,7 @@ exports.devicesget = function(req, res) {
             res.render('devices', { userDevices: userDevices,
                 title: "Devices", user: req.user, selectedDeviceId: selectedDeviceId,
                 selectedDeviceArrayId: selectedDeviceArrayId, locationHistory: locationHistory,
+                baseUrl: system.getBaseURL(), appleLink: system.getAppleLink(), androidLink: system.getAndroidLink(),
                 errormessages:req.flash('error'), infomessages:req.flash('info') });
         });
     });

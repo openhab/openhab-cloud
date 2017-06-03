@@ -114,6 +114,34 @@ System.prototype.getBaseURL = function() {
 };
 
 /**
+ * If configured, returns the link to the apple openHAB app or the default habdroid app link.
+ *
+ * @return {string}
+ */
+System.prototype.getAppleLink = function() {
+    var appleId = '492054521';
+    try {
+        appleId = this.getConfig(['apps', 'appleId']);
+    } catch (err) {}
+
+    return 'https://itunes.apple.com/app/id' + appleId;
+};
+
+/**
+ * If configured, returns the link to the Android openHAB app in the Google Play Store or the default habdroid app link.
+ *
+ * @return {string}
+ */
+System.prototype.getAndroidLink = function () {
+    var playStoreId = 'org.openhab.habdroid';
+    try {
+        playStoreId = this.getConfig(['apps', 'playStoreId']);
+    } catch (err) {}
+
+    return 'https://play.google.com/store/apps/details?id=' + playStoreId;
+};
+
+/**
  * Returns true, if Google Cloud Message seems to be configured, false otherwise.
  * @return {boolean}
  */
@@ -124,7 +152,7 @@ System.prototype.isGcmConfigured = function() {
     } catch(e) {
         return false;
     }
-}
+};
 
 /**
  * Returns the sender ID of GCM, if it exists, throws an error otherwise.
@@ -151,6 +179,65 @@ System.prototype.getGcmJid = function() {
  */
 System.prototype.getGcmPassword = function() {
     return this.getConfig(['gcm', 'password']);
+};
+
+/**
+ * Returns true, if credentials for the database access are set, false otherwise. This function will return true only,
+ * if both, a username and a password, if configured, not if only one of them is set.
+ *
+ * @return {boolean}
+ */
+System.prototype.hasDbCredentials = function() {
+    try {
+        this.getDbUser();
+        this.getDbPass();
+        return true;
+    } catch (e) {
+        return false;
+    }
+};
+
+/**
+ * Returns the user which should be used to connect to the database. If no user is set, this
+ * function will throw an error.
+ *
+ * @return {*}
+ */
+System.prototype.getDbUser = function() {
+    return this.getConfig(['mongodb', 'user']);
+};
+
+/**
+ * Returns the password which should be used to connect to the database. If no password is set, this
+ * function will throw an error.
+ *
+ * @return {*}
+ */
+System.prototype.getDbPass = function() {
+    return this.getConfig(['mongodb', 'password']);
+};
+
+/**
+ * Returns the string representation of the configured database hosts.
+ *
+ * @return {string}
+ */
+System.prototype.getDbHostsString = function() {
+    var dbHostsResult = '',
+        dbHosts = this.getConfig(['mongodb', 'hosts']);
+
+    dbHostsResult += dbHosts;
+
+    return dbHostsResult;
+};
+
+/**
+ * Returns the database name to use for the database connection.
+ *
+ * @return {*}
+ */
+System.prototype.getDbName = function() {
+    return this.getConfig(['mongodb', 'db']);
 };
 
 module.exports = new System();
