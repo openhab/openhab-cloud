@@ -4,20 +4,13 @@ var mongoose = require('mongoose'),
     logger = require('./logger.js'),
     config = require('./config.json'),
     User = require('./models/user'),
-    mongoConnectionString;
+    system = require('./system'),
+    MongoConnect = require('./system/mongoconnect'),
+    mongoConnect;
 
-mongoConnectionString = 'mongodb://' + config.mongodb.user +
-    ':' + config.mongodb.password +
-    '@' + config.mongodb.hosts[0] +
-    '/openhab';
-
-mongoose.connect(mongoConnectionString, function (err) {
-    if (err) {
-        logger.error('openHAB-cloud: mongo connection error: ' + err);
-        return;
-    }
-    logger.info('openHAB-cloud: connected to mongodb');
-});
+system.setConfiguration(config);
+mongoConnect = new MongoConnect(system);
+mongoConnect.connect(mongoose);
 
 username = process.argv[2];
 

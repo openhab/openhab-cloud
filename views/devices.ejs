@@ -33,7 +33,7 @@
                     <section id="widgetArea">
                         <div class="widget">
                             <h3>No Devices</h3>
-                            <p>You currently have no devices registered with openHAB Cloud.</p>
+                            <p>You currently have no devices registered with openHAB Cloud. To register a new device, download the openHAB app and set <i><%=baseUrl%></i> as the remote URL and your openHAB Cloud login data as username and password.</p>
                         </div>
                     </section>
                     <% } %>
@@ -63,8 +63,8 @@
                     </table>
                     <% } %>
                 </div>
-                <div class="span9">
-                    <% if (userDevices.length > 0 ) { %>
+                <% if (userDevices.length > 0 ) { %>
+                <div class="span9 deviceRightPane">
                     <h3>Send a message to this device</h3>
                     <div class="divider"><span></span></div>
                     <form method="post" action="/devices/<%=userDevices[selectedDeviceArrayId].id%>/sendmessage">
@@ -72,7 +72,13 @@
                         <textarea id="messagetext" name="messagetext" maxlength="250" rows="4"></textarea>
                         <button type="submit" class="btn">Send message</button>
                     </form>
-                    <% } %>
+                </div>
+                <% } %>
+                <div class="span9 deviceRightPane">
+                    <div class="app-badges">
+                        <a href="<%=androidLink%>" target="_blank"><img src="/img/apps/google-play-badge.png" class="app-badge"></a>
+                        <a href="<%=appleLink%>" target="_blank"><img src="/img/apps/download-app-store.svg" class="app-badge"></a>
+                    </div>
                 </div>
             </div>
         </div>
