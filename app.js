@@ -204,9 +204,6 @@ logger.info('openHAB-cloud: Scheduling a statistics job (every 5 min)');
 var every5MinStatJob = require('./jobs/every5minstat');
 every5MinStatJob.start();
 
-// Create http server
-var server = http.createServer(app);
-
 // Configure the openHAB-cloud for development mode, if in development
 if (app.get('env') === 'development') {
     app.use(errorHandler());
@@ -321,10 +318,9 @@ app.use(function (req, res, next) {
     }
     next();
 });
-app.use(app.router);
 app.use(static(path.join(__dirname, 'public')));
 
-server.listen(app.get('port'), function () {
+var server = app.listen(app.get('port'), function () {
     logger.info('openHAB-cloud: express server listening on port ' + app.get('port'));
 });
 
