@@ -237,7 +237,7 @@ Routes.prototype.setupAppRoutes = function (app) {
 
     // myOH API for mobile apps
     app.all('/api/v1/notifications*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, api_routes.notificationsget);
-    app.all('/api/v1/settings/notifications', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, api_routes.notificationssettingsget());
+    app.all('/api/v1/settings/notifications', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, api_routes.notificationssettingsget);
 
     // Android app registration
     app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, androidRegistration.register.bind(androidRegistration));
