@@ -1,10 +1,10 @@
 var oauth2orize = require('oauth2orize'),
     passport = require('passport'),
-    OAuth2Client = require('./models/oauth2client'),
-    OAuth2Code = require('./models/oauth2code'),
-    OAuth2Token = require('./models/oauth2token'),
-    OAuth2Scope = require('./models/oauth2scope'),
-    logger = require('./logger.js'),
+    OAuth2Client = require('../models/oauth2client'),
+    OAuth2Code = require('../models/oauth2code'),
+    OAuth2Token = require('../models/oauth2token'),
+    OAuth2Scope = require('../models/oauth2scope'),
+    logger = require('../logger.js'),
     server = oauth2orize.createServer();
 
 // An application must supply serialization functions, which determine how the

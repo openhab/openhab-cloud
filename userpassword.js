@@ -54,6 +54,10 @@ UserPassword.isComplexEnough = function(password) {
         return false;
     }
 
+    if (password.indexOf(':') !== -1) {
+        return false;
+    }
+
     // match against all lowercase letters
     if (password.match(/^(?=.*[a-z]).+$/)) {
         matches++;
@@ -74,11 +78,7 @@ UserPassword.isComplexEnough = function(password) {
         matches++;
     }
 
-    if (matches < 2) {
-        return false;
-    }
-
-    return true;
+    return matches > 1;
 };
 
 /**
@@ -95,6 +95,7 @@ UserPassword.printPasswordNotComplexEnoughError = function(req) {
     message.push(' * Uppercase letters (A, B, C, ...)');
     message.push(' * Numbers (1, 2, 3, ...)');
     message.push(' * Special characters out of: -+_!@#$%^&*.,?');
+    message.push(' * must not contain a colon (":")');
 
     req.flash('error', message);
 };
