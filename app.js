@@ -48,13 +48,21 @@ module.exports.config = config;
 // Setup all homepage
 var flash = require('connect-flash'),
     express = require('express'),
+    methodOverride = require('method-override'),
+    bodyParser = require('body-parser'),
+    errorHandler = require('errorhandler'),
+    morgan = require('morgan'),
+    cookieParser = require('cookie-parser'),
+    session = require('express-session'),
+    favicon = require('serve-favicon'),
+    csurf = require('csurf'),
+    serveStatic = require('serve-static'),
     homepage = require('./routes/homepage'),
     user = require('./routes/user'),
     http = require('http'),
     path = require('path'),
     fs = require('fs'),
     passport = require('passport'),
-    session = require('express-session'),
     RedisStore = require('connect-redis')(session),
     redis = require('./redis-helper'),
     moment = require('moment'),
@@ -182,128 +190,123 @@ logger.info('openHAB-cloud: Scheduling a statistics job (every 5 min)');
 var every5MinStatJob = require('./jobs/every5minstat');
 every5MinStatJob.start();
 
-// Create http server
-var server = http.createServer(app);
-
-// Configure the openHAB-cloud for development or productive mode
-app.configure('development', function () {
-    app.use(express.errorHandler());
-});
-
-app.configure('production', function () {});
+// Configure the openHAB-cloud for development mode, if in development
+if (app.get('env') === 'development') {
+    app.use(errorHandler());
+}
 
 // App configuration for all environments
-app.configure(function () {
-    app.set('port', process.env.PORT || 3000);
-    app.set('views', __dirname + '/views');
-    app.set('view engine', 'ejs');
-    app.use(express.favicon());
-    if (config.system.logging && config.system.logging === 'debug')
-        app.use(express.logger('dev'));
-    
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
-    app.use(express.cookieParser(config.express.key));
-    
-    // Configurable support for cross subdomain cookies
-    var cookie = {};
-    if(config.system.subDomainCookies){
-        cookie.path = '/';
-        cookie.domain = '.' + system.getHost();
-        logger.info('openHAB-cloud: Cross sub domain cookie support is configured for domain: ' + cookie.domain);
+app.set('port', process.env.PORT || 3000);
+app.set('views', __dirname + '/views');
+app.set('view engine', 'ejs');
+app.use(favicon(__dirname + '/public/img/favicon.ico'));
+if (config.system.logging && config.system.logging === 'debug')
+    app.use(morgan('dev'));
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(methodOverride());
+app.use(cookieParser(config.express.key));
+
+// Configurable support for cross subdomain cookies
+var cookie = {};
+if(config.system.subDomainCookies){
+    cookie.path = '/';
+    cookie.domain = '.' + system.getHost();
+    logger.info('openHAB-cloud: Cross sub domain cookie support is configured for domain: ' + cookie.domain);
+}
+app.use(session({
+    secret: config.express.key,
+    store: new RedisStore({
+        host: 'localhost',
+        port: 6379,
+        client: redis,
+        logErrors: true
+    }),
+    cookie: cookie,
+    resave: false,
+    saveUninitialized: false
+}));
+
+app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(function (req, res, next) {
+    var csrf = csurf();
+    // Check if url needs csrf
+    if (!req.path.match('/rest*') && !req.path.match('/oauth2/token') && !req.path.match('/ifttt/*'))
+        csrf(req, res, next);
+    else
+        next();
+});
+app.use(function (req, res, next) {
+    if (typeof req.csrfToken === 'function') {
+        res.locals.token = req.csrfToken();
     }
-    app.use(express.session({
-        secret: config.express.key,
-        store: new RedisStore({
-            host: 'localhost',
-            port: 6379,
-            client: redis,
-            logErrors: true
-        }),
-        cookie: cookie
-    }));
-   
-    app.use(flash());
-    app.use(passport.initialize());
-    app.use(passport.session());
-    app.use(function (req, res, next) {
-        var csrf = express.csrf();
-        // Check if url needs csrf
-        if (!req.path.match('/rest*') && !req.path.match('/oauth2/token') && !req.path.match('/ifttt/*'))
-            csrf(req, res, next);
-        else
-            next();
-    });
-    app.use(function (req, res, next) {
-        if (typeof req.csrfToken === 'function') {
-            res.locals.token = req.csrfToken();
-        }
-        next();
-    });
-    app.use(function (req, res, next) {
-        if (req.user) {
-            Openhab.findOne({
-                account: req.user.account
-            }).lean().exec(function (error, openhab) {
-                res.locals.baseurl = system.getBaseURL();
-                if (!error && openhab) {
-                    res.locals.openhab = openhab;
-                    res.locals.openhabstatus = openhab.status;
-                    res.locals.openhablastonline = openhab.last_online;
-                    if (openhab.openhabVersion !== undefined) {
-                        res.locals.openhabMajorVersion = openhab.openhabVersion.split('.')[0];
-                    } else {
-                        res.locals.openhabMajorVersion = 0;
-                    }
+    next();
+});
+app.use(function (req, res, next) {
+    if (req.user) {
+        Openhab.findOne({
+            account: req.user.account
+        }).lean().exec(function (error, openhab) {
+            res.locals.baseurl = system.getBaseURL();
+            if (!error && openhab) {
+                res.locals.openhab = openhab;
+                res.locals.openhabstatus = openhab.status;
+                res.locals.openhablastonline = openhab.last_online;
+                if (openhab.openhabVersion !== undefined) {
+                    res.locals.openhabMajorVersion = openhab.openhabVersion.split('.')[0];
                 } else {
-                    res.locals.openhab = undefined;
-                    res.locals.openhabstatus = undefined;
-                    res.locals.openhablastonline = undefined;
-                    res.locals.openhabMajorVersion = undefined;
+                    res.locals.openhabMajorVersion = 0;
                 }
-                next();
-            });
-        } else {
+            } else {
+                res.locals.openhab = undefined;
+                res.locals.openhabstatus = undefined;
+                res.locals.openhablastonline = undefined;
+                res.locals.openhabMajorVersion = undefined;
+            }
             next();
-        }
-    });
-
-    // Add global usable locals for templates
-    app.use(function (req, res, next) {
-        if (req.session.timezone) {
-            res.locals.timeZone = req.session.timezone;
-        } else {
-            res.locals.timeZone = 'undefined';
-        }
-        res.locals.moment = moment;
-        res.locals.date_util = date_util;
-
-        res.locals.legal = false;
-        if (config.legal) {
-            res.locals.legal = true;
-            res.locals.terms = config.legal.terms;
-            res.locals.policy = config.legal.policy;
-        }
-	    res.locals.registration_enabled = system.isUserRegistrationEnabled();
+        });
+    } else {
         next();
-    });
-    app.use(function (req, res, next) {
-        var host = req.headers.host;
-        //  console.log(host);
-        if (!host) {
-            next(); // No host in header, just go ahead
-        }
-        // If host matches names for full /* proxying, go ahead and just proxy it.
-        if (host.indexOf('remote.') === 0 || host.indexOf('home.') === 0) {
-            req.url = '/remote' + req.url;
-        }
-        next();
-    });
-    app.use(app.router);
-    app.use(express.static(path.join(__dirname, 'public')));
+    }
 });
 
-server.listen(app.get('port'), function () {
+// Add global usable locals for templates
+app.use(function (req, res, next) {
+    if (req.session.timezone) {
+        res.locals.timeZone = req.session.timezone;
+    } else {
+        res.locals.timeZone = 'undefined';
+    }
+    res.locals.moment = moment;
+    res.locals.date_util = date_util;
+
+    res.locals.legal = false;
+    if (config.legal) {
+        res.locals.legal = true;
+        res.locals.terms = config.legal.terms;
+        res.locals.policy = config.legal.policy;
+    }
+    res.locals.registration_enabled = system.isUserRegistrationEnabled();
+    next();
+});
+app.use(function (req, res, next) {
+    var host = req.headers.host;
+    //  console.log(host);
+    if (!host) {
+        next(); // No host in header, just go ahead
+    }
+    // If host matches names for full /* proxying, go ahead and just proxy it.
+    if (host.indexOf('remote.') === 0 || host.indexOf('home.') === 0) {
+        req.url = '/remote' + req.url;
+    }
+    next();
+});
+app.use(serveStatic(path.join(__dirname, 'public')));
+
+var server = app.listen(app.get('port'), function () {
     logger.info('openHAB-cloud: express server listening on port ' + app.get('port'));
 });
 
