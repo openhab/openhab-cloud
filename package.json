@@ -38,7 +38,7 @@
     "morgan": "^1.8.2",
     "node-gcm": "0.14.4",
     "node-xmpp": "1.0.8",
-    "nodemailer": "0.5.2",
+    "nodemailer": "4.0.1",
     "oauth2orize": "1.0.1",
     "passport": "0.1.18",
     "passport-http": "0.2.2",
