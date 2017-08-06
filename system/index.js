@@ -131,9 +131,9 @@ System.prototype.isUserRegistrationEnabled = function() {
  * @return {boolean}
  */
 System.prototype.hasLegalTerms = function() {
-	let config;
-	try {
-	    config = this.getConfig(['legal', 'terms']);
+    let config;
+    try {
+        config = this.getConfig(['legal', 'terms']);
         return ((config !== false) && (config !== ""));
     } catch (err) {
         return false;
@@ -146,9 +146,9 @@ System.prototype.hasLegalTerms = function() {
  * @return {boolean}
  */
 System.prototype.hasLegalPolicy = function() {
-	let config;
-	try {
-	    config = this.getConfig(['legal', 'policy']);
+    let config;
+    try {
+        config = this.getConfig(['legal', 'policy']);
 		return ((config !== false) && (config !== ""));
     } catch (err) {
         return false;
