@@ -1,5 +1,5 @@
-var url = require('url');
-var System = function() {};
+const url = require('url');
+const System = function() {};
 
 /**
  * The suffix, which is appended to the GCM sender ID to build the full jid.
@@ -21,7 +21,7 @@ System.prototype.setConfiguration = function(config) {
 
     // backward-compatibility to the baseurl property
     if (this.config && this.config.system && this.config.system.hasOwnProperty('baseurl')) {
-        var parsedUrl, baseurl = this.config.system.baseurl;
+        let parsedUrl, baseurl = this.config.system.baseurl;
 
         // anything will match, except URLs without protocol, like:
         // localhost:3000
@@ -38,7 +38,7 @@ System.prototype.setConfiguration = function(config) {
 
     // backward-compatibility to jid/senderId setting of GCM
     if (this.config && this.config.gcm && this.config.gcm.hasOwnProperty('jid')) {
-        var splittedConfig = this.config.gcm.jid.split('@');
+        let splittedConfig = this.config.gcm.jid.split('@');
 
         if (splittedConfig.length !== 2) {
             throw new Error('The Google Cloud Message JID needs to be of format: jid' + System.jidSuffix + ' but got:' +
@@ -60,7 +60,7 @@ System.prototype.setConfiguration = function(config) {
  * @private
  */
 System.prototype.getConfig = function(config) {
-    var localConfig = this.config;
+    let localConfig = this.config;
 
     if (!this.config)
         throw new Error('No configuration object set so far.');
@@ -131,8 +131,9 @@ System.prototype.isUserRegistrationEnabled = function() {
  * @return {boolean}
  */
 System.prototype.hasLegalTerms = function() {
-	let config = this.getConfig(['legal', 'terms']);
+	let config;
 	try {
+	    config = this.getConfig(['legal', 'terms']);
         return ((config !== false) && (config !== ""));
     } catch (err) {
         return false;
@@ -145,8 +146,9 @@ System.prototype.hasLegalTerms = function() {
  * @return {boolean}
  */
 System.prototype.hasLegalPolicy = function() {
-	let config = this.getConfig(['legal', 'policy']);
+	let config;
 	try {
+	    config = this.getConfig(['legal', 'policy']);
 		return ((config !== false) && (config !== ""));
     } catch (err) {
         return false;
@@ -173,7 +175,7 @@ System.prototype.isIFTTTEnabled = function() {
  * @return {string}
  */
 System.prototype.getAppleLink = function() {
-    var appleId = '492054521';
+    let appleId = '492054521';
     try {
         appleId = this.getConfig(['apps', 'appleId']);
     } catch (err) {}
@@ -187,7 +189,7 @@ System.prototype.getAppleLink = function() {
  * @return {string}
  */
 System.prototype.getAndroidLink = function () {
-    var playStoreId = 'org.openhab.habdroid';
+    let playStoreId = 'org.openhab.habdroid';
     try {
         playStoreId = this.getConfig(['apps', 'playStoreId']);
     } catch (err) {}
@@ -277,7 +279,7 @@ System.prototype.getDbPass = function() {
  * @return {string}
  */
 System.prototype.getDbHostsString = function() {
-    var dbHostsResult = '',
+    let dbHostsResult = '',
         dbHosts = this.getConfig(['mongodb', 'hosts']);
 
     dbHostsResult += dbHosts;
