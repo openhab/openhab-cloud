@@ -20,8 +20,15 @@
 
 // Main Logging setup
 var logger = require('./logger.js'),
-    config = require('./config.json'),
-    system = require('./system');
+    system = require('./system'),
+    env = process.env.NODE_ENV || 'production',
+    config;
+
+if (env !== 'development') {
+    config = require('./config.json');
+} else {
+    config = require('./config-development.json');
+}
 
 system.setConfiguration(config);
 

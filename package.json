@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "start": "node app.js",
-    "test": "qunit tests/qunit/**/*.js"
+    "qunit": "qunit tests/qunit/**/*.js",
+    "test": "grunt"
   },
   "dependencies": {
     "apn": "1.7.6",
@@ -51,6 +52,14 @@
     "winston": "0.7.2"
   },
   "devDependencies": {
-    "qunitjs": "^2.3.2"
+    "cheerio": "^1.0.0-rc.2",
+    "grunt": "^1.0.1",
+    "grunt-express-server": "^0.5.3",
+    "grunt-mocha-test": "^0.13.2",
+    "grunt-qunit-node": "^0.1.0",
+    "mocha": "^3.4.2",
+    "qunitjs": "^2.3.2",
+    "should": "^11.2.1",
+    "supertest": "^3.0.0"
   }
 }
