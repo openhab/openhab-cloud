@@ -50,40 +50,36 @@ if (system.isGcmConfigured()) {
     require('./gcm-xmpp');
 }
 
-var registration_enabled = ('registration_enabled' in config) ? config.registration_enabled : true;
-
 module.exports.config = config;
 
-// Setup all routes
+// Setup all homepage
 var flash = require('connect-flash'),
     express = require('express'),
-    routes = require('./routes'),
+    methodOverride = require('method-override'),
+    bodyParser = require('body-parser'),
+    errorHandler = require('errorhandler'),
+    morgan = require('morgan'),
+    cookieParser = require('cookie-parser'),
+    session = require('express-session'),
+    favicon = require('serve-favicon'),
+    csurf = require('csurf'),
+    serveStatic = require('serve-static'),
+    homepage = require('./routes/homepage'),
     user = require('./routes/user'),
     http = require('http'),
     path = require('path'),
     fs = require('fs'),
     passport = require('passport'),
-    account_routes = require('./routes/account'),
-    devices_routes = require('./routes/devices'),
-    applications_routes = require('./routes/applications'),
-    events_routes = require('./routes/events'),
-    items_routes = require('./routes/items'),
-    notifications_routes = require('./routes/notifications'),
-    configsystem_routes = require('./routes/configsystem'),
-    invitations_routes = require('./routes/invitations'),
-    users_routes = require('./routes/users'),
-    staff_routes = require('./routes/staff'),
-    api_routes = require('./routes/api'),
-    ifttt_routes = require('./routes/ifttt'),
-    session = require('express-session'),
     RedisStore = require('connect-redis')(session),
     redis = require('./redis-helper'),
     moment = require('moment'),
     date_util = require('./date_util.js'),
     appleSender = require('./aps-helper'),
-    oauth2 = require('./oauth2'),
+    oauth2 = require('./routes/oauth2'),
     auth = require('./auth.js'),
     Limiter = require('ratelimiter'),
+    requesttracker = require('./requesttracker'),
+    routes = require('./routes'),
     MongoConnect = require('./system/mongoconnect');
 
 // Setup Google Cloud Messaging component
@@ -108,11 +104,8 @@ mongooseTypes.loadTypes(mongoose);
 
 var app = express();
 
-// A request counter for issuing a uniqe ID to every request when sending them to openHABs
-var requestCounter = 0;
-
 // A list of requests which are awaiting for responses from openHABs
-var restRequests = {};
+var requestTracker = new requesttracker();
 
 // A list of openHABs which lost their socket.io connection and are due for offline notification
 // key is openHAB UUID, value is Date when openHAB was disconnected
@@ -174,19 +167,20 @@ if (taskEnv === 'main') {
 //to these in our restRequests map.  This goes through and finds those orphaned
 //responses and cleans them up, otherwise memory goes through the roof.
 setInterval(function () {
-  logger.debug('openHAB-cloud: Checking orphaned rest requests (' + Object.keys(restRequests).length + ')');
-  for (var requestId in restRequests) {
-    var res = restRequests[requestId];
-    if (res.finished) {
-      logger.debug('openHAB-cloud: expiring orphaned response');
-      delete restRequests[requestId];
-      if(res.openhab) {
-        io.sockets.in(res.openhab.uuid).emit('cancel', {
-          id: requestId
-        });
-      }
+    var requests = requestTracker.getAll();
+    logger.debug('openHAB-cloud: Checking orphaned rest requests (' + requestTracker.size() + ')');
+    for (var requestId in requests) {
+        var res = requestTracker.get(requestId);
+        if (res.finished) {
+            logger.debug('openHAB-cloud: expiring orphaned response');
+            requestTracker.remove(requestId);
+            if(res.openhab) {
+                io.sockets.in(res.openhab.uuid).emit('cancel', {
+                    id: requestId
+                });
+            }
+        }
     }
-  }
 }, 60000);
 
 // Setup mongoose data models
@@ -203,128 +197,123 @@ logger.info('openHAB-cloud: Scheduling a statistics job (every 5 min)');
 var every5MinStatJob = require('./jobs/every5minstat');
 every5MinStatJob.start();
 
-// Create http server
-var server = http.createServer(app);
-
-// Configure the openHAB-cloud for development or productive mode
-app.configure('development', function () {
-    app.use(express.errorHandler());
-});
-
-app.configure('production', function () {});
+// Configure the openHAB-cloud for development mode, if in development
+if (app.get('env') === 'development') {
+    app.use(errorHandler());
+}
 
 // App configuration for all environments
-app.configure(function () {
-    app.set('port', process.env.PORT || 3000);
-    app.set('views', __dirname + '/views');
-    app.set('view engine', 'ejs');
-    app.use(express.favicon());
-    if (config.system.logging && config.system.logging === 'debug')
-        app.use(express.logger('dev'));
-    
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
-    app.use(express.cookieParser(config.express.key));
-    
-    // Configurable support for cross subdomain cookies
-    var cookie = {};
-    if(config.system.subDomainCookies){
-        cookie.path = '/';
-        cookie.domain = '.' + system.getHost();
-        logger.info('openHAB-cloud: Cross sub domain cookie support is configured for domain: ' + cookie.domain);
+app.set('port', process.env.PORT || 3000);
+app.set('views', __dirname + '/views');
+app.set('view engine', 'ejs');
+app.use(favicon(__dirname + '/public/img/favicon.ico'));
+if (config.system.logging && config.system.logging === 'debug')
+    app.use(morgan('dev'));
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(methodOverride());
+app.use(cookieParser(config.express.key));
+
+// Configurable support for cross subdomain cookies
+var cookie = {};
+if(config.system.subDomainCookies){
+    cookie.path = '/';
+    cookie.domain = '.' + system.getHost();
+    logger.info('openHAB-cloud: Cross sub domain cookie support is configured for domain: ' + cookie.domain);
+}
+app.use(session({
+    secret: config.express.key,
+    store: new RedisStore({
+        host: 'localhost',
+        port: 6379,
+        client: redis,
+        logErrors: true
+    }),
+    cookie: cookie,
+    resave: false,
+    saveUninitialized: false
+}));
+
+app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(function (req, res, next) {
+    var csrf = csurf();
+    // Check if url needs csrf
+    if (!req.path.match('/rest*') && !req.path.match('/oauth2/token') && !req.path.match('/ifttt/*'))
+        csrf(req, res, next);
+    else
+        next();
+});
+app.use(function (req, res, next) {
+    if (typeof req.csrfToken === 'function') {
+        res.locals.token = req.csrfToken();
     }
-    app.use(express.session({
-        secret: config.express.key,
-        store: new RedisStore({
-            host: 'localhost',
-            port: 6379,
-            client: redis,
-            logErrors: true
-        }),
-        cookie: cookie
-    }));
-   
-    app.use(flash());
-    app.use(passport.initialize());
-    app.use(passport.session());
-    app.use(function (req, res, next) {
-        var csrf = express.csrf();
-        // Check if url needs csrf
-        if (!req.path.match('/rest*') && !req.path.match('/oauth2/token') && !req.path.match('/ifttt/*'))
-            csrf(req, res, next);
-        else
-            next();
-    });
-    app.use(function (req, res, next) {
-        if (typeof req.csrfToken === 'function') {
-            res.locals.token = req.csrfToken();
-        }
-        next();
-    });
-    app.use(function (req, res, next) {
-        if (req.user) {
-            Openhab.findOne({
-                account: req.user.account
-            }).lean().exec(function (error, openhab) {
-                res.locals.baseurl = system.getBaseURL();
-                if (!error && openhab) {
-                    res.locals.openhab = openhab;
-                    res.locals.openhabstatus = openhab.status;
-                    res.locals.openhablastonline = openhab.last_online;
-                    if (openhab.openhabVersion !== undefined) {
-                        res.locals.openhabMajorVersion = openhab.openhabVersion.split('.')[0];
-                    } else {
-                        res.locals.openhabMajorVersion = 0;
-                    }
+    next();
+});
+app.use(function (req, res, next) {
+    if (req.user) {
+        Openhab.findOne({
+            account: req.user.account
+        }).lean().exec(function (error, openhab) {
+            res.locals.baseurl = system.getBaseURL();
+            if (!error && openhab) {
+                res.locals.openhab = openhab;
+                res.locals.openhabstatus = openhab.status;
+                res.locals.openhablastonline = openhab.last_online;
+                if (openhab.openhabVersion !== undefined) {
+                    res.locals.openhabMajorVersion = openhab.openhabVersion.split('.')[0];
                 } else {
-                    res.locals.openhab = undefined;
-                    res.locals.openhabstatus = undefined;
-                    res.locals.openhablastonline = undefined;
-                    res.locals.openhabMajorVersion = undefined;
+                    res.locals.openhabMajorVersion = 0;
                 }
-                next();
-            });
-        } else {
+            } else {
+                res.locals.openhab = undefined;
+                res.locals.openhabstatus = undefined;
+                res.locals.openhablastonline = undefined;
+                res.locals.openhabMajorVersion = undefined;
+            }
             next();
-        }
-    });
-
-    // Add global usable locals for templates
-    app.use(function (req, res, next) {
-        if (req.session.timezone) {
-            res.locals.timeZone = req.session.timezone;
-        } else {
-            res.locals.timeZone = 'undefined';
-        }
-        res.locals.moment = moment;
-        res.locals.date_util = date_util;
-
-        res.locals.legal = false;
-        if (config.legal) {
-            res.locals.legal = true;
-            res.locals.terms = config.legal.terms;
-            res.locals.policy = config.legal.policy;
-        }
-	    res.locals.registration_enabled = registration_enabled;
+        });
+    } else {
         next();
-    });
-    app.use(function (req, res, next) {
-        var host = req.headers.host;
-        //  console.log(host);
-        if (!host) {
-            next(); // No host in header, just go ahead
-        }
-        // If host matches names for full /* proxying, go ahead and just proxy it.
-        if (host.indexOf('remote.') === 0 || host.indexOf('home.') === 0) {
-            req.url = '/remote' + req.url;
-        }
-        next();
-    });
-    app.use(app.router);
-    app.use(express.static(path.join(__dirname, 'public')));
+    }
 });
 
-server.listen(app.get('port'), function () {
+// Add global usable locals for templates
+app.use(function (req, res, next) {
+    if (req.session.timezone) {
+        res.locals.timeZone = req.session.timezone;
+    } else {
+        res.locals.timeZone = 'undefined';
+    }
+    res.locals.moment = moment;
+    res.locals.date_util = date_util;
+
+    res.locals.legal = false;
+    if (config.legal) {
+        res.locals.legal = true;
+        res.locals.terms = config.legal.terms;
+        res.locals.policy = config.legal.policy;
+    }
+    res.locals.registration_enabled = system.isUserRegistrationEnabled();
+    next();
+});
+app.use(function (req, res, next) {
+    var host = req.headers.host;
+    //  console.log(host);
+    if (!host) {
+        next(); // No host in header, just go ahead
+    }
+    // If host matches names for full /* proxying, go ahead and just proxy it.
+    if (host.indexOf('remote.') === 0 || host.indexOf('home.') === 0) {
+        req.url = '/remote' + req.url;
+    }
+    next();
+});
+app.use(serveStatic(path.join(__dirname, 'public')));
+
+var server = app.listen(app.get('port'), function () {
     logger.info('openHAB-cloud: express server listening on port ' + app.get('port'));
 });
 
@@ -332,472 +321,10 @@ var io = require('socket.io').listen(server, {
     logger: logger
 });
 
-// Ensure user is authenticated for web requests
-function ensureAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    req.session.returnTo = req.originalUrl || req.url;
-    res.redirect('/login');
-}
-
-// Ensure user is authenticated for REST or proxied requets
-function ensureRestAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    return passport.authenticate(['basic','bearer'], {session: false})(req, res, next);
-}
-
-// Ensure user have 'master' role for certain routes
-function ensureMaster(req, res, next) {
-    if (req.user.role === 'master') {
-        return next();
-    }
-    res.redirect('/');
-}
-
-// Ensure user is from 'staff' group for certain routes
-function ensureStaff(req, res, next) {
-    if (req.user.group === 'staff') {
-        return next();
-    }
-    res.redirect('/');
-}
-
-// General routes
-app.get('/', routes.index);
-
-
-// V2 route - response to this route means this openHAB-cloud is using v2 transport based on socket.io 1.0
-app.get('/v2', routes.getv2);
-
-app.get('/logout', function (req, res) {
-    req.logout();
-    res.redirect('/');
-});
-
-app.get('/login', function (req, res) {
-    errormessages = req.flash('error');
-    if (req.query['invitationCode'] !== null) {
-        invitationCode = req.query['invitationCode'];
-    } else {
-        invitationCode = '';
-    }
-
-    res.render('login', {
-        title: 'Log in',
-        user: req.user,
-        errormessages: errormessages,
-        infomessages: req.flash('info'),
-        invitationCode: invitationCode
-    });
-});
-
-app.post('/login', passport.authenticate('local', {
-    successReturnToOrRedirect: '/',
-    failureRedirect: '/login',
-    failureFlash: true
-}));
-
-// My account
-app.get('/account', ensureAuthenticated, account_routes.accountget);
-app.post('/account', ensureAuthenticated, ensureMaster, account_routes.accountpostvalidate, account_routes.accountpost);
-app.post('/accountpassword', ensureAuthenticated, account_routes.accountpasswordpostvalidate, account_routes.accountpasswordpost);
-app.get('/accountdelete', ensureAuthenticated, ensureMaster, account_routes.accountdeleteget);
-app.post('/accountdelete', ensureAuthenticated, ensureMaster, account_routes.accountdeletepost);
-app.get('/itemsdelete', ensureAuthenticated, ensureMaster, account_routes.itemsdeleteget);
-app.post('/itemsdelete', ensureAuthenticated, ensureMaster, account_routes.itemsdeletepost);
-
-// My devices
-app.get('/devices', ensureAuthenticated, devices_routes.devicesget);
-app.get('/devices/:id', ensureAuthenticated, devices_routes.devicesget);
-app.get('/devices/:id/delete', ensureAuthenticated, devices_routes.devicesdelete);
-app.post('/devices/:id/sendmessage', ensureAuthenticated, devices_routes.devicessendmessagevalidate, devices_routes.devicessendmessage);
-
-// Applications
-app.get('/applications', ensureAuthenticated, applications_routes.applicationsget);
-app.get('/applications/:id/delete', ensureAuthenticated, applications_routes.applicationsdelete);
-
-// New user registration
-if (!config.legal.terms && !config.legal.policy) {
-    app.post('/register', account_routes.registerpostvalidate, account_routes.registerpost);
-}
-app.post('/register', account_routes.registerpostvalidateall, account_routes.registerpost);
-app.get('/verify', account_routes.verifyget);
-
-// Enroll for beta - old URLs, both of them respond with redirects to /login
-app.get('/enroll', account_routes.enrollget);
-app.post('/enroll', account_routes.enrollpost);
-
-// Events
-app.get('/events', ensureAuthenticated, events_routes.eventsget);
-
-// Items
-app.get('/items', ensureAuthenticated, items_routes.itemsget);
-
-// Notifications
-app.get('/notifications', ensureAuthenticated, notifications_routes.notificationsget);
-
-// Invitations
-app.get('/invitations', ensureAuthenticated, invitations_routes.invitationsget);
-app.post('/invitations', ensureAuthenticated, invitations_routes.invitationspostvalidate, invitations_routes.invitationspost);
-app.get('/lostpassword', account_routes.lostpasswordget);
-app.post('/lostpassword', account_routes.lostpasswordpostvalidate, account_routes.lostpasswordpost);
-app.get('/lostpasswordreset', account_routes.lostpasswordresetget);
-app.post('/lostpasswordreset', account_routes.lostpasswordresetpostvalidate, account_routes.lostpasswordresetpost);
-
-// Users management for 'master' users
-app.get('/users', ensureAuthenticated, ensureMaster, users_routes.usersget);
-app.get('/users/add', ensureAuthenticated, ensureMaster, users_routes.usersaddget);
-app.post('/users/add', ensureAuthenticated, ensureMaster, users_routes.usersaddpostvalidate, users_routes.usersaddpost);
-app.get('/users/delete/:id', ensureAuthenticated, ensureMaster, users_routes.usersdeleteget);
-app.get('/users/:id', ensureAuthenticated, ensureMaster, users_routes.usersget);
-
-// System Configuration
-app.get('/config/system', ensureAuthenticated, configsystem_routes.get);
-app.get('/config/system/:id', ensureAuthenticated, configsystem_routes.get);
-
-// OAuth2 routes
-app.get('/oauth2/authorize', ensureAuthenticated, oauth2.authorization);
-app.post('/oauth2/authorize/decision', ensureAuthenticated, oauth2.decision);
-app.post('/oauth2/token', oauth2.token);
-
-// Staff route
-app.get('/staff', ensureAuthenticated, ensureStaff, staff_routes.staffget);
-app.get('/staff/processenroll/:id', ensureAuthenticated, ensureStaff, staff_routes.processenroll);
-app.get('/staff/stats', ensureAuthenticated, ensureStaff, staff_routes.statsget);
-app.get('/staff/invitations', ensureAuthenticated, ensureStaff, staff_routes.invitationsget);
-app.get('/staff/resendinvitation/:id', ensureAuthenticated, ensureStaff, staff_routes.resendinvitation);
-app.get('/staff/deleteinvitation/:id', ensureAuthenticated, ensureStaff, staff_routes.deleteinvitation);
-app.get('/staff/oauthclients', ensureAuthenticated, ensureStaff, staff_routes.oauthclientsget);
-
-
-// IFTTT routes
-if (config.ifttt) {
-    logger.info('openHAB-cloud: IFTTT is configured, app handling IFTTT capabilities...');
-    app.get('/ifttt/v1/user/info', ifttt_routes.userinfo);
-    app.get('/ifttt/v1/status', ifttt_routes.v1status);
-    app.post('/ifttt/v1/test/setup', ifttt_routes.v1testsetup);
-    app.post('/ifttt/v1/actions/command', ifttt_routes.v1actioncommand);
-    app.post('/ifttt/v1/actions/command/fields/item/options', ifttt_routes.v1actioncommanditemoptions);
-    app.post('/ifttt/v1/triggers/itemstate', ifttt_routes.v1triggeritemstate);
-    app.post('/ifttt/v1/triggers/itemstate/fields/item/options', ifttt_routes.v1actioncommanditemoptions);
-    app.post('/ifttt/v1/triggers/item_raised_above', ifttt_routes.v1triggeritem_raised_above);
-    app.post('/ifttt/v1/triggers/item_raised_above/fields/item/options', ifttt_routes.v1actioncommanditemoptions);
-    app.post('/ifttt/v1/triggers/item_dropped_below', ifttt_routes.v1triggeritem_dropped_below);
-    app.post('/ifttt/v1/triggers/item_dropped_below/fields/item/options', ifttt_routes.v1actioncommanditemoptions);
-}
-
-// A route to set session timezone automatically detected in browser
-app.all('/setTimezone', setSessionTimezone);
-
-function setSessionTimezone(req, res) {
-    req.session.timezone = req.query['tz'];
-    res.send(200, 'Timezone set');
-}
-
-// REST routes
-app.get('/api/events', ensureAuthenticated, events_routes.eventsvaluesget);
-
-function setOpenhab(req, res, next) {
-    req.user.openhab(function (error, openhab) {
-        if (!error && openhab) {
-            req.openhab = openhab;
-            next();
-            return;
-        }
-        if (error) {
-            logger.error('openHAB-cloud: openHAB lookup error: ' + error);
-            return res.status(500).json({
-                errors: [{
-                    message: error
-                }]
-            });
-        } else {
-            logger.warn('openHAB-cloud: Can\'t find the openHAB of user which is unbelievable');
-            return res.status(500).json({
-                errors: [{
-                    message: 'openHAB not found'
-                }]
-            });
-        }
-    });
-}
-
-function preassembleBody(req, res, next) {
-    var data = '';
-    req.on('data', function (chunk) {
-        data += chunk;
-    });
-    req.on('end', function () {
-        req.rawBody = data;
-        next();
-    });
-}
-
-function proxyRouteOpenhab(req, res) {
-    req.connection.setTimeout(600000);
-    
-    if (req.openhab.status === 'offline') {
-        res.writeHead(500, 'openHAB is offline', {
-            'content-type': 'text/plain'
-        });
-        res.end('openHAB is offline');
-        return;
-    }
-
-    // TODO: migrate this to redis incr?
-    // increment request id and fix it
-    requestCounter++;
-    var requestId = requestCounter;
-    // make a local copy of request headers to modify
-    var requestHeaders = req.headers;
-    // get remote hose from either x-forwarded-for or request
-    var remoteHost = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    // We need to remove and modify some headers here
-    delete requestHeaders['cookie'];
-    delete requestHeaders['cookie2'];
-    delete requestHeaders['authorization'];
-    delete requestHeaders['x-real-ip'];
-    delete requestHeaders['x-forwarded-for'];
-    delete requestHeaders['x-forwarded-proto'];
-    delete requestHeaders['connection'];
-    requestHeaders['host'] = req.headers.host || system.getHost() + ':' + system.getPort();
-    requestHeaders['user-agent'] = 'openhab-cloud/0.0.1';
-    // Strip off path prefix for remote vhosts hack
-    var requestPath = req.path;
-    if (requestPath.indexOf('/remote/') === 0) {
-        requestPath = requestPath.replace('/remote', '');
-        // TODO: this is too dirty :-(
-        delete requestHeaders['host'];
-        requestHeaders['host'] = 'home.' + system.getHost() + ':' + system.getPort();
-    }
-
-    // Send a message with request to openhab agent module
-    io.sockets.in(req.openhab.uuid).emit('request', {
-        id: requestId,
-        method: req.method,
-        headers: requestHeaders,
-        path: requestPath,
-        query: req.query,
-        body: req.rawBody
-    });
-    res.openhab = req.openhab;
-    restRequests[requestId] = res;
-
-    //we should only have to catch these two callbacks to hear about the response
-    //being close/finished, but thats not the case. Sometimes neither gets called
-    //and we have to manually clean up.  We have a interval for this above.
-
-    //when a response is closed by the requester
-    res.on('close', function () {
-        io.sockets.in(req.openhab.uuid).emit('cancel', {
-            id: requestId
-        });
-        delete restRequests[requestId];
-    });
-
-    //when a response is closed by us
-    res.on('finish', function () {
-        delete restRequests[requestId];
-    });
-
-}
-
-function addAppleRegistration(req, res) {
-    if (!req.query.hasOwnProperty('regId')) {
-        res.send(404, 'Parameters missing');
-        return;
-    }
-    var registrationId = req.query['regId'];
-    var deviceId;
-    var deviceModel;
-    if (req.query.hasOwnProperty('deviceId')) {
-        deviceId = req.query['deviceId'];
-    } else {
-        deviceId = 'unknown';
-    }
-    if (req.query.hasOwnProperty('deviceModel')) {
-         deviceModel = req.query['deviceModel'];
-    } else {
-         deviceModel = 'unknown';
-    }
-    UserDevice.findOne({
-        owner: req.user.id,
-        deviceType: 'ios',
-        deviceId: deviceId
-    }, function (error, userDevice) {
-        if (error) {
-            logger.warn('openHAB-cloud: Error looking up device: ' + error);
-            res.send(500, 'Internal server error');
-            return;
-        }
-        if (userDevice) {
-            // If found, update device token and save
-            logger.info('openHAB-cloud: Found iOS device for user ' + req.user.username + ', updating');
-            userDevice.iosDeviceToken = registrationId;
-            userDevice.lastUpdate = new Date();
-            userDevice.save(function (error) {
-                if (error) {
-                    logger.error('openHAB-cloud: Error saving user device: ' + error);
-                }
-            });
-            res.send(200, 'Updated');
-        } else {
-            // If not found, add new device registration
-            logger.info('openHAB-cloud: Registering new iOS device for user ' + req.user.username);
-            var userDevice = new UserDevice({
-                owner: req.user.id,
-                deviceType: 'ios',
-                deviceId: deviceId,
-                iosDeviceToken: registrationId,
-                deviceModel: deviceModel,
-                lastUpdate: new Date(),
-                registered: new Date()
-            });
-            userDevice.save(function (error) {
-                if (error) {
-                    logger.error('openHAB-cloud: Error saving user device: ' + error);
-                }
-            });
-            res.send(200, 'Added');
-        }
-    });
-
-}
-
-/**
- * Tries to find an android device using the registration ID and sets the given deviceId to this UserDevice.
- *
- * @param req
- * @param registrationId
- * @param res
- * @param deviceId
- * @param deviceModel
- */
-function findAndroidDeviceByRegistrationId(req, registrationId, res, deviceId, deviceModel) {
-    UserDevice.findOne({
-            owner: req.user.id,
-            deviceType: 'android',
-            androidRegistration: registrationId
-        },
-        function (error, userDevice) {
-            if (error) {
-                logger.warn('openHAB-cloud: Error looking up device: ' + error);
-                res.send(500, 'Internal server error');
-                return;
-            }
-            if (userDevice) {
-                // If found, update the changed device id
-                userDevice.deviceId = deviceId;
-                userDevice.lastUpdate = new Date();
-                userDevice.save(function (error) {
-                    if (error) {
-                        logger.error('openHAB-cloud: Error saving user device: ' + error);
-                    }
-                });
-                res.send(200, 'Updated');
-            } else {
-                // If not found, finally register a new one
-                var userDevice = new UserDevice({
-                    owner: req.user.id,
-                    deviceType: 'android',
-                    deviceId: deviceId,
-                    androidRegistration: registrationId,
-                    deviceModel: deviceModel,
-                    lastUpdate: new Date(),
-                    registered: new Date()
-                });
-                userDevice.save(function (error) {
-                    if (error) {
-                        logger.error('openHAB-cloud: Error saving user device: ' + error);
-                    }
-                });
-                res.send(200, 'Added');
-            }
-        });
-}
-function addAndroidRegistration(req, res) {
-    if (!req.query.hasOwnProperty('regId')) {
-        res.send(404, 'Parameters missing');
-        return;
-    }
-    var registrationId = req.query['regId'];
-    var deviceId;
-    var deviceModel;
-    if (req.query.hasOwnProperty('deviceId')) {
-        deviceId = req.query['deviceId'];
-    } else {
-        deviceId = 'unknown';
-    }
-    if (req.query.hasOwnProperty('deviceModel')) {
-        deviceModel = req.query['deviceModel'];
-    } else {
-        deviceModel = 'unknown';
-    }
-    // Try to find user device by device Id
-    UserDevice.findOne({
-        owner: req.user.id,
-        deviceType: 'android',
-        deviceId: deviceId
-    }, function (error, userDevice) {
-        if (error) {
-            logger.warn('openHAB-cloud: Error looking up device: ' + error);
-            res.send(500, 'Internal server error');
-            return;
-        }
-
-        if (userDevice) {
-            // If found, update the changed registration id
-            logger.info('openHAB-cloud: Found an Android device for user ' + req.user.username + ', updating');
-            userDevice.androidRegistration = registrationId;
-            userDevice.lastUpdate = new Date();
-            userDevice.save(function (error) {
-                if (error) {
-                    logger.error('openHAB-cloud: Error saving user device: ' + error);
-                }
-            });
-            res.send(200, 'Updated');
-        } else {
-            // If not found, try to find device by registration id. Sometimes android devices change their
-            // ids dynamically, while google play services continue to return the same registration id
-            // so this is still the same device and we don't want any duplicates
-            findAndroidDeviceByRegistrationId(req, registrationId, res, deviceId, deviceModel);
-        }
-    });
-}
-
-// Process all requests from mobile apps to openHAB
-app.all('/rest*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/images/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/static/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/rrdchart.png*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/chart*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/openhab.app*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/WebApp*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/CMD*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/cometVisu*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/proxy*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/greent*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/jquery.*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/classicui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/paperui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/basicui/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/doc/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/start/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/icon*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/habmin/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/remote*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-app.all('/habpanel/*', ensureRestAuthenticated, preassembleBody, setOpenhab, proxyRouteOpenhab);
-
-// myOH API for mobile apps
-app.all('/api/v1/notifications*', ensureRestAuthenticated, preassembleBody, setOpenhab, api_routes.notificationsget);
-app.all('/api/v1/settings/notifications', ensureRestAuthenticated, preassembleBody, setOpenhab, api_routes.notificationssettingsget);
-
-// Android app registration
-app.all('/addAndroidRegistration*', ensureRestAuthenticated, preassembleBody, setOpenhab, addAndroidRegistration);
-app.all('/addAppleRegistration*', ensureRestAuthenticated, preassembleBody, setOpenhab, addAppleRegistration);
+// setup the routes for the app
+var rt = new routes(requestTracker, logger);
+rt.setSocketIO(io);
+rt.setupRoutes(app);
 
 function sendNotificationToUser(user, message, icon, severity) {
     var androidRegistrations = [];
@@ -991,18 +518,19 @@ io.sockets.on('connection', function (socket) {
 
     socket.on('response', function (data) {
         var self = this;
-        var requestId = data.id;
-        if (restRequests[requestId]) {
-            if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
-                // self.to(self.handshake.uuid).emit('response', data);
+        var requestId = data.id,
+            request;
+        if (requestTracker.has(requestId)) {
+            request = requestTracker.get(requestId);
+            if (self.handshake.uuid === request.openhab.uuid) {
                 if (data.error !== null) {
-                    restRequests[requestId].send(500, 'Timeout in transit');
+                    request.send(500, 'Timeout in transit');
                 } else {
                     if (data.headers['Content-Type'] !== null) {
                         var contentType = data.headers['Content-Type'];
-                        restRequests[requestId].contentType(contentType);
+                        request.contentType(contentType);
                     }
-                    restRequests[requestId].send(data.responseStatusCode, new Buffer(data.body, 'base64'));
+                    request.send(data.responseStatusCode, new Buffer(data.body, 'base64'));
                 }
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
@@ -1015,10 +543,12 @@ io.sockets.on('connection', function (socket) {
     });
     socket.on('responseHeader', function (data) {
         var self = this;
-        var requestId = data.id;
-        if (restRequests[requestId]) {
-            if (self.handshake.uuid === restRequests[requestId].openhab.uuid && !restRequests[requestId].headersSent) {
-                restRequests[requestId].writeHead(data.responseStatusCode, data.responseStatusText, data.headers);
+        var requestId = data.id,
+            request;
+        if (requestTracker.has(requestId)) {
+            request = requestTracker.get(requestId);
+            if (self.handshake.uuid === request.openhab.uuid && !request.headersSent) {
+                request.writeHead(data.responseStatusCode, data.responseStatusText, data.headers);
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
             }
@@ -1031,10 +561,12 @@ io.sockets.on('connection', function (socket) {
     // This is a method for old versions of openHAB-cloud bundle which use base64 encoding for binary
     socket.on('responseContent', function (data) {
         var self = this;
-        var requestId = data.id;
-        if (restRequests[requestId]) {
-            if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
-                restRequests[requestId].write(new Buffer(data.body, 'base64'));
+        var requestId = data.id,
+            request;
+        if (requestTracker.has(requestId)) {
+            request = requestTracker.get(requestId);
+            if (self.handshake.uuid === request.openhab.uuid) {
+                request.write(new Buffer(data.body, 'base64'));
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
             }
@@ -1047,10 +579,12 @@ io.sockets.on('connection', function (socket) {
     // This is a method for new versions of openHAB-cloud bundle which use bindary encoding
     socket.on('responseContentBinary', function (data) {
         var self = this;
-        var requestId = data.id;
-        if (restRequests[requestId]) {
-            if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
-                restRequests[requestId].write(data.body);
+        var requestId = data.id,
+            request;
+        if (requestTracker.has(requestId)) {
+            request = requestTracker.get(requestId);
+            if (self.handshake.uuid === request.openhab.uuid) {
+                request.write(data.body);
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
             }
@@ -1062,11 +596,12 @@ io.sockets.on('connection', function (socket) {
     });
     socket.on('responseFinished', function (data) {
         var self = this;
-        var requestId = data.id;
-        if (restRequests[requestId]) {
-            if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
-                // self.to(self.handshake.uuid).emit('responseFinished', data);
-                restRequests[requestId].end();
+        var requestId = data.id,
+            request;
+        if (requestTracker.has(requestId)) {
+            request = requestTracker.get(requestId);
+            if (self.handshake.uuid === request.openhab.uuid) {
+                request.end();
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
             }
@@ -1074,11 +609,12 @@ io.sockets.on('connection', function (socket) {
     });
     socket.on('responseError', function (data) {
         var self = this;
-        var requestId = data.id;
-        if (restRequests[requestId]) {
-            if (self.handshake.uuid === restRequests[requestId].openhab.uuid) {
-                // self.to(self.handshake.uuid).emit('responseError', data);
-                restRequests[requestId].send(500, data.responseStatusText);
+        var requestId = data.id,
+            request;
+        if (requestTracker.has(requestId)) {
+            request = requestTracker.get(requestId);
+            if (self.handshake.uuid === request.openhab.uuid) {
+                request.send(500, data.responseStatusText);
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
             }
