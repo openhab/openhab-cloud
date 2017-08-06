@@ -15,7 +15,19 @@ module.exports = function(grunt) {
         },
         'qunit-node': {
             options: {
-                noglobals: true
+                noglobals: true,
+                setup: function (QUnit) {
+                    // a separate function to report test failures
+                    QUnit.on('testEnd', function (test) {
+                        if (test.status !== 'failed') {
+                            return;
+                        }
+                        grunt.log.writeln(('not ok ' + test.fullName.join(' > ')).red);
+                        test.errors.forEach(function (error) {
+                            grunt.log.writeln(error.message);
+                        });
+                    });
+                }
             },
             test: {
                 src: 'tests/qunit/**/*.js'
