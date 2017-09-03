@@ -1,4 +1,4 @@
-FROM mhart/alpine-node:7.5
+FROM mhart/alpine-node:7.10.1
 
 # File Author / Maintainer
 MAINTAINER Mehmet Arziman
@@ -32,7 +32,7 @@ RUN rm -rf \
 # when we change our app nodejs dependencies:
 COPY ./package.json ./config.json /tmp/
 
-RUN cd /tmp && npm install
+RUN cd /tmp && npm install && npm rebuild bcrypt --build-from-source
 RUN mkdir -p /opt/openhabcloud && cp -a /tmp/node_modules /opt/openhabcloud
 
 # From here we load our application's code in, therefore the previous docker
