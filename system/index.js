@@ -296,4 +296,13 @@ System.prototype.getDbName = function() {
     return this.getConfig(['mongodb', 'db']);
 };
 
+/**
+ * Returns the string representation of interal address in the form host:port
+ *
+ * @return {string}
+ */
+System.prototype.getInternalAddress = function() {
+  return process.env.HOST + ":" + process.env.PORT;
+};
+
 module.exports = new System();

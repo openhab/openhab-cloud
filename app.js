@@ -32,6 +32,8 @@ if (env !== 'development') {
 
 system.setConfiguration(config);
 
+var internalAddress = system.getInternalAddress();
+
 require('heapdump');
 
 logger.info('openHAB-cloud: Backend service is starting up...');
@@ -465,8 +467,9 @@ io.sockets.on('connection', function (socket) {
             // Make an event and notification only if openhab was offline
             // If it was marked online, means reconnect appeared because of my.oh fault
             // We don't want massive events and notifications when node is restarted
-            if (openhab.status === 'offline') {
+            if (openhab.status === 'offline' || openhab.serverAddress !== internalAddress) {
                 openhab.status = 'online';
+                openhab.serverAddress = internalAddress;
                 openhab.last_online = new Date();
                 openhab.openhabVersion = socket.handshake.openhabVersion;
                 openhab.clientVersion = socket.handshake.clientVersion;
