@@ -20,7 +20,7 @@ services:
         build: 
            context: ./
            dockerfile: ./docker/mongo/Dockerfile
-        command: mongod --smallfiles
+        command: mongod --smallfiles --bind_ip_all
         networks:
         - ohcloud-network
         ports:
