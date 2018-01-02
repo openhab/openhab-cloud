@@ -1,3 +1,4 @@
+var system = require('../system');
 
 /*
  * GET home page.
@@ -6,7 +7,7 @@ exports.index = function(req, res){
   errormessages = req.flash('error');
   infomessages = req.flash('info');
   res.render('index', {title: "Home", user: req.user, errormessages: errormessages,
-    infomessages: infomessages});
+    infomessages: infomessages, multi: system.isMultiOpenHABInstanceEnabled()});
 };
 
 exports.docs = function(req, res) {

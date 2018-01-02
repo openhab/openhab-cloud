@@ -153,33 +153,12 @@ exports.enrollpost = function(req, res) {
 }
 
 exports.accountget = function(req, res) {
-    req.user.openhab(function(error, openhab) {
-        res.render('account', { title: "Account", user: req.user, openhab: openhab,
-            errormessages:req.flash('error'), infomessages:req.flash('info') });
+    res.render('account', {
+        title: "Account",
+        user: req.user,
+        errormessages:req.flash('error'),
+        infomessages:req.flash('info')
     });
-}
-
-exports.accountpostvalidate = form(
-    field("openhabuuid", "openHAB UUID").trim().required(),
-    field("openhabsecret", "openHAB secret").trim().required()
-);
-
-exports.accountpost = function(req, res) {
-    if (!req.form.isValid) {
-        req.user.openhab(function(error, openhab) {
-            res.redirect('/account');
-        });
-    } else {
-        req.user.openhab(function(error, openhab) {
-            if (!error && openhab) {
-                openhab.uuid = req.body.openhabuuid;
-                openhab.secret = req.body.openhabsecret;
-                openhab.save();
-                req.flash('info', 'openHAB settings successfully updated');
-                res.redirect('/account');
-            }
-        });
-    }
 }
 
 exports.accountpasswordpostvalidate = form(

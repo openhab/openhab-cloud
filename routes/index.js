@@ -13,9 +13,11 @@ var system = require('../system'),
     staff_routes = require('./staff'),
     api_routes = require('./api'),
     oauth2 = require('./oauth2'),
+    openhab_routes = require('./openhab'),
     setSessionTimezone = require('./setTimezone'),
     AndroidRegistrationService = require('../mobileregistrationservice/AndroidRegistrationService'),
-    AppleRegistrationService = require('../mobileregistrationservice/AppleRegistrationService');
+    AppleRegistrationService = require('../mobileregistrationservice/AppleRegistrationService'),
+    Openhab = require('../models/openhab'),
     ifttt_routes = require('./ifttt');
 
 /**
@@ -55,6 +57,7 @@ Routes.prototype.setupRoutes = function (app) {
     this.setupStaffRoutes(app);
     this.setupProxyRoutes(app);
     this.setupAppRoutes(app);
+    this.setupOpenhabRoutes(app);
 };
 
 Routes.prototype.setupGeneralRoutes = function (app) {
@@ -108,7 +111,6 @@ Routes.prototype.setupLoginLogoutRoutes = function (app) {
 
 Routes.prototype.setupAccountRoutes = function (app) {
     app.get('/account', this.ensureAuthenticated, account_routes.accountget);
-    app.post('/account', this.ensureAuthenticated, this.ensureMaster, account_routes.accountpostvalidate, account_routes.accountpost);
     app.post('/accountpassword', this.ensureAuthenticated, account_routes.accountpasswordpostvalidate, account_routes.accountpasswordpost);
     app.get('/accountdelete', this.ensureAuthenticated, this.ensureMaster, account_routes.accountdeleteget);
     app.post('/accountdelete', this.ensureAuthenticated, this.ensureMaster, account_routes.accountdeletepost);
@@ -208,27 +210,44 @@ Routes.prototype.setupApiRoutes = function (app) {
 };
 
 Routes.prototype.setupProxyRoutes = function (app) {
-    app.all('/rest*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/images/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/static/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/rrdchart.png*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/chart*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/openhab.app*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/WebApp*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/CMD*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/cometVisu*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/proxy*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/greent*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/jquery.*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/classicui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/paperui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/basicui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/doc/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/start/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/icon*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/habmin/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/remote*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
-    app.all('/habpanel/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/rest*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/rest*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/images/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/images/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/static/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/static/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/rrdchart.png*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/rrdchart.png*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/openhab.app*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/openhab.app*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/WebApp*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/WebApp*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/CMD*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/CMD*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/cometVisu*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/cometVisu*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/proxy*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/proxy*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/greent*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/greent*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/classicui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/classicui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/paperui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/paperui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/basicui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/basicui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/doc/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/doc/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/start/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/start/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/icon*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/icon*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/habmin/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/habmin/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/remote*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/remote*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/:uuid/habpanel/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
+    app.all('/habpanel/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), this.proxyRouteOpenhab.bind(this));
 };
 
 Routes.prototype.setupAppRoutes = function (app) {
@@ -236,12 +255,20 @@ Routes.prototype.setupAppRoutes = function (app) {
         androidRegistration = new AndroidRegistrationService(this.logger);
 
     // myOH API for mobile apps
-    app.all('/api/v1/notifications*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, api_routes.notificationsget);
-    app.all('/api/v1/settings/notifications', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, api_routes.notificationssettingsget);
+    app.all('/api/v1/notifications*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), api_routes.notificationsget);
+    app.all('/api/v1/settings/notifications', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), api_routes.notificationssettingsget);
 
     // Android app registration
-    app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, androidRegistration.register.bind(androidRegistration));
-    app.all('/addAppleRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, appleRegistration.register.bind(appleRegistration));
+    app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), androidRegistration.register.bind(androidRegistration));
+    app.all('/addAppleRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab.bind(this), appleRegistration.register.bind(appleRegistration));
+};
+
+Routes.prototype.setupOpenhabRoutes = function (app) {
+    app.get('/openhab', this.ensureAuthenticated, this.ensureMaster, openhab_routes.openhabget);
+    app.post('/openhab', this.ensureAuthenticated, this.ensureMaster, openhab_routes.openhabpostvalidate, openhab_routes.openhabpost);
+    if (system.isMultiOpenHABInstanceEnabled()) {
+        app.get('/openhab/:uuid/delete', this.ensureAuthenticated, openhab_routes.openhabdelete);
+    }
 };
 
 // Ensure user is authenticated for web requests
@@ -277,15 +304,31 @@ Routes.prototype.ensureStaff = function (req, res, next) {
     res.redirect('/');
 };
 
+/**
+ * Take sthe request and sets the openHAB instance to req.openhab, that should be used during the processing of this
+ * request. The openHAB UUID, which will be used for the lookup, is selected in the following way:
+ *  - if the request contains the UUID path parameter, this UUID will be used for the lookup
+ *  - a randomly selected openHAB instance of the currently logged in user will be used
+ *
+ * The UUID will then be used to lookup the openHAB instance in our database, along with the account of the logged in
+ * user to protect against openHAB instance hijacking. If no openHAB, matching these criteria, was found, the request
+ * will be ended with status code 500.
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
 Routes.prototype.setOpenhab = function (req, res, next) {
-    var self = this;
+    var uuid,
+        self = this;
 
-    req.user.openhab(function (error, openhab) {
+    function callback (error, openhab) {
         if (!error && openhab) {
             req.openhab = openhab;
             next();
             return;
         }
+
         if (error) {
             self.logger.error('openHAB-cloud: openHAB lookup error: ' + error);
             return res.status(500).json({
@@ -301,7 +344,28 @@ Routes.prototype.setOpenhab = function (req, res, next) {
                 }]
             });
         }
-    });
+    }
+
+    if (req.params.uuid) {
+        // if the URL specifies the openHAB instance, choose this one as a preferred one, otherwise, use the one returned for
+        // this user.
+        var url = req.url,
+            re = new RegExp('/' + req.params.uuid, 'g');
+        this.logger.info('openHAB-cloud: Found uuid in request: ' + req.params.uuid);
+
+        req.url = url.replace(re, '');
+        this.logger.debug('openHAB-cloud: Rewrote URL ' + url  + ' for proxy request to: ' + req.url);
+        uuid = req.params.uuid;
+    }
+
+    if (uuid) {
+        Openhab.findOne({
+            uuid: uuid,
+            account: req.user.account
+        }).exec(callback);
+    } else {
+        req.user.openhab(callback);
+    }
 };
 
 Routes.prototype.preassembleBody = function (req, res, next) {
@@ -315,16 +379,40 @@ Routes.prototype.preassembleBody = function (req, res, next) {
     });
 };
 
+/**
+ * Helper method, which sends an "openHAB is offline" message to the passed ServerResponse.
+ *
+ * @param {ServerResponse} res
+ */
+Routes.prototype.sendOpenhabOffline = function (res) {
+    res.writeHead(500, 'openHAB is offline', {
+        'content-type': 'text/plain'
+    });
+    res.end('openHAB is offline');
+};
+
+/**
+ * Prepares the request to be proxied to the openHAB instance set by setOpenhab. The preparation includes, but is not
+ * limited to:
+ *  - removing unnecessary headers, like cookie, authorization, x-forwarded-* and so on
+ *  - sets new header fields, so that the answer of openHAB can actually be handled by the browser as coming from
+ *    openHAB-cloud
+ *
+ * After the request is made, openHAB will usually answer this request, which is NOT handled by this function. The
+ * response (res) is saved in a restRequest object with a unique requestId, which will also be included in the answer
+ * from openHAB. The answer then can be handled by the socket.io listeners to response* events, where the answer of
+ * openHAB will be added to the ServerResponse.
+ *
+ * @param {Request} req
+ * @param {ServerResponse} res
+ */
 Routes.prototype.proxyRouteOpenhab = function (req, res) {
     var self = this;
 
     req.connection.setTimeout(600000);
 
     if (req.openhab.status === 'offline') {
-        res.writeHead(500, 'openHAB is offline', {
-            'content-type': 'text/plain'
-        });
-        res.end('openHAB is offline');
+        this.sendOpenhabOffline(res);
         return;
     }
 

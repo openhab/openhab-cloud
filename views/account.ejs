@@ -14,31 +14,12 @@
     <div class="container">
         <%- include alerts.ejs %>
         <div class="row">
-            <% if (user.role == "master") { %>
-            <div class="span6">
-                <h3>openHAB settings</h3>
-                <div class="divider"><span></span></div>
-            </div>
-            <% } %>
             <div class="span6">
                 <h3>Change password</h3>
                 <div class="divider"><span></span></div>
             </div>
         </div>
         <div class="row">
-            <% if (user.role == "master") { %>
-            <div class="span6">
-                <form method="post" action="/account" id="contactform">
-                    <input type="hidden" name="_csrf" value="<%= token %>">
-                    <label for="openhabuuid">openHAB UUID</label>
-                    <input id="openhabuuid" type="text" name="openhabuuid" value="<%= openhab.uuid %>">
-                    <label for="openhabsecret">openHAB Secret</label>
-                    <input id="openhabsecret" type="text" name="openhabsecret" value="<%= openhab.secret %>">
-                    <button name="submit" type="submit" class="btn" id="submit">Update</button>
-                </form>
-                <div id="message"></div>
-            </div>
-            <% } %>
             <div class="span6">
                 <form method="post" action="/accountpassword" id="contactform">
                     <input type="hidden" name="_csrf" value="<%= token %>">

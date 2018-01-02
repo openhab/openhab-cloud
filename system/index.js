@@ -112,6 +112,15 @@ System.prototype.getProtocol = function() {
 System.prototype.getBaseURL = function() {
     return this.getProtocol() + '://' + this.getHost() + ':' + this.getPort();
 };
+
+System.prototype.isMultiOpenHABInstanceEnabled = function() {
+    try {
+        return this.getConfig(['system', 'multiOpenHAB']);
+    } catch (err) {
+        return false;
+    }
+};
+
 /**
  * Checks, if new user registration should be enabled or not.
  *

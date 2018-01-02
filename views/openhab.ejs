@@ -1,0 +1,99 @@
+<% section = 'openhab' %>
+<%- include header.ejs %>
+<section id="content">
+    <header class="headerPage">
+        <div class="container clearfix">
+            <div class="row">
+                <h1 class="span8">openHAB settings</h1>
+                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>openHAB settings</div>
+            </div>
+        </div>
+    </header>
+</section>
+<div class="slice clearfix">
+    <div class="container">
+        <%- include alerts.ejs %>
+        <div class="row">
+            <div class="span12">
+                <h3>registered openHAB instances</h3>
+                <div class="divider"><span></span></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="span12">
+                <ul>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <% if (multi) { %>
+                            <th>Name</th>
+                            <% } %>
+                            <th>UUID</th>
+                            <th>Secret</th>
+                            <th>openHAB Version</th>
+                            <th>Status</th>
+                            <% if (multi) { %>
+                            <th></th>
+                            <% } %>
+                        </tr>
+                        </thead>
+                        <% for (var i=0; i<openhabs.length; i++) { %>
+                        <tr>
+                            <% if (multi) { %>
+                            <td><%=openhabs[i].name%></td>
+                            <% } %>
+                            <td><%=openhabs[i].uuid%></td>
+                            <td><%=openhabs[i].secret%></td>
+                            <td><%=openhabs[i].openhabVersion%></td>
+                            <td><%=openhabs[i].status%></td>
+                            <% if (multi) { %>
+                            <td>
+                                <a href="/openhab/<%=openhabs[i].uuid%>/delete"><i class="icon-trash"></i></a>
+                            </td>
+                            <% } %>
+                        </tr>
+                        <% } %>
+                    </table>
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class="span12">
+                <h3>
+                    <% if (!multi) { %>
+                    Update openHAB settings
+                    <% } else { %>
+                    Add new openHAB instance
+                    <% } %></h3>
+                <div class="divider"><span></span></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="span12">
+                <% if (multi) { %>
+                Adding multiple openHAB instances to one openHAB-cloud account is an experimental feature and not yet supported by all provided functions. If you add a new openHAB instance, please note, that some functions of openHAB-cloud may just use one of your added instances instead of all of them.<br /><br />
+                <% } %>
+                <form method="post" action="/openhab">
+                    <input type="hidden" name="_csrf" value="<%= token %>">
+                    <% if (multi) { %>
+                    <label for="openhabname">openHAB name</label>
+                    <input id="openhabname" type="text" name="openhabname">
+                    <% } %>
+                    <label for="openhabuuid">openHAB UUID</label>
+                    <input id="openhabuuid" type="text" name="openhabuuid" <% if (!multi) { %>value="<%= openhabs[0].uuid %>"<% } %>>
+                    <label for="openhabsecret">openHAB Secret</label>
+                    <input id="openhabsecret" type="text" name="openhabsecret" <% if (!multi) { %>value="<%= openhabs[0].secret %>"<% } %>>
+                    <button name="submit" type="submit" class="btn" id="submit">
+                        <% if (!multi) { %>
+                        Update
+                        <% } else { %>
+                        Add
+                        <% } %>
+                    </button>
+                </form>
+                <div id="message"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<%- include footer.ejs %>

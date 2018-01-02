@@ -254,21 +254,21 @@ app.use(function (req, res, next) {
 });
 app.use(function (req, res, next) {
     if (req.user) {
-        Openhab.findOne({
+        Openhab.find({
             account: req.user.account
-        }).lean().exec(function (error, openhab) {
+        }).lean().exec(function (error, openhabs) {
             res.locals.baseurl = system.getBaseURL();
-            if (!error && openhab) {
-                res.locals.openhab = openhab;
-                res.locals.openhabstatus = openhab.status;
-                res.locals.openhablastonline = openhab.last_online;
-                if (openhab.openhabVersion !== undefined) {
-                    res.locals.openhabMajorVersion = openhab.openhabVersion.split('.')[0];
+            if (!error && openhabs.length > 0) {
+                res.locals.openhabs = openhabs;
+                res.locals.openhabstatus = openhabs[0].status;
+                res.locals.openhablastonline = openhabs[0].last_online;
+                if (openhabs[0].openhabVersion !== undefined) {
+                    res.locals.openhabMajorVersion = openhabs[0].openhabVersion.split('.')[0];
                 } else {
                     res.locals.openhabMajorVersion = 0;
                 }
             } else {
-                res.locals.openhab = undefined;
+                res.locals.openhabs = undefined;
                 res.locals.openhabstatus = undefined;
                 res.locals.openhablastonline = undefined;
                 res.locals.openhabMajorVersion = undefined;
@@ -439,6 +439,32 @@ io.use(function (socket, next) {
     });
 });
 
+/**
+ * Rewrites, if needed, parts of the given response body. These parts are URLs to the rest api or the basicui, which
+ * needs to be prefixed with the ID of openHAB to target the correct openHAB instance in multi-openHAB mode.
+ *
+ * @param body
+ * @param request
+ * @return {*}
+ */
+function getContentRewrittenBodyBuffer(body, request) {
+    if (request.hasHeader('Content-Type') &&
+        (request.getHeader('Content-Type').startsWith('text/html') ||
+        request.getHeader('Content-Type').startsWith('application/javascript'))) {
+        if (Buffer.isBuffer(body)) {
+            body = body.toString('utf8');
+        }
+
+        body = body.toString('utf8').replace(/(\/(rest|basicui))/g, '/' + request.openhab.uuid + '$1');
+    }
+
+    if (!Buffer.isBuffer(body)) {
+        body = Buffer.from(body, 'utf-8');
+    }
+
+    return body;
+}
+
 io.sockets.on('connection', function (socket) {
     logger.info('openHAB-cloud: Incoming openHAB connection for uuid ' + socket.handshake.uuid);
     socket.join(socket.handshake.uuid);
@@ -530,7 +556,7 @@ io.sockets.on('connection', function (socket) {
                         var contentType = data.headers['Content-Type'];
                         request.contentType(contentType);
                     }
-                    request.send(data.responseStatusCode, new Buffer(data.body, 'base64'));
+                    request.send(data.responseStatusCode, getContentRewrittenBodyBuffer(data.body, request));
                 }
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
@@ -548,6 +574,7 @@ io.sockets.on('connection', function (socket) {
         if (requestTracker.has(requestId)) {
             request = requestTracker.get(requestId);
             if (self.handshake.uuid === request.openhab.uuid && !request.headersSent) {
+                delete(data.headers['Content-Length']);
                 request.writeHead(data.responseStatusCode, data.responseStatusText, data.headers);
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
@@ -566,7 +593,7 @@ io.sockets.on('connection', function (socket) {
         if (requestTracker.has(requestId)) {
             request = requestTracker.get(requestId);
             if (self.handshake.uuid === request.openhab.uuid) {
-                request.write(new Buffer(data.body, 'base64'));
+                request.write(getContentRewrittenBodyBuffer(data.body, request));
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
             }
@@ -584,7 +611,7 @@ io.sockets.on('connection', function (socket) {
         if (requestTracker.has(requestId)) {
             request = requestTracker.get(requestId);
             if (self.handshake.uuid === request.openhab.uuid) {
-                request.write(data.body);
+                request.write(getContentRewrittenBodyBuffer(data.body, request));
             } else {
                 logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
             }

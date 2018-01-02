@@ -117,6 +117,12 @@ QUnit.test('#getBaseUrl', function (assert) {
     assert.equal(system.getBaseURL(), 'http://localhost:1000');
 });
 
+QUnit.test('#isMultiOpenHABInstanceEnabled', function (assert) {
+    system.setConfiguration(globalExampleConfig);
+
+    assert.equal(system.isMultiOpenHABInstanceEnabled(), false);
+});
+
 QUnit.test('#isUserRegistrationEnabled default=true', function (assert) {
     system.setConfiguration(globalExampleConfig);
 
