@@ -60,7 +60,7 @@ git clone https://github.com/openhab/openhab-cloud.git
 ```
 
 
-Clone the openhabcloud repository and after the completed checkout you should have the directory in your chosen folder:
+Clone the openhab-cloud repository and after the completed checkout you should have the directory in your chosen folder:
 ```
 ls -al
 total 32
@@ -69,25 +69,25 @@ drwxr-xr-x  3 root   root   4096 Jun  4 12:34 ..
 -rw-r--r--  1 ubuntu ubuntu  220 Apr  9  2014 .bash_logout
 -rw-r--r--  1 ubuntu ubuntu 3637 Apr  9  2014 .bashrc
 drwx------  2 ubuntu ubuntu 4096 Jun  4 16:30 .cache
-drwxr-xr-x 13 root   root   4096 Jun  4 17:06 openhabcloud
+drwxr-xr-x 13 root   root   4096 Jun  4 17:06 openhab-cloud
 -rw-r--r--  1 ubuntu ubuntu  675 Apr  9  2014 .profile
 drwx------  2 ubuntu ubuntu 4096 Jun  4 12:34 .ssh
 ```
 
 
-Now we need to change into the openhabcloud directory and check if node is installed:
+Now we need to change into the openhab-cloud directory and check if node is installed:
 
 ```
 node --version
 ```
 
 
-If you see the node version, you are fine to continue.
+If you see the node version, you are fine to continue (Note: openHAB Cloud is based on Node.js version 7.10.1).
 
 To run openHAB Cloud you need to install the required software bundles/stacks:
 
 ```
-cd openhabcloud
+cd openhab-cloud
 ```
 ```
 npm install
@@ -110,6 +110,12 @@ redis-cli ping
 ```
 Redis will answer with PONG if all is fine.
 
+In the next step you have to rename the system configuration file:
+```
+config-production.json -> config.json
+```
+Adjust the config parameters according your setup
+(Note: MongoDB username and password fields should be deleted, if there is no authentication activated).
 
 Now you can run openHAB Cloud by the following command:
 ```
