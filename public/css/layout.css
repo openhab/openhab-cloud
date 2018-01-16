@@ -956,6 +956,19 @@ aside#sidebar {
 #widgetArea .widget p {
     margin:0;
 }
+
+.openhabstatus:before {
+    float: right;
+    content: ' \25CF';
+}
+
+.online:before {
+    color: green;
+}
+.offline:before {
+    color: red;
+}
+
 .app-badges {
     text-align: center;
     margin-top: 1em;

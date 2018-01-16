@@ -95,30 +95,25 @@
     <section class="slice clearfix">
         <div class=" clearfix">
             <div class="container" id="threeColumns">
-                <%
-                    switch (openhabstatus) {
-                        case undefined:
-                %>
-                            You do not have an openHAB installation connected with your account. Please go to your <a href="/account">account settings</a> to add your openHAB installation.
-                <%
-                            break;
-                        case 'online':
-                            if (openhabMajorVersion == '2') {
-                %>
-                                You are using openHAB 2.x. <a href="<%=baseurl%>/start/index">Click here to access your openHAB's dashboard</a>
-                <%
-                            } else {
-                %>
-                                You are using openHAB 1.x. To remotely access your openHAB's web interface go to <code><%=baseurl%>/openhab.app?sitemap=yoursitemapname</code>
-                <%
-                            }
-                            break;
-                        default:
-                %>
-                            Your openHAB is not online. Please check if your installation is running or recheck the openHAB settings in your  <a href="/account">account</a>.
-                <%
-                    }
-                %>
+                <% if (openhabs.length > 0) { %>
+                <% for (var i = 0; i < openhabs.length; i++) { %>
+                <div class="span5">
+                    <h3><%=openhabs[i].name || 'Unknown openHAB'%><span class="openhabstatus <%=openhabs[i].status%>"></span></h3>
+                    <div class="divider"><span></span></div>
+                    <% if (openhabs[i].status !== 'online') { %>
+                    This openHAB instance is not online. Please make sure that it is running or recheck your <a href="/openhab">openHAB settings</a>.
+                    <% } else { %>
+                    <% if (openhabs[i].openhabVersion && openhabs[i].openhabVersion.split('.')[0] === '2') { %>
+                    You are using openHAB 2.x. <a href="<%=baseurl%><% if (multi) { %>/<%=openhabs[i].uuid%><% } %>/start/index">Click here to access your openHAB's dashboard</a>
+                    <% } else { %>
+                    You are using openHAB 1.x. To remotely access your openHAB's web interface go to <code><%=baseurl%><% if (multi) { %>/<%=openhabs[i].uuid%><% } %>/openhab.app?sitemap=yoursitemapname</code>
+                    <% } %>
+                    <% } %>
+                </div>
+                <% } %>
+                <% } else { %>
+                There're no openHAB instances registered in your account. Make sure, that openHAB is running or recheck your <a href="/openhab">openHAB settings</a>.
+                <% } %>
             </div>
         </div>
     </section>
