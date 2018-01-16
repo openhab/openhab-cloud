@@ -15,7 +15,8 @@ var OpenhabSchema = new Schema({
     global_location: {type: [Number], index: '2d'},     // openHAB's global location
     last_online: { type: Date },                        // last seen this openHAB online
     last_email_notification: {type: Date},              // last notification about openHAB being offline for long time
-    status: {type: String, default: "offline"}          // current openHAB status (online/offline)
+    status: {type: String, default: "offline"},         // current openHAB status (online/offline)
+    serverAddress: {type: String}                       // the host:port that this openhab is connected to
 });
 
 // Index for lookups by uuid

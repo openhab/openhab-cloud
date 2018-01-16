@@ -7,7 +7,8 @@ Group=openhabcloud
 LimitNOFILE=300000
 Environment=NODE_ENV=production
 Environment=TASK=main
-Environment=PORT=3001
+Environment=PORT=%i
+Environment=HOST=127.0.0.1
 #Environment=DEBUG=oath2orize
 Restart=always
 RestartSec=10                       # Restart service after 10 seconds if node service crashes
@@ -16,6 +17,5 @@ StandardError=syslog                # Output to syslog
 SyslogIdentifier=openhabcloud
 WorkingDirectory=/home/openhabcloud/openhabcloud
 ExecStart=/home/openhabcloud/.nvm/versions/node/v7.5.0/bin/node --max-old-space-size=8192 /home/openhabcloud/openhabcloud/app.js
-#ExecStart=/home/openhabcloud/.nvm/v0.10.48/bin/node --max-old-space-size=8192 /home/openhabcloud/openhabcloud/app.js
 [Install]
 WantedBy=multi-user.target
