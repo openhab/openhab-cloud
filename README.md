@@ -183,6 +183,9 @@ location /fonts {
 location /js-plugin {
     alias /home/ubuntu/openhabcloud/public/js-plugin;
     }
+location /staff/js-plugin {
+    alias /home/ubuntu/openhabcloud/public/js-plugin;
+    }
 location /downloads {
     alias /home/ubuntu/openhabcloud/public/downloads;
     }
