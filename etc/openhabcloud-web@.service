@@ -1,13 +1,13 @@
 [Unit]
-Description=node.js openhab cloud server jobs
+Description=node.js openhab cloud server www process (no disconnect notices/socket management)
 
 [Service]
 User=openhabcloud
 Group=openhabcloud
 LimitNOFILE=300000
 Environment=NODE_ENV=production
-Environment=TASK=main
-Environment=PORT=3030
+Environment=TASK=web
+Environment=PORT=%i
 Environment=HOST=127.0.0.1
 #Environment=DEBUG=oath2orize
 Restart=always

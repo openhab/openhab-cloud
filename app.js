@@ -120,10 +120,8 @@ var offlineOpenhabs = {};
  * @param error The error, if an error occured
  * @param {Openhab} openhab The openHAB instance
  */
-function notifyOpenHABOwnerOffline(error, openhab) {
-    if (!openhab || error) {
-        return;
-    }
+function notifyOpenHABOwnerOffline(openhab) {
+
     openhab.status = 'offline';
     openhab.last_online = new Date();
     openhab.save(function (error) {
@@ -149,7 +147,7 @@ function notifyOpenHABOwnerOffline(error, openhab) {
 // This timer runs every minute and checks if there are any openHABs in offline status for more then 300 sec
 // Then it sends notifications to openHAB's owner if it is offline for more then 300 sec
 // This timer only runs on the job task
-if (taskEnv === 'job') {
+if (taskEnv === 'main') {
     setInterval(function () {
         logger.debug('openHAB-cloud: Checking for offline openHABs (' + Object.keys(offlineOpenhabs).length + ')');
         for (var offlineOpenhabUuid in offlineOpenhabs) {
@@ -159,7 +157,15 @@ if (taskEnv === 'job') {
             logger.debug('openHAB-cloud: openHAB with ' + offlineOpenhabUuid + ' is offline > 300 sec, time to notify the owner');
             Openhab.findOne({
                 uuid: offlineOpenhabUuid
-            }).cache().exec(notifyOpenHABOwnerOffline);
+            }).exec(function (error, openhab) {
+              if (!openhab || error) {
+                  return;
+              }
+              //if this has not connected to another server, then notify
+              if(openhab.serverAddress == internalAddress){
+                notifyOpenHABOwnerOffline(openhab);
+              }
+            });
         }
     }, 60000);
 }
