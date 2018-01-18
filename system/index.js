@@ -112,6 +112,19 @@ System.prototype.getProtocol = function() {
 System.prototype.getBaseURL = function() {
     return this.getProtocol() + '://' + this.getHost() + ':' + this.getPort();
 };
+
+/**
+ * Returns if we are muting notifications
+ * @returns {Boolean}
+ */
+System.prototype.getMuteNotifications = function() {
+  try {
+    return this.getConfig(['system', 'muteNotifications']);
+  } catch (err) {
+    return false;
+  }
+};
+
 /**
  * Checks, if new user registration should be enabled or not.
  *

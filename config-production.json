@@ -4,7 +4,8 @@
       "port": "443",
       "protocol": "https",
       "logging": "info",
-      "subDomainCookies": false
+      "subDomainCookies": false,
+      "muteNotifications": false
     },
     "express":{
       "key" : "some express key"

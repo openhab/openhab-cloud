@@ -24,13 +24,20 @@ var logger = require('./logger.js'),
     env = process.env.NODE_ENV || 'production',
     config;
 
-if (env !== 'development') {
-    config = require('./config.json');
-} else {
-    config = require('./config-development.json');
+
+//load and set our configuration, delete any cache first
+var loadConfig = function() {
+  if (env !== 'development') {
+      delete require.cache[require.resolve('./config.json')];
+      config = require('./config.json');
+  } else {
+      delete require.cache[require.resolve('./config-development.json')];
+      config = require('./config-development.json');
+  }
+  system.setConfiguration(config);
 }
 
-system.setConfiguration(config);
+loadConfig();
 
 var internalAddress = system.getInternalAddress();
 
@@ -40,6 +47,11 @@ logger.info('openHAB-cloud: Backend service is starting up...');
 
 process.on('uncaughtException', function (err) {
     logger.error(err);
+});
+
+process.on('SIGHUP', function () {
+  logger.info('Reloading config...');
+  loadConfig();
 });
 
 logger.info('openHAB-cloud: Backend logging initialized...');
@@ -946,26 +958,32 @@ io.sockets.on('connection', function (socket) {
 });
 
 function notifyOpenHABStatusChange(openhab, status) {
-    User.find({
-        account: openhab.account,
-        role: 'master'
-    }, function (error, users) {
-        if (!error && users) {
-            for (var i = 0; i < users.length; i++) {
-                if (status === 'online') {
-                    sendNotificationToUser(users[i], 'openHAB is online', 'openhab', 'good');
-                } else {
-                    sendNotificationToUser(users[i], 'openHAB is offline', 'openhab', 'bad');
-                }
-            }
-        } else {
-            if (error) {
-                logger.warn('openHAB-cloud: Error finding users to notify: ' + error);
-            } else {
-                logger.warn('openHAB-cloud: Unable to find any masters for openHAB ' + openhab.uuid);
-            }
-        }
-    });
+
+  //we can mute notifications, for example when we are doing a deploy
+  if(system.getMuteNotifications()){
+    return;
+  }
+
+  User.find({
+      account: openhab.account,
+      role: 'master'
+  }, function (error, users) {
+      if (!error && users) {
+          for (var i = 0; i < users.length; i++) {
+              if (status === 'online') {
+                  sendNotificationToUser(users[i], 'openHAB is online', 'openhab', 'good');
+              } else {
+                  sendNotificationToUser(users[i], 'openHAB is offline', 'openhab', 'bad');
+              }
+          }
+      } else {
+          if (error) {
+              logger.warn('openHAB-cloud: Error finding users to notify: ' + error);
+          } else {
+              logger.warn('openHAB-cloud: Unable to find any masters for openHAB ' + openhab.uuid);
+          }
+      }
+  });
 }
 
 function shutdown() {
