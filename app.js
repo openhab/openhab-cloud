@@ -153,7 +153,6 @@ function notifyOpenHABOwnerOffline(openhab) {
         }
     });
     notifyOpenHABStatusChange(openhab, 'offline');
-    delete offlineOpenhabs[openhab.uuid];
 }
 
 // This timer runs every minute and checks if there are any openHABs in offline status for more then 300 sec
@@ -166,6 +165,7 @@ if (taskEnv === 'main') {
             if (Date.now() - offlineOpenhabs[offlineOpenhabUuid] < 5 * 60 * 1000) {
                 continue;
             }
+            delete offlineOpenhabs[offlineOpenhabUuid];
             logger.debug('openHAB-cloud: openHAB with ' + offlineOpenhabUuid + ' is offline > 300 sec, time to notify the owner');
             Openhab.findOne({
                 uuid: offlineOpenhabUuid
@@ -327,7 +327,7 @@ app.use(function (req, res, next) {
     }
     // If host matches names for full /* proxying, go ahead and just proxy it.
     if (host.indexOf('remote.') === 0 || host.indexOf('home.') === 0) {
-      //make sure this was not set by another server 
+      //make sure this was not set by another server
       if(req.url.indexOf('/remote') != 0){
         req.url = '/remote' + req.url;
       }
