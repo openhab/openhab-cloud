@@ -53,7 +53,7 @@ UserSchema.static('register', function(username, password, cb) {
     newAccount.save(function(error) {
         if (!error) {
             var user = new self();
-            user.username = username.trim().toLowerCase();
+            user.username = username;
             user.password = password;
             user.role = 'master';
             user.account = newAccount.id;
@@ -87,8 +87,8 @@ UserSchema.static('registerToAccount', function(username, password, account, rol
 
 UserSchema.static('authenticate', function (username, password, callback) {
     // don't use cache() here, before a proper way to invalidate the cache when, e.g., the password is changed is
-    // implemented. See also: https://github.com/Gottox/mongoose-cache/issues/17
-    this.findOne({ username: username }).exec(function(err, user) {
+    // implemented. See also: https://github.com/Gottox/mongoose-cache/issues/17  
+	this.findOne({ username: { $regex: new RegExp("^" + username.toLowerCase(), "i") } }).exec(function(err, user) {
         if (err)
             return callback(err, false, {message: 'Authentication error'});
         if (!user)
