@@ -25,7 +25,7 @@ AppleRegistrationService.prototype.register = function (req, res) {
     UserDevice.findOne({
         owner: req.user.id,
         deviceType: 'ios',
-        deviceId: deviceId
+        deviceId: this.getDeviceId()
     }, function (error, userDevice) {
         if (error) {
             self.getLogger().warn('openHAB-cloud: Error looking up device: ' + error);
@@ -34,7 +34,7 @@ AppleRegistrationService.prototype.register = function (req, res) {
         }
         if (userDevice) {
             // If found, update device token and save
-            self.logger.info('openHAB-cloud: Found iOS device for user ' + req.user.username + ', updating');
+            self.getLogger().info('openHAB-cloud: Found iOS device for user ' + req.user.username + ', updating');
             userDevice.iosDeviceToken = self.getRegistrationId();
             userDevice.lastUpdate = new Date();
             userDevice.save(function (error) {
@@ -49,7 +49,7 @@ AppleRegistrationService.prototype.register = function (req, res) {
             userDevice = new UserDevice({
                 owner: req.user.id,
                 deviceType: 'ios',
-                deviceId: deviceId,
+                deviceId: self.getDeviceId(),
                 iosDeviceToken: self.getRegistrationId(),
                 deviceModel: self.getDeviceModel(),
                 lastUpdate: new Date(),
