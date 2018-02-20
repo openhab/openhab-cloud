@@ -119,6 +119,7 @@ exports.authorization = [
         errormessages = req.flash('error');
         infomessages = req.flash('info');
         scope = req.oauth2.req.scope;
+        logger.info('openHAB-cloud: server.authorization oauth2 request for scope: ' + scope);
         OAuth2Scope.findOne({
             name: scope
         }, function (error, scope) {
