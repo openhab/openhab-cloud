@@ -418,7 +418,6 @@ function sendAndroidNotifications(registrationIds, message) {
                 message: message
             }
         });
-        logger.info('openHAB-cloud: sending GCM message');
         gcmSender.send(gcmMessage, registrationIds, 4, function (err, result) {
             if (err) {
                 logger.error('openHAB-cloud: GCM send error: ' + err);
