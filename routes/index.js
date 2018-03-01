@@ -319,15 +319,23 @@ Routes.prototype.setOpenhab = function (req, res, next) {
     });
 };
 
-Routes.prototype.preassembleBody = function (req, res, next) {
-    var data = '';
-    req.on('data', function (chunk) {
-        data += chunk;
+Routes.prototype.preassembleBody = function(req, res, next) {
+  //app.js will catch any JSON or URLEncoded related requests and
+  //store the rawBody on the request, all other requests need
+  //to have that data collected and stored here
+  var data = '';
+  if (req.rawBody === undefined || req.rawBody === "") {
+    req.on('data', function(chunk) {
+      data += chunk;
     });
-    req.on('end', function () {
-        req.rawBody = data;
-        next();
+    req.on('end', function() {
+      req.rawBody = data;
+      next();
     });
+  } else {
+    req.rawBody = req.rawBody.toString();
+    next();
+  }
 };
 
 Routes.prototype.proxyRouteOpenhab = function (req, res) {
