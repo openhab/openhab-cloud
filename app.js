@@ -230,8 +230,12 @@ app.use(favicon(__dirname + '/public/img/favicon.ico'));
 if (config.system.logging && config.system.logging === 'debug')
     app.use(morgan('dev'));
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({verify:function(req,res,buf){req.rawBody=buf}}))
+app.use(bodyParser.urlencoded({
+        verify:function(req,res,buf){req.rawBody=buf},
+        extended: true
+
+}));
 app.use(methodOverride());
 app.use(cookieParser(config.express.key));
 
@@ -414,6 +418,7 @@ function sendAndroidNotifications(registrationIds, message) {
                 message: message
             }
         });
+        logger.info('openHAB-cloud: sending GCM message');
         gcmSender.send(gcmMessage, registrationIds, 4, function (err, result) {
             if (err) {
                 logger.error('openHAB-cloud: GCM send error: ' + err);
