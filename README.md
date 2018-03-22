@@ -233,10 +233,10 @@ to spin up the dockerized openhab-cloud backend.
 #### Architecture
 The dockerized openhab-cloud uses a separate docker image and container for each part of the overall system
 according to the following stack:
-* app-1: node.js and express.js (alpine-node:7.5)
-* mongodb: MongoDB database (mongo:3)
-* nginx: nginx proxy (nginx)
-* redis: redis session manager (redis:alpine)
+* app-1: node.js and express.js (openhab/openhab-cloud/app-1:latest)
+* mongodb: MongoDB database (bitnami/mongodb:latest)
+* nginx: nginx proxy (openhab/openhab-cloud/nginx:latest)
+* redis: redis session manager (bitnami/redis:latest)
 
 #### Prerequisites
 To run openhab-cloud make sure docker, docker-machine and docker-compose are installed on your machine.
@@ -260,6 +260,16 @@ container services of docker-compose:
 ```
 
 To change the server IP/DNS matching your installation, please refer to [Setting up Nginx](#setupNginx)
+
+#### Customization
+
+If you want to customize the openhab-cloud app or change e.g. configurations within ```config.json```,
+you need to switch to the local build of the node app. Adjust the build stratgy in the ```docker-compose.yml```
+and replace the ```image``` section of ```docker-compose.yml``` with the following lines, to not use the official docker hub images anymore and switch to your local sources as base for the app-1 image:
+
+```build: 
+  context: ./
+  dockerfile: ./docker/node/Dockerfile```
 
 #### Run
 To create and run the composed application, use the following command: 
