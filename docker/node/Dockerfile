@@ -28,15 +28,13 @@ RUN rm -rf \
     /usr/lib/node_modules/npm/html \
     /usr/lib/node_modules/npm/scripts
 
-# We going to use changes to package.json to force Docker not to use the cache
-# when we change our app nodejs dependencies:
-COPY ./package.json ./config.json /tmp/
-
-RUN cd /tmp && npm install && npm rebuild bcrypt --build-from-source
-RUN mkdir -p /opt/openhabcloud && cp -a /tmp/node_modules /opt/openhabcloud
-
-# From here we load our application's code in, therefore the previous docker
-# "layer" thats been cached will be used if possible
+RUN mkdir -p /opt/openhabcloud 
+COPY ./package.json ./config.json /opt/openhabcloud/
+RUN mkdir /data
+RUN ln -s /opt/openhabcloud/package.json /data
+WORKDIR /data
+RUN npm install && npm rebuild bcrypt --build-from-source
+ENV NODE_PATH /data/node_modules
 WORKDIR /opt/openhabcloud
 
 USER openhabcloud
@@ -44,5 +42,4 @@ USER openhabcloud
 ADD . /opt/openhabcloud
 
 EXPOSE 3000
-
-CMD ["node", "/opt/openhabcloud/app.js"]
+CMD ["node", "app.js"]
