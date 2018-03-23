@@ -269,7 +269,8 @@ and replace the ```image``` section of ```docker-compose.yml``` with the followi
 
 ```build: 
   context: ./
-  dockerfile: ./docker/node/Dockerfile```
+  dockerfile: ./docker/node/Dockerfile
+```
 
 #### Run
 To create and run the composed application, use the following command: 
