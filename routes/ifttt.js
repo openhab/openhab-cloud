@@ -196,7 +196,11 @@ exports.v1triggeritemstate = [
                 Item.findOne({openhab: openhab._id, name: itemName}, function (error, item) {
                     if (!error && item) {
                         if (eventLimit > 0) {
-                            Event.find({openhab: openhab._id, source: item.name, status: itemStatus})
+                            var eventFilters = {openhab: openhab._id, source: item.name};
+                            if(itemStatus != undefined && itemStatus.length > 0) {
+                                eventFilters["status"] = itemStatus;
+                            }
+                            Event.find(eventFilters)
                                 .sort({when: 'desc'})
                                 .limit(eventLimit)
 				.lean()
