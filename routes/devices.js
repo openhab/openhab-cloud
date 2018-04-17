@@ -6,13 +6,14 @@ var mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 var ObjectId = mongoose.SchemaTypes.ObjectId;
 var UserDeviceLocationHistory = require('../models/userdevicelocationhistory');
-var gcm = require('node-gcm');
-var gcmSender = require('../gcmsender.js')
-    , appleSender = require('../aps-helper');
+var appleSender = require('../aps-helper');
+var Firebase = require('firebase-messaging');
 var redis = require('../redis-helper');
 var form = require('express-form'),
     field = form.field,
     system = require('../system');
+
+var firebaseClient = new Firebase(system.getGcmPassword());
 
 exports.devicesget = function(req, res) {
     UserDevice.find({owner: req.user.id}, function(error, userDevices) {
@@ -83,7 +84,6 @@ exports.devicesdelete = function(req, res) {
     var deleteId = mongoose.Types.ObjectId(req.params.id);
     UserDevice.findOne({owner: req.user.id, _id: deleteId}, function(error, userDevice) {
         if (!error && userDevice) {
-//            logger.info("found device");
             userDevice.remove();
         }
         res.redirect('/devices');
@@ -92,20 +92,22 @@ exports.devicesdelete = function(req, res) {
 
 function sendAndroidNotification(registrationId, message) {
     redis.incr("androidNotificationId", function(error, androidNotificationId) {
-        if (!error) {
-            var gcmMessage = new gcm.Message({
-                delayWhileIdle: false,
-                data: {
-                    type: 'notification',
-                    notificationId: androidNotificationId,
-                    message: message
-                }
-            });
-            gcmSender.send(gcmMessage, [registrationId], 4, function (err, result) {
-                if (err) {
-                    logger.error("openHAB-cloud: GCM send error: " + err);
-                }
-            });
+        if (error) {
+            return;
         }
+
+        var options = {
+            delay_while_idle: false
+        };
+        var data = {
+            type: 'notification',
+            notificationId: androidNotificationId,
+            message: message,
+        };
+        firebaseClient.message(registrationId, data, options, function (result) {
+            if (result.failure) {
+                logger.error("openHAB-cloud: GCM send error: " + err);
+            }
+        });
     });
 }

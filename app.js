@@ -56,7 +56,7 @@ var taskEnv = process.env.TASK || 'main';
 
 // If Google Cloud Messaging is configured set it up
 if (system.isGcmConfigured()) {
-    require('./gcm-xmpp');
+    require('./fcm-xmpp');
 }
 
 module.exports.config = config;
@@ -71,6 +71,7 @@ var flash = require('connect-flash'),
     cookieParser = require('cookie-parser'),
     session = require('express-session'),
     favicon = require('serve-favicon'),
+    Firebase = require("firebase-messaging"),
     csurf = require('csurf'),
     serveStatic = require('serve-static'),
     homepage = require('./routes/homepage'),
@@ -93,7 +94,7 @@ var flash = require('connect-flash'),
 
 // Setup Google Cloud Messaging component
 var gcm = require('node-gcm');
-var gcmSender = require('./gcmsender.js');
+var firebaseClient = new Firebase(system.getGcmPassword());
 
 // MongoDB connection settings
 var mongoose = require('mongoose');
@@ -405,20 +406,20 @@ function sendIosNotifications(iosDeviceTokens, message) {
 
 function sendAndroidNotifications(registrationIds, message) {
     redis.incr('androidNotificationId', function (error, androidNotificationId) {
-        if (!config.gcm || error) {
+        if (error) {
             return;
         }
-        var gcmMessage = new gcm.Message({
-            delayWhileIdle: false,
-            data: {
-                type: 'notification',
-                notificationId: androidNotificationId,
-                message: message
-            }
-        });
-        gcmSender.send(gcmMessage, registrationIds, 4, function (err, result) {
-            if (err) {
-                logger.error('openHAB-cloud: GCM send error: ' + err);
+        var options = {
+            delay_while_idle: false
+        };
+        var data = {
+            type: 'notification',
+            notificationId: androidNotificationId,
+            message: message
+        };
+        firebaseClient.message(registrationIds, data, options, function (result) {
+            if (result.failure) {
+                logger.error('openHAB-cloud: GCM send error: ' + result);
             }
         });
     });

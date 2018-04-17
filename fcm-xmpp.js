@@ -8,6 +8,7 @@ const system = require('./system');
 const UserDevice = require('./models/userdevice'),
     UserDeviceLocationHistory = require('./models/userdevicelocationhistory'),
     xmpp = require('node-xmpp-client'),
+    Firebase = require('firebase-messaging'),
     logger = require('./logger.js'),
     xmppOptions = {
         type: 'client',
@@ -18,7 +19,7 @@ const UserDevice = require('./models/userdevice'),
         legacySSL: true,
     };
 
-let xmppClient, gcmSender, gcm;
+let xmppClient, firebaseClient, gcm;
 
 const ACK_MESSAGE_TYPE = 'ack';
 const NACK_MESSAGE_TYPE = 'nack';
@@ -26,9 +27,8 @@ const NACK_MESSAGE_TYPE = 'nack';
 logger.info('openHAB-cloud: Initializing XMPP connection to GCM');
 xmppClient = new xmpp.Client(xmppOptions);
 
-gcmSender = require('./gcmsender.js');
+firebaseClient = new Firebase(system.getGcmPassword());
 
-gcm = require('node-gcm');
 xmppClient.on('online', function() {
     logger.info('openHAB-cloud: GCM XMPP connection is online');
 });
@@ -75,9 +75,9 @@ function hideNotificationInfo(messageData) {
         }
 
         UserDevice.find({owner: userDevice.owner}, function (error, userDevices) {
-            let gcmMessage;
+            let data, options;
 
-            // TODO: now send hideNotification message to all devices except the source one
+            // TODO: now send hideNotification data to all devices except the source one
             const registrationIds = [];
             for (let i = 0; i < userDevices.length; i++) {
                 const uDevice = userDevices[i];
@@ -89,16 +89,17 @@ function hideNotificationInfo(messageData) {
             if (registrationIds.length < 0) {
                 return;
             }
-            gcmMessage = new gcm.Message({
-                delayWhileIdle: false,
-                data: {
-                    type: 'hideNotification',
-                    notificationId: messageData.data.notificationId
-                }
-            });
-            gcmSender.send(gcmMessage, registrationIds, 4, function (err) {
-                if (err) {
-                    logger.error('openHAB-cloud: GCM send error: ' + err);
+
+            options = {
+                delay_while_idle: false
+            };
+            data = {
+                type: 'hideNotification',
+                notificationId: messageData.data.notificationId
+            };
+            firebaseClient.message(registrationIds, data, options, function (result) {
+                if (result.failure) {
+                    logger.error('openHAB-cloud: GCM send error: ' + result);
                 }
             });
         });
