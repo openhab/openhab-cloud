@@ -7,7 +7,7 @@ const system = require('./system');
 
 const UserDevice = require('./models/userdevice'),
     UserDeviceLocationHistory = require('./models/userdevicelocationhistory'),
-    xmpp = require('node-xmpp'),
+    xmpp = require('node-xmpp-client'),
     logger = require('./logger.js'),
     xmppOptions = {
         type: 'client',

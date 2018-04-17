@@ -38,7 +38,7 @@
     "mongoose-types": "1.0.3",
     "morgan": "^1.8.2",
     "node-gcm": "0.14.4",
-    "node-xmpp": "1.0.8",
+    "node-xmpp-client": "3.2.0",
     "nodemailer": "4.0.1",
     "oauth2orize": "1.0.1",
     "passport": "0.1.18",
