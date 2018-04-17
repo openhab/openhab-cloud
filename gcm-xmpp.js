@@ -1,11 +1,11 @@
-var system = require('./system');
+const system = require('./system');
 
-/*
- This module maintains XMPP connection to GCM to receive messages from Android
- app.
+/**
+ * This module maintains XMPP connection to GCM to receive messages from Android
+ * app.
  */
 
-var UserDevice = require('./models/userdevice'),
+const UserDevice = require('./models/userdevice'),
     UserDeviceLocationHistory = require('./models/userdevicelocationhistory'),
     xmpp = require('node-xmpp'),
     logger = require('./logger.js'),
@@ -14,113 +14,126 @@ var UserDevice = require('./models/userdevice'),
         jid: system.getGcmJid(),
         password: system.getGcmPassword(),
         port: 5235,
-        host: 'gcm.googleapis.com',
+        host: 'fcm-xmpp.googleapis.com',
         legacySSL: true,
-        preferredSaslMechanism : 'PLAIN'
-    },
-    xmppClient, gcmSender, gcm;
+    };
+
+let xmppClient, gcmSender, gcm;
+
+const ACK_MESSAGE_TYPE = 'ack';
+const NACK_MESSAGE_TYPE = 'nack';
 
 logger.info('openHAB-cloud: Initializing XMPP connection to GCM');
-
 xmppClient = new xmpp.Client(xmppOptions);
-gcmSender = require('./gcmsender.js');
-gcm = require('node-gcm');
 
+gcmSender = require('./gcmsender.js');
+
+gcm = require('node-gcm');
 xmppClient.on('online', function() {
     logger.info('openHAB-cloud: GCM XMPP connection is online');
 });
 
+function updateLocationOfDevice(messageData) {
+    logger.info('openHAB-cloud: This is a location message');
+    UserDevice.findOne({androidRegistration: messageData.from}, function (error, userDevice) {
+        let newLocation;
+
+        if (error) {
+            logger.warn('openHAB-cloud: Error finding user device: ' + error);
+            return;
+        }
+        if (!userDevice) {
+            logger.warn('openHAB-cloud: Unable to find user device with reg id = ' + messageData.from);
+            return;
+        }
+
+        userDevice.globalLocation = [messageData.data.latitude, messageData.data.longitude];
+        userDevice.globalAccuracy = messageData.data.accuracy;
+        userDevice.globalAltitude = messageData.data.altitude;
+        userDevice.lastGlobalLocation = new Date(messageData.data.timestamp);
+        userDevice.save();
+        newLocation = new UserDeviceLocationHistory({userDevice: userDevice.id});
+        newLocation.globalLocation = [messageData.data.latitude, messageData.data.longitude];
+        newLocation.when = new Date(messageData.data.timestamp);
+        newLocation.globalAltitude = messageData.data.altitude;
+        newLocation.globalAccuracy = messageData.data.accuracy;
+        newLocation.save();
+    });
+}
+
+function hideNotificationInfo(messageData) {
+    logger.info('openHAB-cloud: This is hideNotification message');
+    UserDevice.findOne({androidRegistration: messageData.from}, function (error, userDevice) {
+        if (error) {
+            logger.warn('openHAB-cloud: Error finding user device: ' + error);
+            return;
+        }
+
+        if (!userDevice) {
+            logger.warn('openHAB-cloud: Unable to find user device with reg id = ' + messageData.from);
+            return;
+        }
+
+        UserDevice.find({owner: userDevice.owner}, function (error, userDevices) {
+            let gcmMessage;
+
+            // TODO: now send hideNotification message to all devices except the source one
+            const registrationIds = [];
+            for (let i = 0; i < userDevices.length; i++) {
+                const uDevice = userDevices[i];
+                // Skip the device which sent notification hide itself
+                if (uDevice.androidRegistration !== userDevice.androidRegistration) {
+                    registrationIds.push(uDevice.androidRegistration);
+                }
+            }
+            if (registrationIds.length < 0) {
+                return;
+            }
+            gcmMessage = new gcm.Message({
+                delayWhileIdle: false,
+                data: {
+                    type: 'hideNotification',
+                    notificationId: messageData.data.notificationId
+                }
+            });
+            gcmSender.send(gcmMessage, registrationIds, 4, function (err) {
+                if (err) {
+                    logger.error('openHAB-cloud: GCM send error: ' + err);
+                }
+            });
+        });
+    });
+}
 
 xmppClient.on('stanza', function(stanza) {
-    if (stanza.is('message') && stanza.attrs.type !== 'error') {
-        var messageData = JSON.parse(stanza.getChildText('gcm'));
+    if (!stanza.is('message') || stanza.attrs.type === 'error') {
+        return;
+    }
 
-        logger.info('openHAB-cloud: GCM XMPP received message');
+    logger.info('openHAB-cloud: GCM XMPP received message');
 
-        if (messageData && messageData.message_type !== 'ack' && messageData.message_type !== 'nack') {
-            var ackMsg = new xmpp.Element('message')
-                .c('gcm', { xmlns: 'google:mobile:data' })
-                .t(JSON.stringify({
-                    'to':messageData.from,
-                    'message_id': messageData.message_id,
-                    'message_type':'ack'
-                }));
+    const messageData = JSON.parse(stanza.getChildText('gcm'));
+    if (messageData && messageData.message_type === ACK_MESSAGE_TYPE || messageData.message_type === NACK_MESSAGE_TYPE) {
+        return;
+    }
 
-            xmppClient.send(ackMsg);
+    const ackMsg = new xmpp.Element('message')
+        .c('gcm', { xmlns: 'google:mobile:data' })
+        .t(JSON.stringify({
+            'to': messageData.from,
+            'message_id': messageData.message_id,
+            'message_type': ACK_MESSAGE_TYPE
+        }));
 
-            logger.info('openHAB-cloud: GCM XMPP ack sent');
-            if (messageData.data.type === 'location') {
-                logger.info('openHAB-cloud: This is a location message');
-                UserDevice.findOne({androidRegistration: messageData.from}, function (error, userDevice) {
-                    var newLocation;
+    xmppClient.send(ackMsg);
 
-                    if (error) {
-                        logger.warn('openHAB-cloud: Error finding user device: ' + error);
-                        return;
-                    }
-                    if (!userDevice) {
-                        logger.warn('openHAB-cloud: Unable to find user device with reg id = ' + messageData.from);
-                        return;
-                    }
+    logger.info('openHAB-cloud: GCM XMPP ack sent');
+    if (messageData.data.type === 'location') {
+        updateLocationOfDevice(messageData);
+    }
 
-                    userDevice.globalLocation = [messageData.data.latitude, messageData.data.longitude];
-                    userDevice.globalAccuracy = messageData.data.accuracy;
-                    userDevice.globalAltitude = messageData.data.altitude;
-                    userDevice.lastGlobalLocation = new Date(messageData.data.timestamp);
-                    userDevice.save();
-                    newLocation = new UserDeviceLocationHistory({userDevice: userDevice.id});
-                    newLocation.globalLocation = [messageData.data.latitude, messageData.data.longitude];
-                    newLocation.when = new Date(messageData.data.timestamp);
-                    newLocation.globalAltitude = messageData.data.altitude;
-                    newLocation.globalAccuracy = messageData.data.accuracy;
-                    newLocation.save();
-                });
-            } else if (messageData.data.type === 'hideNotification') {
-                logger.info('openHAB-cloud: This is hideNotification message');
-                UserDevice.findOne({androidRegistration: messageData.from}, function (error, userDevice) {
-                    if (error) {
-                        logger.warn('openHAB-cloud: Error finding user device: ' + error);
-                        return;
-                    }
-
-                    if (!userDevice) {
-                        logger.warn('openHAB-cloud: Unable to find user device with reg id = ' + messageData.from);
-                        return;
-                    }
-
-                    UserDevice.find({owner: userDevice.owner}, function (error, userDevices) {
-                        var gcmMessage;
-
-                        // TODO: now send hideNotification message to all devices except the source one
-                        var registrationIds = [];
-                        for (var i=0; i<userDevices.length; i++) {
-                            var uDevice = userDevices[i];
-                            // Skip the device which sent notification hide itself
-                            if (uDevice.androidRegistration !== userDevice.androidRegistration) {
-                                registrationIds.push(uDevice.androidRegistration);
-                            }
-                        }
-                        if (registrationIds.length < 0) {
-                            return;
-                        }
-                        gcmMessage = new gcm.Message({
-                            delayWhileIdle: false,
-                            data: {
-                                type: 'hideNotification',
-                                notificationId: messageData.data.notificationId
-                            }
-                        });
-                        gcmSender.send(gcmMessage, registrationIds, 4, function (err, result) {
-                            if (err) {
-                                logger.error('mopenHAB-cloud: GCM send error: ' + err);
-                            }
-                        });
-                    });
-                });
-            }
-        } else {
-            logger.info('openHAB-cloud: GCM XMPP message is ack or nack, ignoring');
-        }
+    if (messageData.data.type === 'hideNotification') {
+        hideNotificationInfo(messageData);
     }
 });
 
