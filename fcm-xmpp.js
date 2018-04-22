@@ -1,7 +1,7 @@
 const system = require('./system');
 
 /**
- * This module maintains XMPP connection to GCM to receive messages from Android
+ * This module maintains XMPP connection to FCM to receive messages from Android
  * app.
  */
 

@@ -54,7 +54,7 @@ logger.info('openHAB-cloud: Backend logging initialized...');
 // Initialize the main configuration
 var taskEnv = process.env.TASK || 'main';
 
-// If Google Cloud Messaging is configured set it up
+// If Firebase Cloud Messaging is configured set it up
 if (system.isGcmConfigured()) {
     require('./fcm-xmpp');
 }
