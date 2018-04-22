@@ -47,7 +47,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-qunit-node');
     grunt.loadNpmTasks('grunt-mocha-test');
 
-    grunt.registerTask('mocha', ['express', 'mochaTest'])
+    grunt.registerTask('mocha', ['express', 'mochaTest']);
     grunt.registerTask('default', ['qunit-node', 'mocha']);
 
 };
