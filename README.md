@@ -23,10 +23,10 @@ provides an OAuth2 application enablement.
 openHAB Cloud is mainly based on the following frameworks and technologies:
 
 
-* [Node.js](https://nodejs.org/en/) - Server-side Javascript-framework
+* [Node.js](https://nodejs.org/en/) - Server-side Javascript-framework (>= 7.0.0)
 * [Express.js](http://expressjs.com/) - Web application framework for Node.js
 * [Nginx](https://www.nginx.com/resources/wiki/) - Web server & reverse proxy
-* [MongoDB](https://www.mongodb.com/) - NoSQL database
+* [MongoDB](https://www.mongodb.com/) - NoSQL database (>= 3.0.0)
 * [redis](http://redis.io) - Session Manager & data structure server
 * [Socket.IO](http://socket.io/) - Bi-directional communication between web clients and servers
 
