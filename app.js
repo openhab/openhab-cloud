@@ -682,66 +682,71 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('broadcastnotification', function (data) {
-        var self = this;
-        Openhab.findById(self.openhabId, function (error, openhab) {
+        Openhab.findById(this.openhabId, function (error, openhab) {
             if (error) {
                 logger.error('openHAB-cloud: openHAB lookup error: ' + error);
                 return;
             }
             if (!openhab) {
                 logger.debug('openHAB-cloud: openHAB not found');
+                return;
             }
 
             User.find({
                 account: openhab.account
             }, function (error, users) {
-                if (!error && users) {
-                    for (var i = 0; i < users.length; i++) {
-                        sendNotificationToUser(users[i], data.message, data.icon, data.severity);
-                    }
-                } else {
-                    if (error) {
-                        logger.error('openHAB-cloud: Error getting users list: ' + error);
-                    } else {
-                        logger.debug('openHAB-cloud: No users found for openHAB');
-                    }
+                if (error) {
+                    logger.error('openHAB-cloud: Error getting users list: ' + error);
+                    return;
+                }
+
+                if (!users) {
+                    logger.debug('openHAB-cloud: No users found for openHAB');
+                    return;
+                }
+
+                for (var i = 0; i < users.length; i++) {
+                    sendNotificationToUser(users[i], data.message, data.icon, data.severity);
                 }
             });
         });
     });
 
     socket.on('lognotification', function (data) {
-        var self = this;
-        Openhab.findById(self.openhabId, function (error, openhab) {
+        Openhab.findById(this.openhabId, function (error, openhab) {
             if (error) {
                 logger.error('openHAB lookup error: ' + error);
+                return;
             }
             if (!openhab) {
                 logger.debug('openHAB not found');
+                return;
             }
             User.find({
                 account: openhab.account
             }, function (error, users) {
-                if (!error && users) {
-                    for (var i = 0; i < users.length; i++) {
-                        newNotification = new Notification({
-                            user: users[i].id,
-                            message: data.message,
-                            icon: data.icon,
-                            severity: data.severity
-                        });
-                        newNotification.save(function (error) {
-                            if (error) {
-                                logger.error('Error saving notification: ' + error);
-                            }
-                        });
-                    }
-                } else {
-                    if (error) {
-                        logger.error('Error getting users list: ' + error);
-                    } else {
-                        logger.debug('No users found for openhab');
-                    }
+                if (error) {
+                    logger.error('openHAB-cloud: Error getting users list: ' + error);
+                    return;
+                }
+
+                if (!users) {
+                    logger.debug('openHAB-cloud: No users found for openHAB');
+                    return;
+                }
+
+                for (var i = 0; i < users.length; i++) {
+                    newNotification = new Notification({
+                        user: users[i].id,
+                        message: data.message,
+                        icon: data.icon,
+                        severity: data.severity
+                    });
+                    newNotification.save(function (error) {
+                        if (error) {
+                            logger.error('Error saving notification: ' + error);
+                        }
+                    });
                 }
             });
         });
