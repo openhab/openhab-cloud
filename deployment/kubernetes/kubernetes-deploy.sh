@@ -24,7 +24,7 @@ echo DEPLOYING OPENHAB-CLOUD TO KUBERNETES
 
 # Creating the openHAB-cloud namespace
 
-kubectl create namespace $NS
+kubectl create namespace $KUBERNETES_NAMESPACE
 
 # Creating a service account in the namespace
 
