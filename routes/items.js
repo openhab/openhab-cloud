@@ -3,7 +3,7 @@ var Openhab = require('../models/openhab');
 var Item = require('../models/item');
 
 exports.itemsget = function(req, res) {
-    switch (req.query.sort) {
+    switch (req.params.sort) {
         default:
         case "name":
             var sortValue = {name: 'asc'};

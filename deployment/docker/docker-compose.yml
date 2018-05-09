@@ -3,8 +3,6 @@ services:
     app-1:
         container_name: app-1
         image: docker.io/openhab/openhabcloud-app
-        volumes:
-        - app-1:/opt/openhabcloud
         working_dir: /opt/openhabcloud
         networks:
         - ohcloud-network
@@ -20,11 +18,11 @@ services:
     mongodb:
         container_name: mongodb
         image: bitnami/mongodb:latest
+        ports:
+        - "27017:27017"
         command: mongod --smallfiles --bind_ip_all
         networks:
         - ohcloud-network
-        ports:
-        - "27017"
         volumes:
         - /data/db
         - /data/configdb
