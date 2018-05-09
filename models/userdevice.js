@@ -11,7 +11,7 @@ var UserDeviceSchema = new Schema({
     iosDeviceToken: {type: String},
     deviceType: {type: String},
     deviceModel: {type: String},
-    deviceId: {type: String},
+    deviceId: {type: String, unique: true},
     globalLocation: {type: [Number], index: '2d'},
     globalAltitude: {type: Number},
     globalAccuracy: {type: Number},
