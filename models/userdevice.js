@@ -7,8 +7,8 @@ var mongoose = require('mongoose'),
 
 var UserDeviceSchema = new Schema({
     owner: {type: ObjectId, required: true},
-    androidRegistration: {type: String},
-    iosDeviceToken: {type: String},
+    androidRegistration: {type: String, unique: true},
+    iosDeviceToken: {type: String, unique: true},
     deviceType: {type: String},
     deviceModel: {type: String},
     deviceId: {type: String, unique: true},

@@ -18,9 +18,17 @@ function deleteDuplicateUserDevices(err, devices) {
 
     logger.info('Found ' + devices.length + ' devices...');
     const alreadyRegisteredDeviceId = [];
+    const alreadyRegisteredAndroidRegistration = [];
+    const alreadyRegisteredIOSToken = [];
     devices.forEach(function(device) {
-        if (!alreadyRegisteredDeviceId.includes(device.deviceId)) {
+        if (
+            !alreadyRegisteredDeviceId.includes(device.deviceId) &&
+            !alreadyRegisteredAndroidRegistration.includes(device.androidRegistration) &&
+            !alreadyRegisteredIOSToken.includes(device.iosDeviceToken)
+        ) {
             alreadyRegisteredDeviceId.push(device.deviceId);
+            alreadyRegisteredAndroidRegistration.push(device.androidRegistration);
+            alreadyRegisteredIOSToken.push(device.iosDeviceToken);
             return;
         }
 
