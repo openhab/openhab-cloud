@@ -16,7 +16,7 @@ module.exports = function (date, timezone) {
         var tz_date;
 
         if (timezone === 'undefined') {
-            timezone = 'UTC';
+            timezone = 'Europe/London';
         }
         tz_date = new time.Date(date);
         tz_date.setTimezone(timezone); // localize the date into the specified timezone
