@@ -477,3 +477,14 @@ http://YOUR-AWS-EC2-PUBLIC-DNS
 ```
 
 You should be ready with your openHAB Cloud installation!
+
+# Release-Notes
+## 1.0.5
+* When upgrading from older versions, please run the `./scripts/deleteDuplicateUserDevices.js`
+  script, start openhab-cloud once (and shut it down again) and then execute the following
+  statement in your MongoDB collection:
+  ```
+  use <YOUR_DB>
+  db.userdevices.reIndex()
+  ```
+  This is necessary to ensure a unique index on the collection.
