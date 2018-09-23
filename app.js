@@ -262,10 +262,27 @@ app.use(session({
 app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
+//TODO we need to remove this hack, its leftover from long ago.
+//we need to know if this is a proxy connection or not (home/remote), other middleware depends on it.
+app.use(function (req, res, next) {
+    var host = req.headers.host;
+    //  console.log(host);
+    if (!host) {
+        next(); // No host in header, just go ahead
+    }
+    // If host matches names for full /* proxying, go ahead and just proxy it.
+    if (host.indexOf('remote.') === 0 || host.indexOf('home.') === 0) {
+      //make sure this was not set by another server
+      if(req.url.indexOf('/remote') != 0){
+        req.url = '/remote' + req.url;
+      }
+    }
+    next();
+});
 app.use(function (req, res, next) {
     var csrf = csurf();
-    // Check if url needs csrf
-    if (!req.path.match('/rest*') && !req.path.match('/oauth2/token') && !req.path.match('/ifttt/*'))
+    // Check if url needs csrf, remote connections and REST connections are excluded from CSRF
+    if (!req.path.match('/rest*') && !req.path.match('/oauth2/token') && !req.path.match('/ifttt/*') && !req.path.match('/remote/*'))
         csrf(req, res, next);
     else
         next();
@@ -323,21 +340,7 @@ app.use(function (req, res, next) {
     res.locals.registration_enabled = system.isUserRegistrationEnabled();
     next();
 });
-app.use(function (req, res, next) {
-    var host = req.headers.host;
-    //  console.log(host);
-    if (!host) {
-        next(); // No host in header, just go ahead
-    }
-    // If host matches names for full /* proxying, go ahead and just proxy it.
-    if (host.indexOf('remote.') === 0 || host.indexOf('home.') === 0) {
-      //make sure this was not set by another server
-      if(req.url.indexOf('/remote') != 0){
-        req.url = '/remote' + req.url;
-      }
-    }
-    next();
-});
+
 app.use(serveStatic(path.join(__dirname, 'public')));
 
 var server = app.listen(app.get('port'), function () {
