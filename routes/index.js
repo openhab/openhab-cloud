@@ -14,8 +14,8 @@ var system = require('../system'),
     api_routes = require('./api'),
     oauth2 = require('./oauth2'),
     setSessionTimezone = require('./setTimezone'),
-    AndroidRegistrationService = require('../mobileregistrationservice/AndroidRegistrationService'),
-    AppleRegistrationService = require('../mobileregistrationservice/AppleRegistrationService');
+    androidRegistrationService = require('./androidRegistrationService'),
+    appleRegistrationService = require('./appleRegistrationService');
     ifttt_routes = require('./ifttt');
 
 /**
@@ -232,16 +232,13 @@ Routes.prototype.setupProxyRoutes = function (app) {
 };
 
 Routes.prototype.setupAppRoutes = function (app) {
-    var appleRegistration = new AppleRegistrationService(this.logger),
-        androidRegistration = new AndroidRegistrationService(this.logger);
-
     // myOH API for mobile apps
     app.all('/api/v1/notifications*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, api_routes.notificationsget);
     app.all('/api/v1/settings/notifications', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, api_routes.notificationssettingsget);
 
     // Android app registration
-    app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, androidRegistration.register.bind(androidRegistration));
-    app.all('/addAppleRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, appleRegistration.register.bind(appleRegistration));
+    app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, androidRegistrationService);
+    app.all('/addAppleRegistration*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, appleRegistrationService);
 };
 
 // Ensure user is authenticated for web requests
