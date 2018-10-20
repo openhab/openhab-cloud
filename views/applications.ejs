@@ -45,7 +45,7 @@
                                 <%= date_util(oauth2tokens[i].created, timeZone).calendar() %>
                             </td>
                             <td>
-                                <a href="<% oauth2tokens[i].oAuthClient.homeUrl %>"><img style="height: 24px;" src="/img/oauth2/<%= oauth2tokens[i].oAuthClient.icon %>"><%= oauth2tokens[i].oAuthClient.name %></a>
+                                <a href="<% oauth2tokens[i].oAuthClient.homeUrl %>"><img style="height: 24px;" src="/img/oauth2/<%= oauth2tokens[i].oAuthClient.icon %>">&nbsp;<%= oauth2tokens[i].oAuthClient.name %></a>
                             </td>
                             <td>
                                 <%= oauth2tokens[i].oAuthClient.description %>

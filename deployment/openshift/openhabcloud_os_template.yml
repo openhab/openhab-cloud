@@ -1,0 +1,379 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: app-1
+    name: app-1
+  spec:
+    ports:
+    - name: "3000"
+      port: 3000
+      targetPort: 3000
+    selector:
+      org.openhab.cloud.service: app-1
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: mongodb
+    name: mongodb
+  spec:
+    ports:
+    - name: "27017"
+      port: 27017
+      targetPort: 27017
+    selector:
+      org.openhab.cloud.service: mongodb
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: nginx
+    name: nginx
+  spec:
+    ports:
+    - name: "80"
+      port: 80
+      targetPort: 8081
+    - name: "443"
+      port: 443
+      targetPort: 8443
+    selector:
+      org.openhab.cloud.service: nginx
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: redis
+    name: redis
+  spec:
+    ports:
+    - name: "6379"
+      port: 6379
+      targetPort: 6379
+    selector:
+      org.openhab.cloud.service: redis
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: app-1
+    name: app-1
+  spec:
+    replicas: 1
+    selector:
+      org.openhab.cloud.service: app-1
+    strategy:
+      resources: {}
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          org.openhab.cloud.service: app-1
+      spec:
+        containers:
+        - image: ' '
+          name: app-1
+          ports:
+          - containerPort: 3000
+          resources: {}
+          workingDir: /opt/openhabcloud
+        restartPolicy: Always
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - app-1
+        from:
+          kind: ImageStreamTag
+          name: app-1:latest
+      type: ImageChange
+  status: {}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: app-1
+    name: app-1
+  spec:
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: docker.io/openhab/openhabcloud-app
+      generation: null
+      importPolicy: {}
+      name: latest
+  status:
+    dockerImageRepository: ""
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: mongodb
+    name: mongodb
+  spec:
+    replicas: 1
+    selector:
+      org.openhab.cloud.service: mongodb
+    strategy:
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          org.openhab.cloud.service: mongodb
+      spec:
+        containers:
+        - args:
+          - mongod
+          - --smallfiles
+          - --bind_ip_all
+          image: ' '
+          name: mongodb
+          ports:
+          - containerPort: 27017
+          resources: {}
+          volumeMounts:
+          - mountPath: /data/db
+            name: mongodb-claim0
+          - mountPath: /data/configdb
+            name: mongodb-claim1
+        restartPolicy: Always
+        volumes:
+        - name: mongodb-claim0
+          persistentVolumeClaim:
+            claimName: mongodb-claim0
+        - name: mongodb-claim1
+          persistentVolumeClaim:
+            claimName: mongodb-claim1
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - mongodb
+        from:
+          kind: ImageStreamTag
+          name: mongodb:latest
+      type: ImageChange
+  status: {}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: mongodb
+    name: mongodb
+  spec:
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: bitnami/mongodb:latest
+      generation: null
+      importPolicy: {}
+      name: latest
+  status:
+    dockerImageRepository: ""
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: mongodb-claim0
+    name: mongodb-claim0
+  spec:
+    accessModes:
+    - ReadWriteMany
+    resources:
+      requests:
+        storage: 30Gi
+    volumeName: "pv0002"
+  status: {}
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: mongodb-claim1
+    name: mongodb-claim1
+  spec:
+    accessModes:
+    - ReadWriteMany
+    resources:
+      requests:
+        storage: 5Gi
+    volumeName: "pv0003"
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: nginx
+    name: nginx
+  spec:
+    replicas: 1
+    selector:
+      org.openhab.cloud.service: nginx
+    strategy:
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          org.openhab.cloud.service: nginx
+      spec:
+        containers:
+        - image: ' '
+          name: nginx
+          ports:
+          - containerPort: 8081
+          - containerPort: 8443
+          resources: {}
+          volumeMounts:
+          - mountPath: /opt/openhabcloud
+            name: app-1
+        restartPolicy: Always
+        volumes:
+        - name: app-1
+          persistentVolumeClaim:
+            claimName: app-1
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - nginx
+        from:
+          kind: ImageStreamTag
+          name: nginx:latest
+      type: ImageChange
+  status: {}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: nginx
+    name: nginx
+  spec:
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: docker.io/openhab/openhabcloud-nginx
+      generation: null
+      importPolicy: {}
+      name: latest
+  status:
+    dockerImageRepository: ""
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: app-1
+    name: app-1
+  spec:
+    accessModes:
+    - ReadWriteMany
+    resources:
+      requests:
+        storage: 5Gi
+    volumeName: "pv0001"
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: redis
+    name: redis
+  spec:
+    replicas: 1
+    selector:
+      org.openhab.cloud.service: redis
+    strategy:
+      resources: {}
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          org.openhab.cloud.service: redis
+      spec:
+        containers:
+        - env:
+          - name: REDIS_PASSWORD
+            value: 123_openHAB
+          image: ' '
+          name: redis
+          ports:
+          - containerPort: 6379
+          resources: {}
+        restartPolicy: Always
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - redis
+        from:
+          kind: ImageStreamTag
+          name: redis:latest
+      type: ImageChange
+  status: {}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    creationTimestamp: null
+    labels:
+      org.openhab.cloud.service: redis
+    name: redis
+  spec:
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: bitnami/redis:latest
+      generation: null
+      importPolicy: {}
+      name: latest
+  status:
+    dockerImageRepository: ""
+kind: List
+metadata: {}
+
