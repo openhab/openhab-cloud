@@ -344,12 +344,16 @@ app.use(function (req, res, next) {
 
 app.use(serveStatic(path.join(__dirname, 'public')));
 
-var server = app.listen({
-        host:app.get('host'),
-        port:app.get('port')
-    }, function () {
-    logger.info('openHAB-cloud: express server listening on ' +app.get('host') + ':' + app.get('port'));
+var server_params = {port:app.get('port')};
+
+if (app.get('host') != '0.0.0.0') {
+    server_params.host = app.get('host')
+}
+
+var server = app.listen(server_params, function () {
+    logger.info('openHAB-cloud: express server listening on ' + app.get('host') + ':' + app.get('port'));
 });
+    
 
 var io = require('socket.io').listen(server, {
     logger: logger
