@@ -99,7 +99,14 @@ Routes.prototype.setupLoginLogoutRoutes = function (app) {
         });
     });
 
-    app.post('/login', passport.authenticate('local', {
+    app.post('/login', account_routes.loginpostvalidate, 
+    //use express-form sanitized data for passport  
+    function(req, res, next) {
+        // Populate express-form data back to body before passing it on to Passport.
+        req.body = req.form;
+        next();
+      },
+    passport.authenticate('local', {
         successReturnToOrRedirect: '/',
         failureRedirect: '/login',
         failureFlash: true

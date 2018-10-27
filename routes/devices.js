@@ -58,7 +58,7 @@ exports.devicessendmessage = function(req, res) {
     } else {
         logger.info("openHAB-cloud: sending message to device " + req.params.id);
         var sendMessageDeviceId = mongoose.Types.ObjectId(req.params.id);
-        var message = req.body.messagetext;
+        var message = req.form.messagetext;
         UserDevice.findOne({owner: req.user.id, _id: sendMessageDeviceId}, function (error, sendMessageDevice) {
             if (!error && sendMessageDevice) {
                 if (sendMessageDevice.deviceType == 'ios') {
