@@ -98,7 +98,8 @@ exports.lostpasswordresetget = function(req, res) {
 
 exports.lostpasswordresetpostvalidate = form(
     field("password", "New password").trim().required(),
-    field("password2", "Repeat new password").trim().required()
+    field("password2", "Repeat new password").trim().required(),
+    field("resetCode", "Reset Code").required()
 );
 
 exports.lostpasswordresetpost = function(req, res) {
