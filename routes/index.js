@@ -102,8 +102,8 @@ Routes.prototype.setupLoginLogoutRoutes = function (app) {
     app.post('/login', account_routes.loginpostvalidate, 
     //use express-form sanitized data for passport  
     function(req, res, next) {
-        // Populate express-form data back to body before passing it on to Passport.
-        req.body = req.form;
+        req.body.username = req.form.username;
+        req.body.password = req.form.password;
         next();
       },
     passport.authenticate('local', {
