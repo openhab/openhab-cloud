@@ -33,7 +33,12 @@ exports.lostpasswordget = function(req, res) {
 }
 
 exports.lostpasswordpostvalidate = form(
-    field("email", "E-Mail").trim().isEmail().required()
+    field("email", "E-Mail").trim().toLower().isEmail().required()
+);
+
+exports.loginpostvalidate = form(
+    field("username", "E-Mail").trim().toLower().isEmail().required(),
+    field("password", "Password").trim().required()
 );
 
 exports.lostpasswordpost = function(req, res) {
@@ -42,7 +47,7 @@ exports.lostpasswordpost = function(req, res) {
 //            errormessages:req.flash('error'), infomessages:req.flash('info')});
         res.redirect('/lostpassword');
     } else {
-        User.findOne({username: req.body.email}, function(error, lostUser) {
+        User.findOne({username: req.form.email}, function(error, lostUser) {
             // resetSuccess indicates, if there's no technical error, only, it doesn't mean, thatan account with the e-mail address exists.
             var resetSuccess = true;
 
@@ -93,16 +98,17 @@ exports.lostpasswordresetget = function(req, res) {
 
 exports.lostpasswordresetpostvalidate = form(
     field("password", "New password").trim().required(),
-    field("password2", "Repeat new password").trim().required()
+    field("password2", "Repeat new password").trim().required(),
+    field("resetCode", "Reset Code").required()
 );
 
 exports.lostpasswordresetpost = function(req, res) {
     if (!req.form.isValid) {
-        res.redirect('/lostpasswordreset?resetCode=' + req.body.resetCode);
+        res.redirect('/lostpasswordreset?resetCode=' + req.form.resetCode);
     } else {
-        if (req.body.password != req.body.password2) {
+        if (req.form.password != req.form.password2) {
             req.flash('error', 'Passwords don\'t match');
-            res.redirect('/lostpasswordreset?resetCode=' + req.body.resetCode);
+            res.redirect('/lostpasswordreset?resetCode=' + req.form.resetCode);
         } else {
             LostPassword.findOne({recoveryCode: resetCode, used: false}, function(error, lostPassword) {
                 if (lostPassword && !error) {
@@ -111,7 +117,7 @@ exports.lostpasswordresetpost = function(req, res) {
                             var userPassword, result;
 
                             userPassword = new UserPassword(lostUser);
-                            result = userPassword.setPassword(req.body.password, function(error) {
+                            result = userPassword.setPassword(req.form.password, function(error) {
                                 if (!error) {
                                     lostPassword.used = true;
                                     lostPassword.save();
@@ -125,7 +131,7 @@ exports.lostpasswordresetpost = function(req, res) {
 
                             if (!result) {
                                 UserPassword.printPasswordNotComplexEnoughError(req);
-                                res.redirect('/lostpasswordreset?resetCode=' + req.body.resetCode);
+                                res.redirect('/lostpasswordreset?resetCode=' + req.form.resetCode);
                             }
                         } else {
                             req.flash('error', 'There was an error while processing your request');
@@ -172,8 +178,8 @@ exports.accountpost = function(req, res) {
     } else {
         req.user.openhab(function(error, openhab) {
             if (!error && openhab) {
-                openhab.uuid = req.body.openhabuuid;
-                openhab.secret = req.body.openhabsecret;
+                openhab.uuid = req.form.openhabuuid;
+                openhab.secret = req.form.openhabsecret;
                 openhab.save();
                 req.flash('info', 'openHAB settings successfully updated');
                 res.redirect('/account');
@@ -195,14 +201,14 @@ exports.accountpasswordpost = function(req, res) {
     }
 
     // first check, if both new passwords match each other
-    if (req.body.password !== req.body.password1) {
+    if (req.form.password !== req.form.password1) {
         req.flash('error', 'Passwords don\'t match');
         res.redirect('/account');
         return;
     }
 
     // make sure, that the old password is correct before changing it
-    req.user.checkPassword(req.body.oldpassword, function (err, isCorrect) {
+    req.user.checkPassword(req.form.oldpassword, function (err, isCorrect) {
         if (err) {
             req.flash('error', 'Could not check old password due to an unknown authentication error.');
             return;
@@ -216,7 +222,7 @@ exports.accountpasswordpost = function(req, res) {
 
         // save the new password and redirect
         userPassword = new UserPassword(req.user);
-        if (!userPassword.setPassword(req.body.password)) {
+        if (!userPassword.setPassword(req.form.password)) {
             UserPassword.printPasswordNotComplexEnoughError(req);
             res.redirect('/account');
         } else {
@@ -342,14 +348,14 @@ exports.accountdeletepost = function(req, res) {
 
 exports.registerpostvalidateall =     form(
     field("agree", "Agreeing to terms and privacy policy").trim().required(),
-    field("username", "Username").trim().isEmail().required(),
+    field("username", "Username").trim().toLower().isEmail().required(),
     field("password", "Password").trim().required(),
     field("openhabuuid", "openHAB UUID").trim().required(),
     field("openhabsecret", "openHAB secret").trim().required()
 );
 
 exports.registerpostvalidate =     form(
-	    field("username", "Username").trim().isEmail().required(),
+	    field("username", "Username").trim().toLower().isEmail().required(),
 	    field("password", "Password").trim().required(),
 	    field("openhabuuid", "openHAB UUID").trim().required(),
 	    field("openhabsecret", "openHAB secret").trim().required()
@@ -366,25 +372,25 @@ exports.registerpost = function(req, res) {
         res.render('login', { title: "Login / Sign up", user: req.user,
             errormessages:req.flash('error'), infomessages:req.flash('info') });
     } else {
-        User.findOne({username: req.body.username.trim().toLowerCase()}, function(err, existingUser) {
+        User.findOne({username: req.form.username}, function(err, existingUser) {
             if (existingUser) {
                 req.flash('error', "A user with this e-mail is already registered.");
                 res.render('login', { title: "Login / Sign up", user: req.user,
                     errormessages:req.flash('error'), infomessages:req.flash('info') });
             } else if (!err) {
-                Openhab.findOne({uuid: req.body.openhabuuid},function(err, existingOpenhab) {
+                Openhab.findOne({uuid: req.form.openhabuuid},function(err, existingOpenhab) {
                     if (existingOpenhab) {
                       req.flash('error', "UUID is already in use on another account.");
                       res.render('login', { title: "Login / Sign up", user: req.user,
                           errormessages:req.flash('error'), infomessages:req.flash('info') });
                     } else {
-                        if (!UserPassword.isComplexEnough(req.body.password)) {
+                        if (!UserPassword.isComplexEnough(req.form.password)) {
                             UserPassword.printPasswordNotComplexEnoughError(req);
                             res.render('login', { title: "Login / Sign up", user: req.user,
                                 errormessages:req.flash('error'), infomessages:req.flash('info') });
                             return;
                         }
-                  User.register(req.body.username, req.body.password, function(err, user) {
+                  User.register(req.form.username, req.form.password, function(err, user) {
                       if (err) {
                           req.flash('error', "An error occured during registration, please contact support");
                           logger.error(err);
@@ -399,8 +405,8 @@ exports.registerpost = function(req, res) {
                                       errormessages:req.flash('error'), infomessages:req.flash('info') });
                               } else {
                                   var openhab = new Openhab({
-                                      account: user.account, uuid: req.body.openhabuuid,
-                                      secret: req.body.openhabsecret
+                                      account: user.account, uuid: req.form.openhabuuid,
+                                      secret: req.form.openhabsecret
                                   });
                                   openhab.save(function (error) {
                                       if (error) {
