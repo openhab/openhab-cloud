@@ -27,21 +27,16 @@ var logger = require('./logger.js'),
 
 //load and set our configuration, delete any cache first
 var loadConfig = function() {
-  if (env !== 'development') {
-      delete require.cache[require.resolve('./config.json')];
-      config = require('./config.json');
-  } else {
-      delete require.cache[require.resolve('./config-development.json')];
-      config = require('./config-development.json');
-  }
-  system.setConfiguration(config);
+    delete require.cache[require.resolve('./config.json')];
+    config = require('./config.json');
+    system.setConfiguration(config);
 }
 
 loadConfig();
 
 var internalAddress = system.getInternalAddress();
 
-require('heapdump');
+//require('heapdump');
 
 logger.info('openHAB-cloud: Backend service is starting up...');
 
@@ -227,8 +222,8 @@ app.set('port', process.env.PORT || 3000);
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(favicon(__dirname + '/public/img/favicon.ico'));
-if (config.system.logging && config.system.logging === 'debug')
-    app.use(morgan('dev'));
+if (system.getLoggerMorganOption())
+    app.use(system.getLoggerMorganOption());
 
 app.use(bodyParser.json({verify:function(req,res,buf){req.rawBody=buf}}))
 app.use(bodyParser.urlencoded({
@@ -343,8 +338,8 @@ app.use(function (req, res, next) {
 
 app.use(serveStatic(path.join(__dirname, 'public')));
 
-var server = app.listen(app.get('port'), function () {
-    logger.info('openHAB-cloud: express server listening on port ' + app.get('port'));
+var server = app.listen(system.getNodeProcessPort(), function () {
+    logger.info('openHAB-cloud: express server listening on port ' + system.getNodeProcessPort());
 });
 
 var io = require('socket.io').listen(server, {

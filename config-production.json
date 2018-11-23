@@ -3,7 +3,12 @@
       "host": "<your-openhab-cloud-host>",
       "port": "443",
       "protocol": "https",
-      "logging": "info",
+      "logger" : {
+        "dir": "./logs",
+        "maxFiles" : "7d",
+        "level" : "debug",
+        "morganOption" : null
+      },
       "subDomainCookies": false,
       "muteNotifications": false
     },
