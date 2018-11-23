@@ -345,6 +345,7 @@ Routes.prototype.preassembleBody = function(req, res, next) {
 Routes.prototype.proxyRouteOpenhab = function (req, res) {
     var self = this;
 
+    this.logger.auditRequest(req);
     req.connection.setTimeout(600000);
 
     if (req.openhab.status === 'offline') {
