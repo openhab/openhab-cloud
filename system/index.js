@@ -98,6 +98,14 @@ System.prototype.getPort = function() {
 };
 
 /**
+ * Returns the port the node process shoud listen on.
+ * @returns {int}
+ */
+System.prototype.getNodeProcessPort = function() {
+    return process.env.PORT || 3000
+};
+
+/**
  * Returns the configured protocol to use for this app instance.
  * @returns {String}
  */
@@ -316,6 +324,54 @@ System.prototype.getDbName = function() {
  */
 System.prototype.getInternalAddress = function() {
   return process.env.HOST + ":" + process.env.PORT;
+};
+
+/**
+ * Returns the logging level used for winston. Defaults to 'debug'
+ */
+System.prototype.getLoggerLevel = function() {
+    try {
+        return this.getConfig(['system', 'logger', 'level']);
+    } catch (e) {
+        return 'debug';
+    }
+};
+
+/**
+ * Returs the directory logs should be written to.  Defaults to './log/'
+ */
+System.prototype.getLoggerDir = function() {
+    try {
+        let dir = this.getConfig(['system', 'logger', 'dir']);
+        if(!dir.endsWith('/')){
+            dir += '/'
+        }
+        return dir;
+    } catch (e) {
+        return './logs/';
+    }
+};
+
+/**
+ * Returns the max number of days logs should be retained for.  Defaults to '7d' (7 days)
+ */
+System.prototype.getLoggerMaxFiles = function() {
+    try {
+        return this.getConfig(['system', 'logger', 'maxFiles']);
+    } catch (e) {
+        return '7d';
+    }
+};
+
+/**
+ * Returns the morgan request logger option.  Defaults to null (disables morgan logging)
+ */
+System.prototype.getLoggerMorganOption = function() {
+    try {
+        return this.getConfig(['system', 'logger', 'morgan']);
+    } catch (e) {
+        return null;
+    }
 };
 
 module.exports = new System();

@@ -10,8 +10,6 @@ var gcm = require('node-gcm');
 var gcmSender = require('../gcmsender.js')
     , appleSender = require('../aps-helper');
 var redis = require('../redis-helper');
-var form = require('express-form'),
-    field = form.field;
 var OAuth2Token = require('../models/oauth2token');
 
 exports.applicationsget = function(req, res) {

@@ -3,7 +3,12 @@
         "host": "<your-openhab-cloud-host>",
         "port": "443",
         "protocol": "https",
-        "logging": "debug"
+        "logger" : {
+            "dir": "./logs",
+            "maxFiles" : "7d",
+            "level" : "debug",
+            "morganOption" : "dev"
+          }
     },
     "express":{
       "key" : "some express key"

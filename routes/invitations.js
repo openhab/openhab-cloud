@@ -21,7 +21,7 @@ exports.invitationspost = function(req, res) {
             res.redirect('/invitations');
         });
     } else {
-        Invitation.send(req.body.email, function(error, invite) {
+        Invitation.send(req.form.email, function(error, invite) {
             if (!error && invite) {
                 req.flash('info', 'Invitation sent!');
                 res.redirect('/invitations');

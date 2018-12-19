@@ -99,7 +99,14 @@ Routes.prototype.setupLoginLogoutRoutes = function (app) {
         });
     });
 
-    app.post('/login', passport.authenticate('local', {
+    app.post('/login', account_routes.loginpostvalidate, 
+    //use express-form sanitized data for passport  
+    function(req, res, next) {
+        req.body.username = req.form.username;
+        req.body.password = req.form.password;
+        next();
+      },
+    passport.authenticate('local', {
         successReturnToOrRedirect: '/',
         failureRedirect: '/login',
         failureFlash: true
@@ -338,6 +345,7 @@ Routes.prototype.preassembleBody = function(req, res, next) {
 Routes.prototype.proxyRouteOpenhab = function (req, res) {
     var self = this;
 
+    this.logger.auditRequest(req);
     req.connection.setTimeout(600000);
 
     if (req.openhab.status === 'offline') {
