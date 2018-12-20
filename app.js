@@ -339,7 +339,7 @@ app.use(function (req, res, next) {
 
 app.use(serveStatic(path.join(__dirname, 'public')));
 
-var server_params = {system.getNodeProcessPort()};
+var server_params = {'port': system.getNodeProcessPort()};
 
 if (app.get('host') != '0.0.0.0') {
     server_params.host = app.get('host')
