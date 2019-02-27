@@ -1,6 +1,6 @@
 var apn = require('apn'),
-    app = require('./app'),
-    logger = require('./logger'),
+    app = require('./../app'),
+    logger = require('./../logger'),
     apnConnection = new apn.Connection(app.config.apn);
 
 apnConnection.on('connected', function () {

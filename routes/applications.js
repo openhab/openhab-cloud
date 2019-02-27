@@ -1,15 +1,5 @@
-var User = require('../models/user');
-var Openhab = require('../models/openhab');
-var UserDevice = require('../models/userdevice');
 var logger = require('../logger');
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
-var ObjectId = mongoose.SchemaTypes.ObjectId;
-var UserDeviceLocationHistory = require('../models/userdevicelocationhistory');
-var gcm = require('node-gcm');
-var gcmSender = require('../gcmsender.js')
-    , appleSender = require('../aps-helper');
-var redis = require('../redis-helper');
+var mongoose = require('mongoose');
 var OAuth2Token = require('../models/oauth2token');
 
 exports.applicationsget = function(req, res) {
@@ -38,4 +28,4 @@ exports.applicationsdelete = function(req, res) {
         }
         res.redirect('/applications');
     });
-}
+};
