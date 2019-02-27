@@ -20,7 +20,7 @@ exports.sendNotification = function(registrationIds, message) {
         };
         firebaseClient.message(registrationIds, data, firebaseOptions, function (result) {
             if (result.failure) {
-                logger.error("openHAB-cloud: GCM send error: " + err);
+                logger.error("openHAB-cloud: GCM send error: " + JSON.stringify(result));
             }
         });
     });
