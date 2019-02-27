@@ -54,9 +54,9 @@ logger.info('openHAB-cloud: Backend logging initialized...');
 // Initialize the main configuration
 var taskEnv = process.env.TASK || 'main';
 
-// If Google Cloud Messaging is configured set it up
+// If Firebase Cloud Messaging is configured set it up
 if (system.isGcmConfigured()) {
-    require('./gcm-xmpp');
+    require('./fcm-xmpp');
 }
 
 module.exports.config = config;
@@ -71,6 +71,7 @@ var flash = require('connect-flash'),
     cookieParser = require('cookie-parser'),
     session = require('express-session'),
     favicon = require('serve-favicon'),
+    firebase = require('./notificationsender/firebase');
     csurf = require('csurf'),
     serveStatic = require('serve-static'),
     homepage = require('./routes/homepage'),
@@ -83,17 +84,13 @@ var flash = require('connect-flash'),
     redis = require('./redis-helper'),
     moment = require('moment'),
     date_util = require('./date_util.js'),
-    appleSender = require('./aps-helper'),
+    appleSender = require('./notificationsender/aps-helper'),
     oauth2 = require('./routes/oauth2'),
     auth = require('./auth.js'),
     Limiter = require('ratelimiter'),
     requesttracker = require('./requesttracker'),
     routes = require('./routes'),
     MongoConnect = require('./system/mongoconnect');
-
-// Setup Google Cloud Messaging component
-var gcm = require('node-gcm');
-var gcmSender = require('./gcmsender.js');
 
 // MongoDB connection settings
 var mongoose = require('mongoose');
@@ -386,7 +383,7 @@ function sendNotificationToUser(user, message, icon, severity) {
         }
         // If we found any android devices, send notification
         if (androidRegistrations.length > 0) {
-            sendAndroidNotifications(androidRegistrations, message);
+            firebase.sendNotification(androidRegistrations, message);
         }
         // If we found any ios devices, send notification
         if (iosDeviceTokens.length > 0) {
@@ -401,27 +398,6 @@ function sendIosNotifications(iosDeviceTokens, message) {
             appleSender.sendAppleNotification(iosDeviceTokens[i], message);
         }
     }
-}
-
-function sendAndroidNotifications(registrationIds, message) {
-    redis.incr('androidNotificationId', function (error, androidNotificationId) {
-        if (!config.gcm || error) {
-            return;
-        }
-        var gcmMessage = new gcm.Message({
-            delayWhileIdle: false,
-            data: {
-                type: 'notification',
-                notificationId: androidNotificationId,
-                message: message
-            }
-        });
-        gcmSender.send(gcmMessage, registrationIds, 4, function (err, result) {
-            if (err) {
-                logger.error('openHAB-cloud: GCM send error: ' + err);
-            }
-        });
-    });
 }
 
 // In case of polling transport set poll duration to 300 seconds
