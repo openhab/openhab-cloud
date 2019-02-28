@@ -64,7 +64,7 @@ exports.devicessendmessage = function(req, res) {
                     appleSender.sendAppleNotification(sendMessageDevice.iosDeviceToken, message);
                 }
                 if (sendMessageDevice.deviceType == 'android') {
-                    firebase.sendNotification(sendMessageDevice.androidRegistration, message);
+                    firebase.sendMessageNotification(sendMessageDevice.androidRegistration, message);
                 }
                 req.flash('info', 'Your message was sent');
                 res.redirect('/devices/' + sendMessageDevice._id);

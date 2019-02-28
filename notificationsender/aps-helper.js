@@ -37,9 +37,9 @@ module.exports.test = function (deviceToken) {
     apnConnection.pushNotification(note, myDevice);
 }
 
-module.exports.sendAppleNotification = function (deviceToken, message) {
+module.exports.sendAppleNotification = function (deviceToken, message, payload) {
     var myDevice = new apn.Device(deviceToken);
-    var note = new apn.Notification();
+    var note = new apn.Notification(payload);
     note.expiry = Math.floor(Date.now() / 1000) + 3600; // Expires 1 hour from now.
     note.badge = 0;
     note.sound = 'ping.aiff';
