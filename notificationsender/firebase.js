@@ -7,23 +7,39 @@ const firebaseOptions = {
     delay_while_idle: false
 };
 
-exports.sendNotification = function(registrationIds, message) {
+function sendNotificationWithData(registrationIds, data) {
     redis.incr("androidNotificationId", function(error, androidNotificationId) {
         if (error) {
             return;
         }
 
-        const data = {
-            type: 'notification',
-            notificationId: androidNotificationId,
-            message: message,
-        };
+        data.type = 'notification';
+        data.notificationId = androidNotificationId;
         firebaseClient.message(registrationIds, data, firebaseOptions, function (result) {
             if (result.failure) {
                 logger.error("openHAB-cloud: GCM send error: " + JSON.stringify(result));
             }
         });
     });
+};
+
+exports.sendMessageNotification = function(registrationIds, message) {
+    var data = {
+        message: message,
+        timestamp: Date.now()
+    };
+    sendNotificationWithData(registrationIds, data);
+};
+
+exports.sendNotification = function(registrationIds, notification) {
+    var data = {
+        message: notification.message,
+        severity: notification.severity,
+        icon: notification.icon,
+        persistedId: notification._id,
+        timestamp: notification.created.getTime()
+    };
+    sendNotificationWithData(registrationIds, data);
 };
 
 exports.hideNotification = function(registrationIds, notificationId) {

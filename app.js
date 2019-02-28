@@ -383,20 +383,27 @@ function sendNotificationToUser(user, message, icon, severity) {
         }
         // If we found any android devices, send notification
         if (androidRegistrations.length > 0) {
-            firebase.sendNotification(androidRegistrations, message);
+            firebase.sendNotification(androidRegistrations, newNotification);
         }
         // If we found any ios devices, send notification
         if (iosDeviceTokens.length > 0) {
-            sendIosNotifications(iosDeviceTokens, message);
+            sendIosNotifications(iosDeviceTokens, newNotification);
         }
     });
 }
 
-function sendIosNotifications(iosDeviceTokens, message) {
+function sendIosNotifications(iosDeviceTokens, notification) {
+    if (!config.apn) {
+        return;
+    }
+    var payload = {
+        severity: notification.severity,
+        icon: notification.icon,
+        persistedId: notification._id,
+        timestamp: notification.created.getTime()
+    };
     for (var i = 0; i < iosDeviceTokens.length; i++) {
-        if (config.apn) {
-            appleSender.sendAppleNotification(iosDeviceTokens[i], message);
-        }
+        appleSender.sendAppleNotification(iosDeviceTokens[i], notification.message, payload);
     }
 }
 
