@@ -6,8 +6,8 @@ var moment = require('moment');
 var system = require('../system');
 
 exports.notificationsget = function(req, res) {
-    var limit = req.query.limit > 0 ? req.query.limit : 10,
-    skip = req.query.skip > 0 ? req.query.skip : 0;
+    var limit = req.query.limit > 0 ? parseInt(req.query.limit) : 10,
+    skip = req.query.skip > 0 ? parseInt(req.query.skip) : 0;
     Notification.find({user: req.user.id}, '-user')
         .limit(limit)
         .skip(skip)
