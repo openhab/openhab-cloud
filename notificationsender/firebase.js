@@ -4,7 +4,8 @@ const logger = require('../logger.js');
 const firebaseClient = new Firebase(system.getGcmPassword());
 
 const firebaseOptions = {
-    delay_while_idle: false
+    delay_while_idle: false,
+    prority: 'high'
 };
 
 function sendNotificationWithData(registrationIds, data) {
