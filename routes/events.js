@@ -6,12 +6,12 @@ var moment = require('moment');
 
 exports.eventsget = function(req, res) {
     var perPage = 20,
-        page = req.params.page > 0 ? req.params.page : 0;
+        page = req.query.page > 0 ? parseInt(req.query.page) : 0;
     req.user.openhab(function(error, openhab) {
         if (!error && openhab != null) {
             var filter = {openhab: openhab};
-            if (req.params.source)
-                filter.source = req.params.source;
+            if (req.query.source)
+                filter.source = req.query.source;
             Event.find(filter)
                 .limit(perPage)
                 .skip(perPage * page)
@@ -20,7 +20,7 @@ exports.eventsget = function(req, res) {
                 .exec(function(error, events) {
                     Event.count().exec(function (err, count) {
                         res.render('events', { events: events, pages: count / perPage, page: page,
-                            title: "Events", user: req.user, openhab: openhab, source: req.params.source,
+                            title: "Events", user: req.user, openhab: openhab, source: req.query.source,
                             errormessages:req.flash('error'), infomessages:req.flash('info') });
                     });
                 });
@@ -33,7 +33,7 @@ exports.eventsget = function(req, res) {
 exports.eventsvaluesget = function(req, res) {
     req.user.openhab(function(error, openhab) {
         if (!error && openhab != null) {
-            var filter = {openhab: openhab, source: req.params.source};
+            var filter = {openhab: openhab, source: req.query.source};
             Event.find(filter).sort({when: 'asc'}).select('when status -_id').exec(function(error, events) {
                 if (!error) {
                     var result = [];

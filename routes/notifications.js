@@ -6,7 +6,7 @@ var moment = require('moment');
 
 exports.notificationsget = function(req, res) {
     var perPage = 20,
-        page = req.params.page > 0 ? req.params.page : 0;
+        page = req.query.page > 0 ? parseInt(req.query.page) : 0;
     req.user.openhab(function(error, openhab) {
         if (!error && openhab != null) {
             var filter = {user: req.user.id};

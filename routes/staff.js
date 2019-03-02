@@ -9,7 +9,7 @@ var redis = require('../redis-helper');
 
 exports.staffget = function(req, res) {
     var perPage = 20,
-        page = req.params.page > 0 ? req.params.page : 0;
+        page = req.query.page > 0 ? parseInt(req.query.page) : 0;
     req.user.openhab(function(error, openhab) {
         if (!error && openhab != null) {
             var filter = {invited: null};
@@ -78,7 +78,7 @@ exports.processenroll = function(req, res) {
 
 exports.invitationsget = function(req, res) {
     var perPage = 20,
-        page = req.params.page > 0 ? req.params.page : 0;
+        page = req.query.page > 0 ? parseInt(req.query.page) : 0;
     req.user.openhab(function(error, openhab) {
         if (!error && openhab != null) {
             if (req.query.hasOwnProperty('email')) {
@@ -142,7 +142,7 @@ exports.deleteinvitation = function(req, res) {
 
 exports.oauthclientsget = function(req, res) {
     var perPage = 20,
-        page = req.params.page > 0 ? req.params.page : 0;
+        page = req.query.page > 0 ? parseInt(req.query.page) : 0;
     req.user.openhab(function(error, openhab) {
         if (!error && openhab != null) {
             OAuth2Client.find()
