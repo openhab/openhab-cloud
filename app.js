@@ -351,7 +351,7 @@ rt.setupRoutes(app);
 function sendNotificationToUser(user, message, icon, severity) {
     var androidRegistrations = [];
     var iosDeviceTokens = [];
-    newNotification = new Notification({
+    var newNotification = new Notification({
         user: user.id,
         message: message,
         icon: icon,
