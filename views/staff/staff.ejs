@@ -56,11 +56,11 @@
                     <% if (pages > 1) { %>
                     <div class="pagination pagination-centered">
                         <ul>
-                            <li <% if (page == 0) {%>class="disabled"<% } %>> <a href="#"> Prev </a> </li>
+                            <% if (page > 0) { %><li> <a href="?page=<%= page-1 %>"> Prev </a> </li><% } %>
                             <% for (var i=0; i <= pages; i++) { %>
                             <li <% if (i == page) {%>class="active"<%}%>> <a href="?page=<%= i %>"><%= i+1 %></a> </li>
                             <% } %>
-                            <li <% if (page == pages) { %>class="disabled"<% } %>> <a href="#"> Next </a> </li>
+                            <% if (page < pages) { %><li> <a href="?page=<%= page+1 %>"> Next </a> </li><% } %>
                         </ul>
                     </div>
                     <% } %>
