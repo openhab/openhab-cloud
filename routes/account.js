@@ -110,7 +110,7 @@ exports.lostpasswordresetpost = function(req, res) {
             req.flash('error', 'Passwords don\'t match');
             res.redirect('/lostpasswordreset?resetCode=' + req.form.resetCode);
         } else {
-            LostPassword.findOne({recoveryCode: resetCode, used: false}, function(error, lostPassword) {
+            LostPassword.findOne({recoveryCode: req.form.resetCode, used: false}, function(error, lostPassword) {
                 if (lostPassword && !error) {
                     User.findOne({_id: lostPassword.user}, function(error, lostUser) {
                         if (lostUser && !error) {
