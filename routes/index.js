@@ -9,6 +9,7 @@ var system = require('../system'),
     notifications_routes = require('./notifications'),
     configsystem_routes = require('./configsystem'),
     invitations_routes = require('./invitations'),
+    user_routes = require('./user'),
     users_routes = require('./users'),
     staff_routes = require('./staff'),
     api_routes = require('./api'),
@@ -212,6 +213,7 @@ Routes.prototype.setupTimezoneRoutes = function (app) {
 
 Routes.prototype.setupApiRoutes = function (app) {
     app.get('/api/events', this.ensureAuthenticated, events_routes.eventsvaluesget);
+    app.get('/api/userid', this.ensureRestAuthenticated, user_routes.useridget);
 };
 
 Routes.prototype.setupProxyRoutes = function (app) {
