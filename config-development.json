@@ -36,7 +36,9 @@
     },
     "ifttt" : {
       "iftttChannelKey" : "key",
-      "iftttTestToken" : "token"
+      "iftttTestToken" : "token",
+      "enableRealtimeNotifications": false,
+      "realtimeNotificationFreqMsecs": 5000
     },
     "legal": {
     	"terms" : "",
