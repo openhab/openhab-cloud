@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "apn": "1.7.6",
+    "async": "^3.1.0",
     "bcrypt-cache": "^1.0.2",
     "bcrypt": "1.0.2",
     "body-parser": "^1.17.2",

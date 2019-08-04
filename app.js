@@ -90,7 +90,10 @@ var flash = require('connect-flash'),
     Limiter = require('ratelimiter'),
     requesttracker = require('./requesttracker'),
     routes = require('./routes'),
-    MongoConnect = require('./system/mongoconnect');
+    MongoConnect = require('./system/mongoconnect'),
+    uuid = require('uuid/v4'),
+    request = require('request'),
+    async = require('async');
 
 // MongoDB connection settings
 var mongoose = require('mongoose');
@@ -977,6 +980,80 @@ function notifyOpenHABStatusChange(openhab, status) {
           }
       }
   });
+}
+
+if (config.ifttt.enableRealtimeNotifications) {
+    var lastIftttRealtimeCheck = new Date();
+
+    setInterval(function() {
+        var triggerIdentities = [];
+
+        // Find all events updated since our last update and get their trigger identity strings.
+        Event.find({when: { $gte: lastIftttRealtimeCheck }})
+            .sort({when: 'desc'})
+            .lean()
+            .exec(function (error, events) {
+                lastIftttRealtimeCheck = new Date();
+                if (!error) {
+                    var associatedItems = [];
+                    for (var i = 0; i < events.length; i++) {
+                        var event = events[i];
+                        var itemLookupFn = function(callback) {
+                            Item.find({ name: event.source, openhab: event.openhab })
+                                .lean()
+                                .exec(function (error, items) {
+                                    if (!error) {
+                                        for (var i = 0; i < items.length; i++) {
+                                            triggerIdentities = triggerIdentities.concat(items[i].ifttt_trigger_identities);
+                                        }
+                                    } else {
+                                        logger.error('openHAB-cloud: Error retrieving updated items for IFTTT realtime notifications');
+                                    }
+                                    callback(error);
+                                });
+                        };
+                        associatedItems.push(itemLookupFn);
+                    }
+
+                    async.parallel(associatedItems, function(error, result) {
+                        triggerIdentities.slice(0, 1000);  // IFTTT will only accept up to 1000 realtime notification events.
+                        if (!error) {
+                            if (triggerIdentities.length > 0) {
+                                var requestSettings = {
+                                    url: 'https://realtime.ifttt.com/v1/notifications',
+                                    method: 'POST',
+                                    headers: {
+                                        'IFTTT-Service-Key': config.ifttt.iftttChannelKey,
+                                        'Accept': 'application/json',
+                                        'Accept-Charset': 'utf-8',
+                                        'Accept-Encoding': 'gzip, deflate',
+                                        'X-Request-ID': uuid()
+                                    },
+                                    json: true,
+                                    body: {
+                                        data: triggerIdentities.map(function(t) {
+                                            return { trigger_identity: t }
+                                        })
+                                    }
+                                }; 
+
+                                request(requestSettings, function(error, response, body) {
+                                    if (!error) {
+                                        logger.info('openHAB-cloud: Notified IFTTT realtime API about item updates')
+                                    } else {
+                                        logger.error('openHAB-cloud: Unable to notify IFTTT realtime API about item updates: ' + error)
+                                    }
+                                });
+                            }
+                        } else {
+                            logger.error('openHAB-cloud: Error retrieving updated items for IFTTT realtime notifications');
+                        }
+                    });
+                } else {
+                    logger.error('openHAB-cloud: Error retrieving events for IFTTT realtime notifications');
+                }
+            });
+    }, config.ifttt.realtimeNotificationFreqMsecs);
 }
 
 function shutdown() {
