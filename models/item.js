@@ -17,7 +17,7 @@ var ItemSchema = new Schema({
                                     // in a form of {when: Date, value: String}, latest values first in array
 }, {
     versionKey: false,
-    safe: false,
+    safe: { w: 0, j: false, wtimeout: 10000 },
     validateBeforeSave: false,
     strict: false
 });

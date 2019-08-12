@@ -17,12 +17,13 @@ var EventSchema = new Schema({
     when: {type: Date, default: Date.now, expires: '14d'}
 }, {
     versionKey: false,
-    safe: false,
+    safe: { w: 0, j: false, wtimeout: 10000 },
     validateBeforeSave: false,
     strict: false
 });
 
 // Index for event list reads
+EventSchema.index({openhab: 1});
 EventSchema.index({openhab: 1, when: 1});
 EventSchema.index({openhab: 1, source: 1});
 EventSchema.index({openhab: 1, source: 1, status:1});
