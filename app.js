@@ -274,7 +274,7 @@ app.use(function (req, res, next) {
 app.use(function (req, res, next) {
     var csrf = csurf();
     // Check if url needs csrf, remote connections and REST connections are excluded from CSRF
-    if (!req.path.match('/rest*') && !req.path.match('/oauth2/token') && !req.path.match('/ifttt/*') && !req.path.match('/remote/*'))
+    if (!req.path.match('/rest*') && !req.path.match('/oauth2/token') && !req.path.match('/ifttt/*') && !req.path.match('/remote/*') && !req.path.match('/gpstracker/*'))
         csrf(req, res, next);
     else
         next();

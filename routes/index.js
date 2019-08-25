@@ -236,6 +236,7 @@ Routes.prototype.setupProxyRoutes = function (app) {
     app.all('/habmin/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
     app.all('/remote*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
     app.all('/habpanel/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
+    app.all('/gpstracker/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
 };
 
 Routes.prototype.setupAppRoutes = function (app) {
