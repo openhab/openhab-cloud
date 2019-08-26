@@ -3,7 +3,9 @@
       "host": "localhost",
       "port": "443",
       "protocol": "https",
-      "logging" : "info",
+      "logger" : {
+        "type": "console"
+      },
       "subDomainCookies": false
     },
     "express":{

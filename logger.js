@@ -29,7 +29,7 @@ var logFormat = winston.format.printf(function (info) {
     return `${info.timestamp} ${info.level}: ${info.message}`
 })
 
-var defaultLog = new (winston.transports.DailyRotateFile)({
+var fileLog = new (winston.transports.DailyRotateFile)({
     filename: system.getLoggerDir() + 'openhab-cloud-%DATE%-process-' + system.getNodeProcessPort() + '.log',
     datePattern: 'YYYY-MM-DD',
     zippedArchive: false,
@@ -64,13 +64,19 @@ var auditLog = new (winston.transports.DailyRotateFile)({
 
 var consoleLog = new (winston.transports.Console)({
     handleExceptions: true,
-    level: 'warn',
+    level: system.getLoggerLevel(),
     format: winston.format.combine(
         timeFormat,
         winston.format.splat(),
         logFormat
     )
 })
+
+if(system.getLoggerType() == 'console') {
+    var defaultLog = consoleLog
+} else {
+    var defaultLog = fileLog
+}
 
 logger = winston.createLogger({
     transports: [

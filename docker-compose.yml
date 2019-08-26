@@ -2,7 +2,7 @@ version: '2'
 services:
     app:
       container_name: app
-      image: openhab-cloud:latest
+      image: openhab/openhabcloud-app:latest
       working_dir: /opt/openhabcloud
       volumes:
       - ./config-docker.json:/opt/openhabcloud/config.json

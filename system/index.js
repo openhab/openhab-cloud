@@ -374,4 +374,15 @@ System.prototype.getLoggerMorganOption = function() {
     }
 };
 
+/**
+ * Returns the type of logging used (either file or console).  Defaults to file
+ */
+System.prototype.getLoggerType = function() {
+    try {
+        return this.getConfig(['system', 'logger', 'type']);
+    } catch (e) {
+        return 'file';
+    }
+};
+
 module.exports = new System();
