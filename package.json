@@ -34,7 +34,7 @@
     "memwatch-next": "0.3.0",
     "method-override": "^2.3.9",
     "moment": "2.20.1",
-    "mongoose": "4.4.8",
+    "mongoose": "5.7.6",
     "mongoose-cache": "0.1.4",
     "mongoose-types": "1.0.3",
     "morgan": "^1.8.2",
