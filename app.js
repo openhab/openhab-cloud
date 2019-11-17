@@ -746,8 +746,8 @@ io.sockets.on('connection', function (socket) {
         var limiter = new Limiter({
             id: self.openhabId,
             db: redis,
-            max: 20,
-            duration: 60000
+            max: 10,
+            duration: 30000
         });
         limiter.get(function (err, limit) {
             if (err) {
