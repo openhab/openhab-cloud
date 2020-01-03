@@ -9,7 +9,7 @@ var UserDeviceLocationHistory = require('../models/userdevicelocationhistory');
 var appleSender = require('../notificationsender/aps-helper');
 var firebase = require('../notificationsender/firebase');
 var redis = require('../redis-helper');
-var form = require('express-form'),
+var form = require('provejs-express'),
     field = form.field,
     system = require('../system');
 
@@ -46,7 +46,7 @@ exports.devicesget = function(req, res) {
 }
 
 exports.devicessendmessagevalidate = form(
-    field("messagetext", "Message text").trim().required()
+    field("messagetext", "Message text").toTrim().isRequired()
 );
 
 exports.devicessendmessage = function(req, res) {

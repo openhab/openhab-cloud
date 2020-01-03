@@ -1,7 +1,7 @@
 var User = require('../models/user');
 var Openhab = require('../models/openhab');
 var Invitation = require('../models/invitation');
-var form = require('express-form'),
+var form = require('provejs-express'),
     field = form.field;
 
 exports.invitationsget = function(req, res) {
@@ -12,7 +12,7 @@ exports.invitationsget = function(req, res) {
 }
 
 exports.invitationspostvalidate = form(
-    field("email", "E-Mail").trim().isEmail().required()
+    field("email", "E-Mail").toTrim().isEmail().isRequired()
 );
 
 exports.invitationspost = function(req, res) {

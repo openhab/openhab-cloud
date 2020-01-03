@@ -100,7 +100,7 @@ Routes.prototype.setupLoginLogoutRoutes = function (app) {
     });
 
     app.post('/login', account_routes.loginpostvalidate, 
-    //use express-form sanitized data for passport  
+    //use provejs-express sanitized data for passport  
     function(req, res, next) {
         req.body.username = req.form.username;
         req.body.password = req.form.password;

@@ -14,7 +14,7 @@ var OAuth2Token = require('../models/oauth2token');
 var OpenHABAccessLog = require('../models/openhabaccesslog');
 var UserDevice = require('../models/userdevice');
 var UserDeviceLocationHistory = require('../models/userdevicelocationhistory');
-var form = require('express-form'),
+var form = require('provejs-express'),
     field = form.field;
 var path           = require('path')
     , templatesDir   = path.resolve(__dirname, '..', 'templates')
@@ -33,12 +33,12 @@ exports.lostpasswordget = function(req, res) {
 }
 
 exports.lostpasswordpostvalidate = form(
-    field("email", "E-Mail").trim().toLower().isEmail().required()
+    field("email", "E-Mail").toTrim().toLower().isEmail().isRequired()
 );
 
 exports.loginpostvalidate = form(
-    field("username", "E-Mail").trim().toLower().isEmail().required(),
-    field("password", "Password").trim().required()
+    field("username", "E-Mail").toTrim().toLower().isEmail().isRequired(),
+    field("password", "Password").toTrim().isRequired()
 );
 
 exports.lostpasswordpost = function(req, res) {
@@ -97,9 +97,9 @@ exports.lostpasswordresetget = function(req, res) {
 }
 
 exports.lostpasswordresetpostvalidate = form(
-    field("password", "New password").trim().required(),
-    field("password2", "Repeat new password").trim().required(),
-    field("resetCode", "Reset Code").required()
+    field("password", "New password").toTrim().isRequired(),
+    field("password2", "Repeat new password").toTrim().isRequired(),
+    field("resetCode", "Reset Code").isRequired()
 );
 
 exports.lostpasswordresetpost = function(req, res) {
@@ -166,8 +166,8 @@ exports.accountget = function(req, res) {
 }
 
 exports.accountpostvalidate = form(
-    field("openhabuuid", "openHAB UUID").trim().required(),
-    field("openhabsecret", "openHAB secret").trim().required()
+    field("openhabuuid", "openHAB UUID").toTrim().isRequired(),
+    field("openhabsecret", "openHAB secret").toTrim().isRequired()
 );
 
 exports.accountpost = function(req, res) {
@@ -189,9 +189,9 @@ exports.accountpost = function(req, res) {
 }
 
 exports.accountpasswordpostvalidate = form(
-    field("oldpassword", "Old password").trim().required(),
-    field("password", "New password").trim().required(),
-    field("password1", "Re-type new password").trim().required()
+    field("oldpassword", "Old password").toTrim().isRequired(),
+    field("password", "New password").toTrim().isRequired(),
+    field("password1", "Re-type new password").toTrim().isRequired()
 );
 
 exports.accountpasswordpost = function(req, res) {
@@ -347,18 +347,18 @@ exports.accountdeletepost = function(req, res) {
 }
 
 exports.registerpostvalidateall =     form(
-    field("agree", "Agreeing to terms and privacy policy").trim().required(),
-    field("username", "Username").trim().toLower().isEmail().required(),
-    field("password", "Password").trim().required(),
-    field("openhabuuid", "openHAB UUID").trim().required(),
-    field("openhabsecret", "openHAB secret").trim().required()
+    field("agree", "Agreeing to terms and privacy policy").toTrim().isRequired(),
+    field("username", "Username").toTrim().toLower().isEmail().isRequired(),
+    field("password", "Password").toTrim().isRequired(),
+    field("openhabuuid", "openHAB UUID").toTrim().isRequired(),
+    field("openhabsecret", "openHAB secret").toTrim().isRequired()
 );
 
 exports.registerpostvalidate =     form(
-	    field("username", "Username").trim().toLower().isEmail().required(),
-	    field("password", "Password").trim().required(),
-	    field("openhabuuid", "openHAB UUID").trim().required(),
-	    field("openhabsecret", "openHAB secret").trim().required()
+	    field("username", "Username").toTrim().toLower().isEmail().isRequired(),
+	    field("password", "Password").toTrim().isRequired(),
+	    field("openhabuuid", "openHAB UUID").toTrim().isRequired(),
+	    field("openhabsecret", "openHAB secret").toTrim().isRequired()
 	);
 
 exports.registerpost = function(req, res) {

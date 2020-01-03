@@ -6,7 +6,7 @@ var UserPassword = require('../userpassword');
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 var ObjectId = mongoose.SchemaTypes.ObjectId;
-var form = require('express-form'),
+var form = require('provejs-express'),
     field = form.field;
 
 
@@ -46,10 +46,10 @@ exports.usersaddget = function(req, res) {
 }
 
 exports.usersaddpostvalidate = form(
-    field("password", "Password").trim().required(),
-    field("password1", "Verify password").trim().required(),
-    field("username", "Username").trim().isEmail().required(),
-    field("role", "User's role").trim().required().custom(function(value) {
+    field("password", "Password").toTrim().isRequired(),
+    field("password1", "Verify password").toTrim().isRequired(),
+    field("username", "Username").toTrim().isEmail().isRequired(),
+    field("role", "User's role").toTrim().isRequired().custom(function(value) {
         if (value != 'user' && value != 'master') {
             throw new Error("%s must be 'user' or 'master'.");
         }

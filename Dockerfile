@@ -35,7 +35,8 @@ COPY ./package.json /opt/openhabcloud/
 RUN ln -s /opt/openhabcloud/package.json /data
 
 WORKDIR /data
-RUN npm install && npm rebuild bcrypt --build-from-source
+ENV NODE_ENV production
+RUN npm install --production=true && npm rebuild bcrypt --build-from-source
 ENV NODE_PATH /data/node_modules
 
 ADD . /opt/openhabcloud
