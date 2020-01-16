@@ -28,18 +28,27 @@ RUN rm -rf \
     /usr/lib/node_modules/npm/html \
     /usr/lib/node_modules/npm/scripts
 
-RUN mkdir -p /opt/openhabcloud 
-COPY ./package.json ./config.json /opt/openhabcloud/
+RUN mkdir -p /opt/openhabcloud/logs
 RUN mkdir /data
+
+COPY ./package.json /opt/openhabcloud/
 RUN ln -s /opt/openhabcloud/package.json /data
+
 WORKDIR /data
 RUN npm install && npm rebuild bcrypt --build-from-source
 ENV NODE_PATH /data/node_modules
-WORKDIR /opt/openhabcloud
-
-USER openhabcloud
 
 ADD . /opt/openhabcloud
 
+RUN rm -Rf /opt/openhabcloud/deployment
+RUN rm -Rf /opt/openhabcloud/docs
+RUN rm -Rf /opt/openhabcloud/tests
+RUN rm /opt/openhabcloud/config-development.json
+RUN rm /opt/openhabcloud/config-production.json
+
+RUN chown openhabcloud: /opt/openhabcloud/logs
+
+WORKDIR /opt/openhabcloud
+USER openhabcloud
 EXPOSE 3000
 CMD ["node", "app.js"]

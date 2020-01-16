@@ -233,47 +233,34 @@ to spin up the dockerized openhab-cloud backend.
 #### Architecture
 The dockerized openhab-cloud uses a separate docker image and container for each part of the overall system
 according to the following stack:
-* app-1: node.js and express.js (openhab/openhab-cloud/app-1:latest)
-* mongodb: MongoDB database (bitnami/mongodb:latest)
-* nginx: nginx proxy (openhab/openhab-cloud/nginx:latest)
+* app: node.js and express.js (openhab/openhab-cloud/app:latest)
+* mongodb: MongoDB database (mongo:4.1.10-bionic)
 * redis: redis session manager (bitnami/redis:latest)
+* traefik: http proxy with LetsEncrypt SSL Certs (traefik:1.7)
 
 #### Prerequisites
 To run openhab-cloud make sure docker, docker-machine and docker-compose are installed on your machine.
-More information at [Docker's website](https://docs.docker.com/)
+More information at [Docker's website](https://docs.docker.com/).
 
-#### Configuration
-You need to modify the ```config.json``` and adjust the hosts of mongodb and redis to match to the corresponding
-container services of docker-compose:
-```
-    "mongodb": {
-        "hosts": ["mongodb"],
-        "db": "openhab",
-        "user": "",
-        "password": ""
-    },
-    "redis": {
-        "host": "redis",
-        "port": "6379",
-        "password": "password"
-    },
-```
-
-To change the server IP/DNS matching your installation, please refer to [Setting up Nginx](#setupNginx)
+The `docker-compose.yml` file assume you have ports 80, 443 and 8080 available on the host you intend to run on. If you don't, you'll need to adjust these.
 
 #### Customization
 
-If you want to customize the openhab-cloud app or change e.g. configurations within ```config.json```,
-you need to switch to the local build of the node app. Adjust the build stratgy in the ```docker-compose.yml```
-and replace the ```image``` section of ```docker-compose.yml``` with the following lines, to not use the official docker hub images anymore and switch to your local sources as base for the app-1 image:
+1. Copy the files `docker-compose.yml`, `config-docker.json` and `deployment/docker/traefik.toml` onto the machine that will be hosting your OpenHAB Cloud, into the same directory. 
+1. In the `docker-compose.yml` file, update:
+   - In the `app` container, replace `<your-host-name>` with the DNS name you will be using to host OpenHAB Cloud. This helps configure traefik http proxying
+   - In the `mongodb` container, uncomment the volumes section and supply a local path for the mongo files. This allows your database to have persistence. If you miss this step, anytime you restart the containers, you'll need to setup things again.
+1. In the `config-docker.json` file, update:
+   - the system / host entry to be the same DNS name you entered into the `docker-compose.yml` above (you don't need scheme, so just `myopenhab.domain.com` or similar)
+   - update the redis password to match what you've entered in `docker-compose.yml`
+   - update any other settings for OpenHAB Cloud as per the docs
+1. In the `traefik.toml` file, update:
+   - the `domain` entry in the [Docker] section to match the domain you've used above twice already
+   - enter your email in the [acme] section so LetsEncrypt works properly.
 
-```build: 
-  context: ./
-  dockerfile: ./docker/node/Dockerfile
-```
 
 #### Run
-To create and run the composed application, use the following command: 
+Having created all the configs, you can fire it all up. To create and run the composed application, use the following command: 
 ```
 docker-compose up -d
 ```
@@ -286,7 +273,7 @@ docker-compose up -d --force-recreate
 
 To make sure openhab-cloud is running, check the openhab-cloud app logs:
 ```
-docker-compose logs app-1
+docker-compose logs app
 ```
 
 #### Stop & Cleanup
@@ -311,12 +298,11 @@ docker system prune
 
 #### Access
 
-Navigate your browser to ```http://<your-openhab-cloud-host>:<port>``` and log in (e.g. http://localhost:80)
+Navigate your browser to ```https://<your-openhab-cloud-host>``` and log in (e.g. https://myopenhab.domain.com). 
 
-#### Limitations
-* Lets Encrypt SSL is missing in the images and will be added soon
-* The nginx configuration at /etc/nginx_openhabcloud.conf will be reused
+If it's the first time you're starting up, make sure you have `registration_enabled` set to `true` in the `config-docker.yml` file so you can create an initial user login. 
 
+Assuming you don't plan to run an open system, switch this back to `false` once you've registered and restart.
 
 
 ## Installing openHAB Cloud on Amazon Web Services (AWS) ##

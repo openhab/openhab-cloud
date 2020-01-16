@@ -1,0 +1,56 @@
+{
+    "system": {
+      "host": "localhost",
+      "port": "443",
+      "protocol": "https",
+      "logger" : {
+        "type": "console"
+      },
+      "subDomainCookies": false
+    },
+    "express":{
+      "key" : "<create a key here>"
+    },
+    "apn" : {
+      "gateway": "gateway.push.apple.com",
+      "cert": "certs/aps/aps_production_cert.pem",
+      "key": "certs/aps/aps_production_key.pem",
+      "passphrase": "passphrase"
+    },
+    "gcm" : {
+      "jid": "something@gcm.googleapis.com",
+      "password": "password"
+    },
+    "ifttt" : {
+      "iftttChannelKey" : "key",
+      "iftttTestToken" : "token"
+    },
+    "mail": {
+      "host" : "smtp",
+      "port" : 465,
+      "user" : "my@openhab.org",
+      "pass" : "123_openHAB"
+    },
+    "mongodb": {
+        "hosts": ["mongodb"],
+        "db": "openhab"
+    },
+    "redis": {
+        "host": "redis",
+        "port": "6379",
+        "password": "123_openHAB"
+    },
+    "mailer": {
+        "host" : "smtp.openhab.org",
+        "port": 465,
+        "secureConnection": true,
+        "user": "my@openhab.org",
+        "password": "123_openHAB",
+        "from": "My openHAB <my@openhab.org>"
+    },
+    "legal": {
+        "terms" : "",
+        "policy": ""
+    },
+    "registration_enabled": false
+}
