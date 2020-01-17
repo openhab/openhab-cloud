@@ -25,12 +25,6 @@
       "iftttChannelKey" : "key",
       "iftttTestToken" : "token"
     },
-    "mail": {
-      "host" : "smtp",
-      "port" : 465,
-      "user" : "my@openhab.org",
-      "pass" : "123_openHAB"
-    },
     "mongodb": {
         "hosts": ["mongodb"],
         "db": "openhab"
@@ -52,5 +46,5 @@
         "terms" : "",
         "policy": ""
     },
-    "registration_enabled": false
+    "registration_enabled": true
 }

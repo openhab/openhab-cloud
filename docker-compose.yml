@@ -3,6 +3,7 @@ services:
     app:
       container_name: app
       image: openhab/openhabcloud-app:latest
+      # build: . // uncomment this line for local testing
       working_dir: /opt/openhabcloud
       volumes:
       - ./config-docker.json:/opt/openhabcloud/config.json
