@@ -46,5 +46,5 @@
         "terms" : "",
         "policy": ""
     },
-    "registration_enabled": true
+    "registration_enabled": false
 }
