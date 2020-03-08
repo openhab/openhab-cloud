@@ -1,6 +1,6 @@
 {
     "system": {
-      "host": "localhost",
+      "host": "${DOMAIN_NAME}",
       "port": "443",
       "protocol": "https",
       "logger" : {
@@ -9,7 +9,7 @@
       "subDomainCookies": false
     },
     "express":{
-      "key" : "<create a key here>"
+      "key" : "${EXPRESS_KEY}"
     },
     "apn" : {
       "gateway": "gateway.push.apple.com",
@@ -25,12 +25,6 @@
       "iftttChannelKey" : "key",
       "iftttTestToken" : "token"
     },
-    "mail": {
-      "host" : "smtp",
-      "port" : 465,
-      "user" : "my@openhab.org",
-      "pass" : "123_openHAB"
-    },
     "mongodb": {
         "hosts": ["mongodb"],
         "db": "openhab"
@@ -41,7 +35,7 @@
         "password": "123_openHAB"
     },
     "mailer": {
-        "host" : "smtp.openhab.org",
+        "host" : "smtp",
         "port": 465,
         "secureConnection": true,
         "user": "my@openhab.org",

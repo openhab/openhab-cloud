@@ -1,7 +1,10 @@
 node_modules
-.git/
-.dockerignore
-.gitignore
-.settings
-.project
+deployment
+docs
+logs
+test
+Dockerfile
+docker-compose.yml
+config*.json
+.*
 *.log

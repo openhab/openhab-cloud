@@ -15,8 +15,10 @@ node_modules/
 # Development environment settings directories
 .idea
 .project
+/openhab-cloud.iml
 
 # currently used config.json
 /config.json
 
-/openhab-cloud.iml
+# docker-compose env
+.env

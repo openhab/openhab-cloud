@@ -1,6 +1,6 @@
 debug = false
 
-logLevel = "ERROR"
+logLevel = "INFO"
 defaultEntryPoints = ["https","http"]
 
 [entryPoints]
@@ -18,13 +18,13 @@ defaultEntryPoints = ["https","http"]
 
 [docker]
 endpoint = "unix:///var/run/docker.sock"
-domain = "yourdomain.com"
 watch = true
 exposedByDefault = false
 
 [acme]
-email = "your@email.com"
-storage = "acme.json"
+# use staging server during testing
+#caServer = "https://acme-staging-v02.api.letsencrypt.org/directory"
+storage = "/data/acme.json"
 entryPoint = "https"
 onHostRule = true
 [acme.httpChallenge]

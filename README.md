@@ -246,21 +246,37 @@ The `docker-compose.yml` file assume you have ports 80, 443 and 8080 available o
 
 #### Customization
 
-1. Copy the files `docker-compose.yml`, `config-docker.json` and `deployment/docker/traefik.toml` onto the machine that will be hosting your OpenHAB Cloud, into the same directory. 
-1. In the `docker-compose.yml` file, update:
-   - In the `app` container, replace `<your-host-name>` with the DNS name you will be using to host OpenHAB Cloud. This helps configure traefik http proxying
-   - In the `mongodb` container, uncomment the volumes section and supply a local path for the mongo files. This allows your database to have persistence. If you miss this step, anytime you restart the containers, you'll need to setup things again.
-1. In the `config-docker.json` file, update:
-   - the system / host entry to be the same DNS name you entered into the `docker-compose.yml` above (you don't need scheme, so just `myopenhab.domain.com` or similar)
-   - update the redis password to match what you've entered in `docker-compose.yml`
-   - update any other settings for OpenHAB Cloud as per the docs
-1. In the `traefik.toml` file, update:
-   - the `domain` entry in the [Docker] section to match the domain you've used above twice already
-   - enter your email in the [acme] section so LetsEncrypt works properly.
+1. Prepare the project directory. This step depends on if you need to build your own image or use pre-built image.
+   - In order to build your own docker image, you need to clone this git repo locally, which will be your project directory.
+   - Otherwise, you only need to copy the files `docker-compose.yml`, `config-docker.json`, and `deployment/docker/traefik.toml` onto the machine that will be hosting your OpenHAB Cloud. The directory should maintain the same layout:
+   ```
+   openhab-cloud
+   |- docker-compose.yml
+   |- config-docker.json
+   |- deployment
+   |  |- docker
+   |  |  |- traefik.toml
+   ```
+1. Create `.env` file in the project directory, with the following content:
+   ```sh
+   # Used to obtain TLS certificate from letsencrypt
+   DOMAIN_NAME=<your_domain_name>
+   EMAIL=<your_email>
+
+   # IMPORTANT - Use a random secret string
+   EXPRESS_KEY=<random_secret_string>
+   ```
+1. In the `config-docker.json` file, update any other settings for OpenHAB Cloud as per the docs.
 
 
 #### Run
-Having created all the configs, you can fire it all up. To create and run the composed application, use the following command: 
+
+If you want to use the pre-built image, you need to pull it first. Otherwise, directly skip to the next step.
+```
+docker-compose pull app
+```
+
+To create and run the composed application, use the following command: 
 ```
 docker-compose up -d
 ```
