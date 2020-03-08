@@ -224,103 +224,10 @@ You need to restart nginx:
 sudo service nginx restart
 ```
 
-## <a name="docker"></a> Docker ###
+## Docker compose
+
+See [docker-compose README.md](deployment/docker-compose/README.md) for instructions on how to run openhab-cloud using docker-compose.
  
-The section describes how the openHAB-cloud docker images can be used with docker-compose
-to spin up the dockerized openhab-cloud backend.
-
-
-#### Architecture
-The dockerized openhab-cloud uses a separate docker image and container for each part of the overall system
-according to the following stack:
-* app: node.js and express.js (openhab/openhab-cloud/app:latest)
-* mongodb: MongoDB database (mongo:4.1.10-bionic)
-* redis: redis session manager (bitnami/redis:latest)
-* traefik: http proxy with LetsEncrypt SSL Certs (traefik:1.7)
-
-#### Prerequisites
-To run openhab-cloud make sure docker, docker-machine and docker-compose are installed on your machine.
-More information at [Docker's website](https://docs.docker.com/).
-
-The `docker-compose.yml` file assume you have ports 80, 443 and 8080 available on the host you intend to run on. If you don't, you'll need to adjust these.
-
-#### Customization
-
-1. Prepare the project directory. This step depends on if you need to build your own image or use pre-built image.
-   - In order to build your own docker image, you need to clone this git repo locally, which will be your project directory.
-   - Otherwise, you only need to copy the files `docker-compose.yml`, `config-docker.json`, and `deployment/docker/traefik.toml` onto the machine that will be hosting your OpenHAB Cloud. The directory should maintain the same layout:
-   ```
-   openhab-cloud
-   |- docker-compose.yml
-   |- config-docker.json
-   |- deployment
-   |  |- docker
-   |  |  |- traefik.toml
-   ```
-1. Create `.env` file in the project directory, with the following content:
-   ```sh
-   # Used to obtain TLS certificate from letsencrypt
-   DOMAIN_NAME=<your_domain_name>
-   EMAIL=<your_email>
-
-   # IMPORTANT - Use a random secret string
-   EXPRESS_KEY=<random_secret_string>
-   ```
-1. In the `config-docker.json` file, update any other settings for OpenHAB Cloud as per the docs.
-
-
-#### Run
-
-If you want to use the pre-built image, you need to pull it first. Otherwise, directly skip to the next step.
-```
-docker-compose pull app
-```
-
-To create and run the composed application, use the following command: 
-```
-docker-compose up -d
-```
-or with forced recreate:
-```
-docker-compose up -d --force-recreate
-```
-
-#### Logs
-
-To make sure openhab-cloud is running, check the openhab-cloud app logs:
-```
-docker-compose logs app
-```
-
-#### Stop & Cleanup
-
-To stop and remove the openhab-cloud containers, use the following commands of docker-compose:
-```
-docker-compose stop
-docker-compose rm
-```
-
-To perform a reset of the complete setup you can additionally stop all docker containers and remove 
-the related images and volumes by the following commands:
-```
-docker stop $(docker ps -a -q)
-docker rmi -f $(docker images -q)
-docker volume rm $(docker volume ls |awk '{print $2}')
-```
-You can also use this command to delete all:
-```
-docker system prune
-```
-
-#### Access
-
-Navigate your browser to ```https://<your-openhab-cloud-host>``` and log in (e.g. https://myopenhab.domain.com). 
-
-If it's the first time you're starting up, make sure you have `registration_enabled` set to `true` in the `config-docker.yml` file so you can create an initial user login. 
-
-Assuming you don't plan to run an open system, switch this back to `false` once you've registered and restart.
-
-
 ## Installing openHAB Cloud on Amazon Web Services (AWS) ##
 
 

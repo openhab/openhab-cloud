@@ -19,6 +19,3 @@ node_modules/
 
 # currently used config.json
 /config.json
-
-# docker-compose env
-.env

@@ -28,4 +28,4 @@ COPY --chown=openhabcloud:openhabcloud . .
 
 USER openhabcloud
 EXPOSE 3000
-CMD ["./run-docker.sh"]
+CMD ["./run-app.sh"]

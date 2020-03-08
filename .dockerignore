@@ -4,7 +4,6 @@ docs
 logs
 test
 Dockerfile
-docker-compose.yml
 config*.json
 .*
 *.log

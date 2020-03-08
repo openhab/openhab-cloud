@@ -4,12 +4,12 @@ services:
   app:
     image: openhab/openhabcloud-app:latest
     build:
-      context: .
+      context: ../..
       # Uncomment to customize timezone
       #args:
       #  TZ: America/Los_Angeles
     volumes:
-    - ./config-docker.json:/opt/openhabcloud/config-docker.json
+    - ./config.json.template:/opt/openhabcloud/config.json.template
     depends_on:
     - mongodb
     - redis
@@ -28,6 +28,7 @@ services:
     volumes:
     - mongo-data:/data/db
     restart: always
+
   redis:
     image: bitnami/redis:latest
     environment:
@@ -41,7 +42,7 @@ services:
     - "80:80"
     - "8080:8080"
     volumes:
-    - ./deployment/docker/traefik.toml:/etc/traefik/traefik.toml:ro
+    - ./traefik.toml:/etc/traefik/traefik.toml:ro
     - /var/run/docker.sock:/var/run/docker.sock
     - traefik-data:/data
     command:
