@@ -90,11 +90,35 @@ System.prototype.getHost = function() {
 };
 
 /**
+ * Returns the configured proxy host of the system. This can be different from the host where this app is running.
+ * @returns {String}
+ */
+System.prototype.getProxyHost = function() {
+    try {
+        return this.getConfig(['system', 'proxyHost']);
+    } catch (e) {
+        return this.getConfig(['system', 'host']);
+    }
+};
+
+/**
  * Returns the port configured for this system.
  * @returns {int}
  */
 System.prototype.getPort = function() {
     return this.getConfig(['system', 'port']);
+};
+
+/**
+ * Returns the proxy port configured for this system.
+ * @returns {int}
+ */
+System.prototype.getProxyPort = function() {
+    try {
+        return this.getConfig(['system', 'proxyPort']);
+    } catch (e) {
+        return this.getConfig(['system', 'port']);
+    }
 };
 
 /**
@@ -120,6 +144,16 @@ System.prototype.getProtocol = function() {
 System.prototype.getBaseURL = function() {
     return this.getProtocol() + '://' + this.getHost() + ':' + this.getPort();
 };
+
+
+/**
+ * Returns the full base URL of this app, which consists of a protocol, the host and port without a trailing slash.
+ * @return {String}
+ */
+System.prototype.getProxyURL = function() {
+    return this.getProtocol() + '://' + this.getProxyHost() + ':' + this.getProxyPort();    
+};
+
 
 /**
  * Returns if we are muting notifications

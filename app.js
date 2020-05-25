@@ -298,12 +298,13 @@ app.use(function (req, res, next) {
             account: req.user.account
         }).lean().exec(function (error, openhab) {
             res.locals.baseurl = system.getBaseURL();
+            res.locals.proxyUrl = system.getProxyURL();
             if (!error && openhab) {
                 res.locals.openhab = openhab;
                 res.locals.openhabstatus = openhab.status;
                 res.locals.openhablastonline = openhab.last_online;
                 if (openhab.openhabVersion !== undefined) {
-                    res.locals.openhabMajorVersion = openhab.openhabVersion.split('.')[0];
+                    res.locals.openhabMajorVersion = parseInt(openhab.openhabVersion.split('.')[0]);
                 } else {
                     res.locals.openhabMajorVersion = 0;
                 }
