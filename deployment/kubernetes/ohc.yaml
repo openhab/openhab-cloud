@@ -1,23 +1,21 @@
 apiVersion: v1
 kind: List
 items:
-  # - apiVersion: v1
-  #   kind: Service
-  #   metadata:
-  #     name: loadbalancer
-  #     annotations:
-  #       service.beta.kubernetes.io/scw-loadbalancer-proxy-protocol-v2: "*"
-  #   spec:
-  #     selector:
-  #       app: envoy
-  #     ports:
-  #       - name: https
-  #         port: 443
-  #         targetPort: 81
-  #       - name: http
-  #         port: 80
-  #         targetPort: 80
-  #     type: LoadBalancer
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: loadbalancer
+    spec:
+      selector:
+        app: envoy
+      ports:
+        - name: https
+          port: 443
+          targetPort: 81
+        - name: http
+          port: 80
+          targetPort: 80
+      type: LoadBalancer
   - apiVersion: v1
     kind: Service
     metadata:
