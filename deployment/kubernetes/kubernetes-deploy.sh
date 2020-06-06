@@ -36,8 +36,9 @@ kubectl create serviceaccount $KUBERNETES_ACCOUNT --namespace $KUBERNETES_NAMESP
 ### Create openHAB-cloud from template
 
 echo Creating openHAB-cloud from template ...
-
-kubectl create -f openhabcloud_ephemeral_k8_template.yml --namespace $KUBERNETES_NAMESPACE
+kubectl create configmap envoy-config --from-file=envoy.yaml
+kubectl create secret generic ohc-config --from-file=config.json="config-k8s.json"
+kubectl create -f oh.yaml --namespace $KUBERNETES_NAMESPACE
 
 echo Creating openHAB-cloud from template ... done!
 

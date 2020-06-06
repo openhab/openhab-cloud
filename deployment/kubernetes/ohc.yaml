@@ -1,0 +1,299 @@
+apiVersion: v1
+kind: List
+items:
+  # - apiVersion: v1
+  #   kind: Service
+  #   metadata:
+  #     name: loadbalancer
+  #     annotations:
+  #       service.beta.kubernetes.io/scw-loadbalancer-proxy-protocol-v2: "*"
+  #   spec:
+  #     selector:
+  #       app: envoy
+  #     ports:
+  #       - name: https
+  #         port: 443
+  #         targetPort: 81
+  #       - name: http
+  #         port: 80
+  #         targetPort: 80
+  #     type: LoadBalancer
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: web-app
+    spec:
+      clusterIP: None
+      selector:
+        app: web-app
+      ports:
+        - protocol: TCP
+          port: 3000
+          targetPort: 3000
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: proxy-app
+    spec:
+      clusterIP: None
+      selector:
+        app: proxy-app
+      ports:
+        - protocol: TCP
+          port: 3000
+          targetPort: 3000
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: mongodb
+    spec:
+      selector:
+        app: mongodb
+      ports:
+        - protocol: TCP
+          port: 27017
+          targetPort: 27017
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: redis
+    spec:
+      selector:
+        app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+          targetPort: 6379
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: envoy
+      labels:
+        app: envoy
+    spec:
+      selector:
+        matchLabels:
+          app: envoy
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            app: envoy
+        spec:
+          containers:
+            - name: envoy
+              image: envoyproxy/envoy:v1.14.1
+              ports:
+                - name: http
+                  containerPort: 80
+                - name: envoy-admin
+                  containerPort: 9901
+              volumeMounts:
+                - name: config
+                  mountPath: /etc/envoy/envoy.yaml
+                  subPath: envoy.yaml
+          volumes:
+            - name: config
+              configMap:
+                name: envoy-config
+                items:
+                  - key: envoy.yaml
+                    path: envoy.yaml
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: web-app
+    spec:
+      selector:
+        matchLabels:
+          app: web-app
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            app: web-app
+        spec:
+          containers:
+            - image: openhab/openhab-cloud:latest
+              imagePullPolicy: Always
+              name: web-app
+              ports:
+                - containerPort: 3000
+              resources: {}
+              workingDir: /opt/openhabcloud
+              env:
+                - name: PORT
+                  value: "3000"
+                - name: HOST
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: status.podIP
+              volumeMounts:
+                - name: ohc-config
+                  mountPath: /opt/openhabcloud/config.json
+                  subPath: config.json
+              livenessProbe:
+                httpGet:
+                  path: /
+                  port: 3000
+                initialDelaySeconds: 5
+                periodSeconds: 5
+                failureThreshold: 2
+          volumes:
+            - name: ohc-config
+              secret:
+                secretName: ohc-config
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: proxy-app
+    spec:
+      selector:
+        matchLabels:
+          app: proxy-app
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            app: proxy-app
+        spec:
+          containers:
+            - image: openhab/openhab-cloud:latest
+              imagePullPolicy: Always
+              name: proxy-app
+              ports:
+                - containerPort: 3000
+              resources: {}
+              workingDir: /opt/openhabcloud
+              env:
+                - name: PORT
+                  value: "3000"
+                - name: HOST
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: status.podIP
+              volumeMounts:
+                - name: ohc-config
+                  mountPath: /opt/openhabcloud/config.json
+                  subPath: config.json
+              livenessProbe:
+                httpGet:
+                  path: /
+                  port: 3000
+                initialDelaySeconds: 5
+                periodSeconds: 5
+                failureThreshold: 2
+          volumes:
+            - name: ohc-config
+              secret:
+                secretName: ohc-config
+  - apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      name: mongodb
+    spec:
+      serviceName: "mongo"
+      selector:
+        matchLabels:
+          app: mongodb
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            app: mongodb
+        spec:
+          terminationGracePeriodSeconds: 10
+          volumes:
+            - name: mongo-pv-storage
+              persistentVolumeClaim:
+                claimName: mongo-pv-claim
+          containers:
+            - name: mongo
+              image: mongo
+              command:
+                - mongod
+                - "--bind_ip"
+                - 0.0.0.0
+              ports:
+                - containerPort: 27017
+              volumeMounts:
+                - name: mongo-pv-storage
+                  mountPath: /data/db
+  - apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      name: redis
+    spec:
+      serviceName: "redis"
+      selector:
+        matchLabels:
+          app: redis
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            app: redis
+        spec:
+          terminationGracePeriodSeconds: 10
+          volumes:
+            - name: redis-pv-storage
+              persistentVolumeClaim:
+                claimName: redis-pv-claim
+          containers:
+            - name: redis
+              image: redis
+              args: ["--appendonly", "yes"]
+              ports:
+                - containerPort: 6379
+              volumeMounts:
+                - name: redis-pv-storage
+                  mountPath: /data
+  - apiVersion: v1
+    kind: PersistentVolume
+    metadata:
+      name: mongo-pv
+    spec:
+      storageClassName: manual
+      capacity:
+        storage: 1Gi
+      accessModes:
+        - ReadWriteOnce
+      hostPath:
+        path: "/tmp/ohc-mongo-data"
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: mongo-pv-claim
+    spec:
+      storageClassName: manual
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+  - apiVersion: v1
+    kind: PersistentVolume
+    metadata:
+      name: redis-pv
+    spec:
+      storageClassName: manual
+      capacity:
+        storage: 1Gi
+      accessModes:
+        - ReadWriteOnce
+      hostPath:
+        path: "/tmp/ohc-redis-data"
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: redis-pv-claim
+    spec:
+      storageClassName: manual
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+

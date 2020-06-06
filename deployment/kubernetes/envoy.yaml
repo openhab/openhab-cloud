@@ -1,0 +1,86 @@
+    admin:
+      access_log_path: /tmp/admin_access.log
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 9901
+    static_resources:
+      listeners:
+      - name: listener_http
+        address:
+          socket_address:
+            address: 0.0.0.0
+            port_value: 80
+        filter_chains:
+        - use_proxy_proto: true
+          filters:
+          - name: envoy.http_connection_manager
+            config:
+              access_log:
+              - name: envoy.file_access_log
+                config:
+                  path: "/dev/stdout"
+              upgrade_configs:
+                upgrade_type: "websocket"
+              stat_prefix: ingress_http
+              route_config:
+                name: local_route_http
+                virtual_hosts:
+                - name: local_service_http
+                  domains: ["*"]
+                  routes:
+                  - match: { prefix: "/" }
+                    redirect: { https_redirect: true }
+              http_filters:
+              - name: envoy.router
+      - name: listener_https
+        address:
+          socket_address:
+            address: 0.0.0.0
+            port_value: 81
+        filter_chains:
+        - use_proxy_proto: true
+          filters:
+          - name: envoy.http_connection_manager
+            config:
+              access_log:
+              - name: envoy.file_access_log
+                config:
+                  path: "/dev/stdout"
+              upgrade_configs:
+                upgrade_type: "websocket"
+              stat_prefix: ingress_http
+              route_config:
+                name: local_route_https
+                virtual_hosts:
+                - name: local_service_https
+                  domains: ["*"]
+                  routes:
+                  - match:
+                      prefix: "/socket.io"
+                    route:
+                      cluster: proxy_app_cluster
+                      timeout: 60s 
+                      hash_policy:
+                        header:
+                          header_name: "uuid"
+                  - match:
+                      prefix: "/"
+                    route:
+                      cluster: web_app_cluster
+                      timeout: 60s 
+              http_filters:
+              - name: envoy.router
+      clusters:
+      - name: web_app_cluster
+        connect_timeout: 0.25s
+        type: STRICT_DNS
+        dns_lookup_family: V4_ONLY
+        lb_policy: LEAST_REQUEST
+        hosts: [{ socket_address: { address: web-app, port_value: 3000 }}]
+      - name: proxy_app_cluster
+        connect_timeout: 0.25s
+        type: STRICT_DNS
+        dns_lookup_family: V4_ONLY
+        lb_policy: RING_HASH
+        hosts: [{ socket_address: { address: proxy-app, port_value: 3000 }}]
