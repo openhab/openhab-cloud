@@ -1,7 +1,9 @@
 node_modules
-.git/
-.dockerignore
-.gitignore
-.settings
-.project
+deployment
+docs
+logs
+test
+Dockerfile
+config*.json
+.*
 *.log
