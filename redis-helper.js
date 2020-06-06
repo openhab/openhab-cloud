@@ -5,19 +5,22 @@ var app = require('./app.js'),
     redis = require('redis'),
     redisClient;
 
-logger.info('openHAB-cloud: Connecting ro Redis at ' + app.config.redis.host + ':' + app.config.redis.port);
+logger.info('openHAB-cloud: Connecting to Redis at ' + app.config.redis.host + ':' + app.config.redis.port);
 
 redisClient = redis.createClient(app.config.redis.port, app.config.redis.host);
-redisClient.auth(app.config.redis.password, function(error, data) {
-    if (error) {
-        logger.error(error);
-    } else {
-        logger.info('openHAB-cloud: Redis connect response: ' + data);
-    }
-});
+
+if (typeof app.config.redis.password !== 'undefined') {
+    redisClient.auth(app.config.redis.password, function(error, data) {
+        if (error) {
+            logger.error(error);
+        } else {
+            logger.info('openHAB-cloud: Redis connect response: ' + data);
+        }
+    });
+}
 
 redisClient.on('ready', function () {
-    logger.info('Redis is ready');
+    logger.info('openHAB-cloud: Redis is ready');
 });
 
 redisClient.on('end', function () {
