@@ -317,6 +317,18 @@ System.prototype.getDbName = function() {
     return this.getConfig(['mongodb', 'db']);
 };
 
+System.prototype.getRedisHost = function() {
+    return this.getConfig(['redis', 'host']);
+};
+
+System.prototype.getRedisPort = function() {
+    return this.getConfig(['redis', 'port']);
+};
+
+System.prototype.getRedisPassword = function() {
+    return this.getConfig(['redis', 'password']);
+};
+
 /**
  * Returns the string representation of interal address in the form host:port
  *
