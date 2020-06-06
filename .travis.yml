@@ -7,8 +7,13 @@ services:
 script:
 - docker build -t openhab-cloud .
 after_success:
-- docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
-- docker tag openhab-cloud openhab/openhab-cloud:$TRAVIS_BUILD_NUMBER
-- docker push openhab/openhab-cloud:$TRAVIS_BUILD_NUMBER
-- docker tag openhab-cloud openhab/openhab-cloud:latest
-- docker push openhab/openhab-cloud:latest
+- if [[ "$TRAVIS_BRANCH" == "master" ]] && [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
+    docker login -u $DOCKER_USER -p $DOCKER_PASSWORD;
+    docker tag openhab-cloud openhab/openhab-cloud:latest;
+    docker push openhab/openhab-cloud:latest;
+  fi
+- if [[ -n "$TRAVIS_TAG" ]] && [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
+    docker login -u $DOCKER_USER -p $DOCKER_PASSWORD;
+    docker tag openhab-cloud openhab/openhab-cloud:$TRAVIS_TAG;
+    docker push openhab/openhab-cloud:$TRAVIS_TAG;
+  fi
