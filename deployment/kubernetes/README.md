@@ -19,17 +19,10 @@ Another prerequisite is the **Kubectl** tool to interact with the Kubernetes clu
 In order to deploy openHAB-cloud to Kubernetes, there are some steps required which will be done by the script in the repository. After having the Kubernetes cluster up and running and the kubectl command line tool in the PATH, the deployment can be done by running the following commands and script:
 
     cd openhab-cloud/deployment/kubernetes
-    chmod +x openshift-deploy.sh
-    ./openshift-deploy.sh
+    chmod +x kubernetes-deploy.sh
+    ./kubernetes-deploy.sh
 
-The script will create a new Kubernetes namespace called ``openhab-cloud``. It will also spin up all needed resources by one of the openHAB-cloud Kubernetes templates:
-
-    openhabcloud_ephermal_k8_template.yml
-   
- or
-   
-    openhabcloud_k8_template.yml
-    
+The script will create a new Kubernetes namespace called ``openhab-cloud`` with resources defined in ohc.yaml
 
 You can deploy openHAB-cloud with persistent storage (persistent volume claims) by using the template with storage resource definitions.
 

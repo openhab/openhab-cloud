@@ -1,0 +1,58 @@
+{
+    "system": {
+        "host": "your host name",
+        "port": "443",
+        "protocol": "https",
+        "logger": {
+            "type": "console"
+        },
+        "subDomainCookies": true,
+        "muteNotifications": true
+    },
+    "express": {
+        "key": "Unique key here"
+    },
+    "apn": {
+        "gateway": "gateway.push.apple.com",
+        "cert": "certs/aps/aps_production_cert.pem",
+        "key": "certs/aps/aps_production_key.pem",
+        "passphrase": "passphrase"
+    },
+    "gcm": {
+        "jid": "123456@gcm.googleapis.com",
+        "password": "passphrase"
+    },
+    "ifttt": {
+        "iftttChannelKey": "",
+        "iftttTestToken": ""
+    },
+    "mail": {
+        "host": "",
+        "port": 465,
+        "user": "",
+        "pass": ""
+    },
+    "mongodb": {
+        "hosts": [
+            "mongodb"
+        ],
+        "db": "openhab"
+    },
+    "redis": {
+        "host": "redis",
+        "port": "6379",
+        "password": "secret"
+    },
+    "mailer": {
+        "host": "",
+        "port": 465,
+        "secureConnection": true,
+        "user": "",
+        "password": "",
+        "from": ""
+    },
+    "legal": {
+        "terms": "terms.html",
+        "policy": ""
+    }
+}

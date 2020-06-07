@@ -1,4 +1,4 @@
-var system = require('../system'),
+const system = require('../system'),
     homepage = require('./homepage'),
     passport = require('passport'),
     account_routes = require('./account'),
@@ -15,9 +15,23 @@ var system = require('../system'),
     oauth2 = require('./oauth2'),
     setSessionTimezone = require('./setTimezone'),
     androidRegistrationService = require('./androidRegistrationService'),
-    appleRegistrationService = require('./appleRegistrationService');
-    ifttt_routes = require('./ifttt');
-
+    appleRegistrationService = require('./appleRegistrationService'),
+    ifttt_routes = require('./ifttt'),
+    http = require('http'),
+    proxy = require('http-proxy').createProxyServer({ agent: new http.Agent({ keepAlive: true }) });
+    // set custom header if proxing request
+    proxy.on('proxyReq', function (proxyReq, req, res, options) {
+        // add header to detect multiple forwards
+        proxyReq.setHeader('X-OHC-Proxy-Rquest', system.getInternalAddress());
+        // workaround to proxy POST/PUT
+        if (req.body) {
+            var bodyData = Object.keys(req.body)
+            .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(req.body[key])}`)
+            .join('&')
+            proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData))
+            proxyReq.write(bodyData)
+        }
+    });
 /**
  * Constructs the Routes object.
  *
@@ -99,18 +113,19 @@ Routes.prototype.setupLoginLogoutRoutes = function (app) {
         });
     });
 
-    app.post('/login', account_routes.loginpostvalidate, 
-    //use express-form sanitized data for passport  
-    function(req, res, next) {
-        req.body.username = req.form.username;
-        req.body.password = req.form.password;
-        next();
-      },
-    passport.authenticate('local', {
-        successReturnToOrRedirect: '/',
-        failureRedirect: '/login',
-        failureFlash: true
-    }));
+    app.post('/login', account_routes.loginpostvalidate,
+        //use express-form sanitized data for passport
+        function (req, res, next) {
+            req.body.username = req.form.username;
+            req.body.password = req.form.password;
+            next();
+        },
+        passport.authenticate('local', {
+            successReturnToOrRedirect: '/',
+            failureRedirect: '/login',
+            failureFlash: true
+        })
+    );
 };
 
 Routes.prototype.setupAccountRoutes = function (app) {
@@ -215,27 +230,27 @@ Routes.prototype.setupApiRoutes = function (app) {
 };
 
 Routes.prototype.setupProxyRoutes = function (app) {
-    app.all('/rest*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/images/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/static/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/rrdchart.png*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/chart*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/openhab.app*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/WebApp*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/CMD*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/cometVisu*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/proxy*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/greent*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/jquery.*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/classicui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/paperui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/basicui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/doc/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/start/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/icon*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/habmin/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/remote*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/habpanel/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.ensureServer, this.proxyRouteOpenhab.bind(this));
+    app.all('/rest*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/images/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/static/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/rrdchart.png*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/chart*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/openhab.app*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/WebApp*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/CMD*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/cometVisu*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/proxy*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/greent*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/jquery.*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/classicui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/paperui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/basicui/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/doc/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/start/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/icon*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/habmin/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/remote*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
+    app.all('/habpanel/*', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, this.maybeProxy, this.proxyRouteOpenhab.bind(this));
 };
 
 Routes.prototype.setupAppRoutes = function (app) {
@@ -262,7 +277,7 @@ Routes.prototype.ensureRestAuthenticated = function (req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
-    return passport.authenticate(['basic','bearer'], {session: false})(req, res, next);
+    return passport.authenticate(['basic', 'bearer'], { session: false })(req, res, next);
 };
 
 // Ensure user have 'master' role for certain homepage
@@ -283,17 +298,28 @@ Routes.prototype.ensureStaff = function (req, res, next) {
 
 /**
 * Certain requests must be served from the same server that a user's openHAB
-* is connected to.  If we are not the right server we will send a redirect upstream
-* which should be handled internally by nginx, and not the requesting client
+* is connected to.  If we are not the right server we will proxy the connection
+* to the right upstream server.
 **/
-Routes.prototype.ensureServer = function(req, res, next) {
-  if (req.openhab.serverAddress != system.getInternalAddress()){
-    //redirect a request to correct cloud server
-    res.redirect(302, 'http://' + req.openhab.serverAddress + req.path);
-  } else {
-    res.cookie('CloudServer',system.getInternalAddress(), { maxAge: 900000, httpOnly: true });
-    return next();
-  }
+Routes.prototype.maybeProxy = function (req, res, next) {
+    const self = this;
+    if (req.openhab.serverAddress != system.getInternalAddress()) {
+        //check forwarded header, reject if found (redirect loop)
+        const proxyHeader = req.headers['X-OHC-Proxy-Rquest'];
+        if (proxyHeader) {
+            return res.status(500).json({
+                errors: [{
+                    message: 'Too many proxy redirects'
+                }]
+            });
+        } else {
+            //Proxy connection
+            proxy.web(req, res, { target: `http://${req.openhab.serverAddress}` });
+        }
+    } else {
+        res.cookie('CloudServer', system.getInternalAddress(), { maxAge: 900000, httpOnly: true });
+        return next();
+    }
 };
 
 Routes.prototype.setOpenhab = function (req, res, next) {
@@ -323,23 +349,23 @@ Routes.prototype.setOpenhab = function (req, res, next) {
     });
 };
 
-Routes.prototype.preassembleBody = function(req, res, next) {
-  //app.js will catch any JSON or URLEncoded related requests and
-  //store the rawBody on the request, all other requests need
-  //to have that data collected and stored here
-  var data = '';
-  if (req.rawBody === undefined || req.rawBody === "") {
-    req.on('data', function(chunk) {
-      data += chunk;
-    });
-    req.on('end', function() {
-      req.rawBody = data;
-      next();
-    });
-  } else {
-    req.rawBody = req.rawBody.toString();
-    next();
-  }
+Routes.prototype.preassembleBody = function (req, res, next) {
+    //app.js will catch any JSON or URLEncoded related requests and
+    //store the rawBody on the request, all other requests need
+    //to have that data collected and stored here
+    var data = '';
+    if (req.rawBody === undefined || req.rawBody === "") {
+        req.on('data', function (chunk) {
+            data += chunk;
+        });
+        req.on('end', function () {
+            req.rawBody = data;
+            next();
+        });
+    } else {
+        req.rawBody = req.rawBody.toString();
+        next();
+    }
 };
 
 Routes.prototype.proxyRouteOpenhab = function (req, res) {

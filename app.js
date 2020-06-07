@@ -64,6 +64,7 @@ if (system.isGcmConfigured()) {
 }
 
 module.exports.config = config;
+module.exports.system = system;
 
 // Setup all homepage
 var flash = require('connect-flash'),
@@ -102,9 +103,9 @@ var mongoose = require('mongoose');
 var cachegoose = require('cachegoose');
 cachegoose(mongoose, {
   engine: 'redis',
-  port: config.redis.port, 
-  host: config.redis.host,
-  password: config.redis.password,
+  port: system.getRedisPort(), 
+  host: system.getRedisHost(),
+  password: system.getRedisPassword(),
 });
 var cacheTTL = config.cacheTTL || 600;
 
