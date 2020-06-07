@@ -9,11 +9,11 @@ script:
 after_success:
 - if [[ "$TRAVIS_BRANCH" == "master" ]] && [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
     docker login -u $DOCKER_USER -p $DOCKER_PASSWORD;
-    docker tag openhab-cloud openhab/openhab-cloud:latest;
-    docker push openhab/openhab-cloud:latest;
+    docker tag openhab-cloud $TRAVIS_REPO_SLUG:latest;
+    docker push $TRAVIS_REPO_SLUG:latest;
   fi
 - if [[ -n "$TRAVIS_TAG" ]] && [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
     docker login -u $DOCKER_USER -p $DOCKER_PASSWORD;
-    docker tag openhab-cloud openhab/openhab-cloud:$TRAVIS_TAG;
-    docker push openhab/openhab-cloud:$TRAVIS_TAG;
+    docker tag openhab-cloud $TRAVIS_REPO_SLUG:$TRAVIS_TAG;
+    docker push $TRAVIS_REPO_SLUG:$TRAVIS_TAG;
   fi
