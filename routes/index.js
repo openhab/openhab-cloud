@@ -289,7 +289,7 @@ Routes.prototype.ensureStaff = function (req, res, next) {
 Routes.prototype.ensureServer = function(req, res, next) {
   if (req.openhab.serverAddress != system.getInternalAddress()){
     //redirect a request to correct cloud server
-    res.redirect(302, 'http://' + req.openhab.serverAddress + req.path);
+    res.redirect(307, 'http://' + req.openhab.serverAddress + req.path);
   } else {
     res.cookie('CloudServer',system.getInternalAddress(), { maxAge: 900000, httpOnly: true });
     return next();

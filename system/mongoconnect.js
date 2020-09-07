@@ -55,7 +55,7 @@ MongoConnect.prototype.getMongoUri = function () {
 
     mongoUri += this.system.getDbHostsString();
 
-    return mongoUri + '/' + this.system.getDbName() + '?poolSize=100';
+    return mongoUri + '/' + this.system.getDbName() + '?poolSize=50';
 };
 
 module.exports = MongoConnect;
