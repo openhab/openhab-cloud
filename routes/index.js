@@ -376,7 +376,8 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
         delete requestHeaders['host'];
         requestHeaders['host'] = 'home.' + system.getHost() + ':' + system.getPort();
     } else {
-        // if full proxing , allow the auth header through to support oh3 authentication. 
+        // if not full proxing , dont't pass the auth header from our cloud service through
+        // will conflict with oh3 authentication  
         delete requestHeaders['authorization'];
     }
 
