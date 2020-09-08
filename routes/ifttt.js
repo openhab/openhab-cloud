@@ -133,7 +133,7 @@ exports.v1actioncommand = [
             }
             // If OH lives on another server, redirect to that internally (nginx)
             if (openhab.serverAddress != system.getInternalAddress()){
-              return res.redirect(302, 'http://' + openhab.serverAddress + req.path);
+              return res.redirect(307, 'http://' + openhab.serverAddress + req.path);
             }
             app.sio.sockets.in(openhab.uuid).emit('command', {item: req.body.actionFields.item, command: req.body.actionFields.command});
             return res.json({data:[{id: "12345"}]});

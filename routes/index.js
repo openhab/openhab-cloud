@@ -362,7 +362,6 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
     // We need to remove and modify some headers here
     delete requestHeaders['cookie'];
     delete requestHeaders['cookie2'];
-    delete requestHeaders['authorization'];
     delete requestHeaders['x-real-ip'];
     delete requestHeaders['x-forwarded-for'];
     delete requestHeaders['x-forwarded-proto'];
@@ -376,6 +375,9 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
         // TODO: this is too dirty :-(
         delete requestHeaders['host'];
         requestHeaders['host'] = 'home.' + system.getHost() + ':' + system.getPort();
+    } else {
+        // if full proxing , allow the auth header through to support oh3 authentication. 
+        delete requestHeaders['authorization'];
     }
 
     // Send a message with request to openhab agent module
