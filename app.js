@@ -742,6 +742,8 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('itemupdate', function (data) {
+        //disabling item updates for now
+        return;
         var self = this;
         //if openhabId is missing then user has not completed auth
         if (self.openhabId === undefined) {
