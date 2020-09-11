@@ -355,6 +355,9 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
         res.end('openHAB is offline');
         return;
     }
+    
+    //tell OH3 to use alternative Authentication header
+    res.cookie('X-OPENHAB-AUTH-HEADER', 'true')
 
     var requestId = this.requestTracker.acquireRequestId();
     // make a local copy of request headers to modify
