@@ -223,6 +223,7 @@ if (app.get('env') === 'development') {
 
 // App configuration for all environments
 app.set('port', process.env.PORT || 3000);
+app.set('host', process.env.HOST || '0.0.0.0');
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(favicon(__dirname + '/public/img/favicon.ico'));
@@ -343,9 +344,16 @@ app.use(function (req, res, next) {
 
 app.use(serveStatic(path.join(__dirname, 'public')));
 
-var server = app.listen(system.getNodeProcessPort(), function () {
-    logger.info('openHAB-cloud: express server listening on port ' + system.getNodeProcessPort());
+var server_params = {'port': system.getNodeProcessPort()};
+
+if (app.get('host') != '0.0.0.0') {
+    server_params.host = app.get('host')
+}
+
+var server = app.listen(server_params, function () {
+    logger.info('openHAB-cloud: express server listening on ' + app.get('host') + ':' + system.getNodeProcessPort());
 });
+    
 
 var io = require('socket.io').listen(server, {
     logger: logger
