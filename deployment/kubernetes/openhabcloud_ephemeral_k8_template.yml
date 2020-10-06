@@ -98,7 +98,6 @@ items:
           - configMapRef:
               name: openhab-env
           workingDir: /opt/openhabcloud
-          command: ["./run-app.sh"]
           volumeMounts:
             - name: config-storage
               mountPath: /opt/openhabcloud/config.json.template
