@@ -97,6 +97,8 @@ items:
           envFrom:
           - configMapRef:
               name: openhab-env
+          - secretRef:
+              name: openhab-secrets
           workingDir: /opt/openhabcloud
           command: ["./run-app.sh"]
           volumeMounts:
