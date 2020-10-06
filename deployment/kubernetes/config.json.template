@@ -4,7 +4,10 @@
       "port": "443",
       "protocol": "https",
       "logger" : {
-        "type": "console"
+        "dir": "./logs",
+        "maxFiles" : "7d",
+        "level" : "debug",
+        "morganOption" : null
       },
       "subDomainCookies": false,
       "muteNotifications": false
@@ -29,12 +32,14 @@
     "mail": {
       "host" : "smtp",
       "port" : 465,
-      "user" : "foo@bar.com",
+      "user" : "${SMTP_USER},
       "pass" : "${SMTP_PASSWORD}"
     },
     "mongodb": {
         "hosts": ["mongodb"],
         "db": "openhab"
+        "user": "${MONGO_USER}",
+        "password": "${MONGO_PASSWORD}"    
     },
     "redis": {
         "host": "redis",
@@ -45,7 +50,7 @@
         "host" : "smtp",
         "port": 465,
         "secureConnection": true,
-        "user": "foo@bar.com",
+        "user": "${SMTP_USER},
         "password": "${SMTP_PASSWORD}",
         "from": "openHAB Cloud <your@email.address>"
     },
