@@ -9,7 +9,6 @@ items:
       org.openhab.cloud.service: app-1
     name: app-1
   spec:
-    type: NodePort
     ports:
     - name: "3000"
       port: 3000
@@ -44,7 +43,6 @@ items:
       org.openhab.cloud.service: nginx
     name: nginx
   spec:
-    type: NodePort
     ports:
     - name: "80"
       port: 80
@@ -91,7 +89,7 @@ items:
           org.openhab.cloud.service: app-1
       spec:
         containers:
-        - image: docker.io/mariomastrorilli/openhabcloud-app:latest
+        - image: docker.io/openhab/openhabcloud-app:latest
           name: app-1
           ports:
           - containerPort: 3000
@@ -102,19 +100,21 @@ items:
           - name: DOMAIN_NAME
             value: "localhost"
           - name: EMAIL
-            value: "noreply@localost.com"
+            value: "noreply@localhost.com"
           - name: EXPRESS_KEY
             value: "123456"
           workingDir: /opt/openhabcloud
-          command: ["./run-app.sh"]
+          command: ["node"]
+          args: ["app.js"]
           volumeMounts:
-            - mountPath: /opt/openhabcloud/config.json.template
-              name: config-storage
+            - name: config-storage
+              mountPath: /opt/openhabcloud/config.json
+              subPath: config.json
         restartPolicy: Always
         volumes:
           - name: config-storage
-            hostPath:
-              path: "/data/openhabcloud-config/config.json.template"
+            configMap:
+              name: openhab-config
     selector:
       matchLabels:
         org.openhab.cloud.service: app-1
