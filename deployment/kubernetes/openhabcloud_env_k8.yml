@@ -3,9 +3,9 @@ kind: ConfigMap
 metadata:
   name: openhab-env
 data:
-  COMPOSE_PROJECT_NAME: openhab-cloud
+  COMPOSE_PROJECT_NAME: "openhab-cloud"
 # Used to obtain TLS certificate from letsencrypt
-  DOMAIN_NAME: <your_domain_name>
-  EMAIL: <your_email>
+  DOMAIN_NAME: "<your_domain_name>""
+  EMAIL: "<your_email>""
 # IMPORTANT - Choose a random secret string
-  EXPRESS_KEY: <random_secret_string>
+  EXPRESS_KEY: "<random_secret_string>""
