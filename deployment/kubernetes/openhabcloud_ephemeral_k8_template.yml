@@ -94,22 +94,15 @@ items:
           ports:
           - containerPort: 3000
           resources: {}
-          env:
-          - name: COMPOSE_PROJECT_NAME
-            value: "openhab-cloud"
-          - name: DOMAIN_NAME
-            value: "localhost"
-          - name: EMAIL
-            value: "noreply@localhost.com"
-          - name: EXPRESS_KEY
-            value: "123456"
+          envFrom:
+          - configMapRef:
+              name: openhab-env
           workingDir: /opt/openhabcloud
-          command: ["node"]
-          args: ["app.js"]
+          command: ["./run-app.sh"]
           volumeMounts:
             - name: config-storage
-              mountPath: /opt/openhabcloud/config.json
-              subPath: config.json
+              mountPath: /opt/openhabcloud/config.json.template
+              subPath: config.json.temlate
         restartPolicy: Always
         volumes:
           - name: config-storage
