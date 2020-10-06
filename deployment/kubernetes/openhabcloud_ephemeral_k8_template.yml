@@ -89,7 +89,7 @@ items:
           org.openhab.cloud.service: app-1
       spec:
         containers:
-        - image: docker.io/openhab/openhabcloud-app:latest
+        - image: docker.io/mariomastrorilli/openhabcloud-app:latest
           name: app-1
           ports:
           - containerPort: 3000
@@ -98,10 +98,11 @@ items:
           - configMapRef:
               name: openhab-env
           workingDir: /opt/openhabcloud
+          command: ["./run-app.sh"]
           volumeMounts:
             - name: config-storage
               mountPath: /opt/openhabcloud/config.json.template
-              subPath: config.json.temlate
+              subPath: config.json.template
         restartPolicy: Always
         volumes:
           - name: config-storage
