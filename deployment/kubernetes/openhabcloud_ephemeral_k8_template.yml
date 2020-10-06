@@ -9,6 +9,7 @@ items:
       org.openhab.cloud.service: app-1
     name: app-1
   spec:
+    type: NodePort
     ports:
     - name: "3000"
       port: 3000
@@ -43,6 +44,7 @@ items:
       org.openhab.cloud.service: nginx
     name: nginx
   spec:
+    type: NodePort
     ports:
     - name: "80"
       port: 80
@@ -71,7 +73,7 @@ items:
       org.openhab.cloud.service: redis
   status:
     loadBalancer: {}
-- apiVersion: extensions/v1beta1
+- apiVersion: apps/v1
   kind: Deployment
   metadata:
     annotations:
@@ -89,15 +91,35 @@ items:
           org.openhab.cloud.service: app-1
       spec:
         containers:
-        - image: docker.io/openhab/openhabcloud-app
+        - image: docker.io/mariomastrorilli/openhabcloud-app:latest
           name: app-1
           ports:
           - containerPort: 3000
           resources: {}
+          env:
+          - name: COMPOSE_PROJECT_NAME
+            value: "openhab-cloud"
+          - name: DOMAIN_NAME
+            value: "localhost"
+          - name: EMAIL
+            value: "noreply@localost.com"
+          - name: EXPRESS_KEY
+            value: "123456"
           workingDir: /opt/openhabcloud
+          command: ["./run-app.sh"]
+          volumeMounts:
+            - mountPath: /opt/openhabcloud/config.json.template
+              name: config-storage
         restartPolicy: Always
+        volumes:
+          - name: config-storage
+            hostPath:
+              path: "/data/openhabcloud-config/config.json.template"
+    selector:
+      matchLabels:
+        org.openhab.cloud.service: app-1
   status: {}
-- apiVersion: extensions/v1beta1
+- apiVersion: apps/v1
   kind: Deployment
   metadata:
     annotations:
@@ -118,7 +140,6 @@ items:
         containers:
         - args:
           - mongod
-          - --smallfiles
           - --bind_ip_all
           image: bitnami/mongodb:latest
           name: mongodb
@@ -136,8 +157,11 @@ items:
           name: mongodb-empty0
         - emptyDir: {}
           name: mongodb-empty1
+    selector:
+      matchLabels:
+        org.openhab.cloud.service: mongodb
   status: {}
-- apiVersion: extensions/v1beta1
+- apiVersion: apps/v1
   kind: Deployment
   metadata:
     annotations:
@@ -169,8 +193,11 @@ items:
         volumes:
         - emptyDir: {}
           name: app-1
+    selector:
+      matchLabels:
+        org.openhab.cloud.service: nginx
   status: {}
-- apiVersion: extensions/v1beta1
+- apiVersion: apps/v1
   kind: Deployment
   metadata:
     annotations:
@@ -197,6 +224,9 @@ items:
           - containerPort: 6379
           resources: {}
         restartPolicy: Always
+    selector:
+      matchLabels:
+        org.openhab.cloud.service: redis
   status: {}
 kind: List
 metadata: {}
