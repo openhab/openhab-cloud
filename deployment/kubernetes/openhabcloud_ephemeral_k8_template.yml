@@ -71,6 +71,16 @@ items:
       org.openhab.cloud.service: redis
   status:
     loadBalancer: {}
+- apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: MongoXFS
+  provisioner: kubernetes.io/gce-pd
+  parameters:
+    type: pd-standard
+    fstype: xfs
+    replication-type: none
+  reclaimPolicy: Retain
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -115,7 +125,7 @@ items:
         org.openhab.cloud.service: app-1
   status: {}
 - apiVersion: apps/v1
-  kind: Deployment
+  kind: StatefulSet
   metadata:
     annotations:
     creationTimestamp: null
@@ -143,15 +153,23 @@ items:
           resources: {}
           volumeMounts:
           - mountPath: /data/db
-            name: mongodb-empty0
+            name: mongodb-xfs
           - mountPath: /data/configdb
             name: mongodb-empty1
         restartPolicy: Always
         volumes:
         - emptyDir: {}
-          name: mongodb-empty0
-        - emptyDir: {}
           name: mongodb-empty1
+        volumeClaimTemplates:
+          - metadata:
+              name: mongodb-xfs
+            spec:
+              storageClassName: MongoXFS
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 10Gi
     selector:
       matchLabels:
         org.openhab.cloud.service: mongodb
