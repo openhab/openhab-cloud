@@ -74,11 +74,11 @@ items:
 - apiVersion: storage.k8s.io/v1
   kind: StorageClass
   metadata:
-    name: MongoXFS
+    name: storageclass-mongo
   provisioner: kubernetes.io/gce-pd
   parameters:
     type: pd-standard
-    fstype: xfs
+    fstype: ext4
     replication-type: none
   reclaimPolicy: Retain
 - apiVersion: apps/v1
@@ -133,9 +133,8 @@ items:
       org.openhab.cloud.service: mongodb
     name: mongodb
   spec:
+    serviceName: "mongodb"
     replicas: 1
-    strategy:
-      type: Recreate
     template:
       metadata:
         creationTimestamp: null
@@ -153,27 +152,30 @@ items:
           resources: {}
           volumeMounts:
           - mountPath: /data/db
-            name: mongodb-xfs
+            name: mongodb-vc
           - mountPath: /data/configdb
             name: mongodb-empty1
         restartPolicy: Always
         volumes:
         - emptyDir: {}
           name: mongodb-empty1
-        volumeClaimTemplates:
-          - metadata:
-              name: mongodb-xfs
-            spec:
-              storageClassName: MongoXFS
-              accessModes:
-                - ReadWriteOnce
-              resources:
-                requests:
-                  storage: 10Gi
+        securityContext:
+          fsGroup: 2000
+    volumeClaimTemplates:
+      - metadata:
+          name: mongodb-vc
+        spec:
+          storageClassName: storageclass-mongo
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
     selector:
       matchLabels:
         org.openhab.cloud.service: mongodb
-  status: {}
+  status:
+    replicas: 1
 - apiVersion: apps/v1
   kind: Deployment
   metadata:

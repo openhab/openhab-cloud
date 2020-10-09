@@ -32,12 +32,12 @@
     "mail": {
       "host" : "smtp",
       "port" : 465,
-      "user" : "${SMTP_USER},
+      "user" : "${SMTP_USER}",
       "pass" : "${SMTP_PASSWORD}"
     },
     "mongodb": {
         "hosts": ["mongodb"],
-        "db": "openhab"
+        "db": "openhab",
         "user": "${MONGO_USER}",
         "password": "${MONGO_PASSWORD}"    
     },
@@ -50,7 +50,7 @@
         "host" : "smtp",
         "port": 465,
         "secureConnection": true,
-        "user": "${SMTP_USER},
+        "user": "${SMTP_USER}",
         "password": "${SMTP_PASSWORD}",
         "from": "openHAB Cloud <your@email.address>"
     },
