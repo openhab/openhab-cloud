@@ -13,6 +13,8 @@ var system = require('../system');
 var iftttChannelKey = app.config.ifttt.iftttChannelKey
 // IFTTT access token for testing the API
 var iftttTestToken = app.config.ifttt.iftttTestToken
+// IFTTT enable realtime notifications
+var enableRealtimeNotifications = app.config.ifttt.enableRealtimeNotifications
 
 function ensureIFTTTChannelKey (req, res, next) {
     if (!req.headers.hasOwnProperty('ifttt-channel-key')) {
@@ -195,6 +197,17 @@ exports.v1triggeritemstate = [
                 var itemStatus = req.body.triggerFields.status;
                 Item.findOne({openhab: openhab._id, name: itemName}, function (error, item) {
                     if (!error && item) {
+                        if (enableRealtimeNotifications) {
+                            var triggerIdentity = req.body.trigger_identity;
+                            if(item.ifttt_trigger_identities.indexOf(triggerIdentity) === -1) {
+                                item.ifttt_trigger_identities.push(triggerIdentity);
+                                item.save(function(error) {
+                                    if (error) {
+                                        return res.status(400).json({errors: [{message: "Failed to save trigger"}]});
+                                    }
+                                });
+                            }
+                        }
                         if (eventLimit > 0) {
                             Event.find({openhab: openhab._id, source: item.name, status: itemStatus})
                                 .sort({when: 'desc'})
@@ -251,6 +264,17 @@ exports.v1triggeritem_raised_above = [
                 var value = req.body.triggerFields.value;
                 Item.findOne({openhab: openhab._id, name: itemName}, function (error, item) {
                     if (!error && item) {
+                        if (enableRealtimeNotifications) {
+                            var triggerIdentity = req.body.trigger_identity;
+                            if(item.ifttt_trigger_identities.indexOf(triggerIdentity) === -1) {
+                                item.ifttt_trigger_identities.push(triggerIdentity);
+                                item.save(function(error) {
+                                    if (error) {
+                                        return res.status(400).json({errors: [{message: "Failed to save trigger"}]});
+                                    }
+                                });
+                            }
+                        }
                         if (eventLimit > 0) {
 //                            console.log(value);
                             Event.find({openhab: openhab._id, source: item.name})
@@ -310,6 +334,17 @@ exports.v1triggeritem_dropped_below = [
                 var value = req.body.triggerFields.value;
                 Item.findOne({openhab: openhab._id, name: itemName}, function (error, item) {
                     if (!error && item) {
+                        if (enableRealtimeNotifications) {
+                            var triggerIdentity = req.body.trigger_identity;
+                            if(item.ifttt_trigger_identities.indexOf(triggerIdentity) === -1) {
+                                item.ifttt_trigger_identities.push(triggerIdentity);
+                                item.save(function(error) {
+                                    if (error) {
+                                        return res.status(400).json({errors: [{message: "Failed to save trigger"}]});
+                                    }
+                                });
+                            }
+                        }
                         if (eventLimit > 0) {
 //                            console.log(value);
                             Event.find({openhab: openhab._id, source: item.name})
