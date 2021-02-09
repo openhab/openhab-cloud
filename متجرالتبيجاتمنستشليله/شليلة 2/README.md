@@ -1,7 +1,7 @@
-# openHAB Cloud
-
-openHAB Cloud is a companion cloud service and backend for the openHAB open-source home automation software.
-The openHAB Cloud backend provides secure remote access and enables openHAB users to remotely monitor,
+# openHAB كلاود
+# 
+OpenHAB Cloud هي خدمة سحابية وخلفية جوية للعمل الآلي openHAB مفتوح المصدر.
+توفر الواجهة الخلفية لـ openHAB Cloud وصولاً آمنًا عن بُعد وتمكن مستخدمي openHAB من المراقبة عن بُعد ،
 control and steer their homes through the internet, collect device statistics of their openHABs, receive
 notifications on their mobile devices or collect and visualize data etc.
 The main core features of openHAB Cloud are an user-management frontend, secure remote access, remote proxy-access, device registry & management, messaging services and data management & persistence.
