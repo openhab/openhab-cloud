@@ -377,6 +377,9 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
     if (requestPath.indexOf('/remote/') === 0) {
         requestPath = requestPath.replace('/remote', '');
         // TODO: this is too dirty :-(
+        if(requestPath.indexOf('/remote/auth') !== 0){
+            delete requestHeaders['authorization'];
+        }
         delete requestHeaders['host'];
         requestHeaders['host'] = 'home.' + system.getHost() + ':' + system.getPort();
     }
