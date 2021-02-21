@@ -370,7 +370,7 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
     delete requestHeaders['x-forwarded-for'];
     delete requestHeaders['x-forwarded-proto'];
     delete requestHeaders['connection'];
-    requestHeaders['host'] = req.headers.host || system.getHost() + ':' + system.getPort();
+    requestHeaders['host'] = req.headers["x-forwarded-host"] || system.getHost() + ':' + system.getPort();
     requestHeaders['user-agent'] = 'openhab-cloud/0.0.1';
     // Strip off path prefix for remote vhosts hack
     var requestPath = req.path;
