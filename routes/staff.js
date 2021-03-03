@@ -4,7 +4,6 @@ var Enrollment = require('../models/enrollment');
 var Invitation = require('../models/invitation');
 var OAuth2Client = require('../models/oauth2client');
 var logger = require('../logger');
-var moment = require('moment');
 var redis = require('../redis-helper');
 
 exports.staffget = function(req, res) {

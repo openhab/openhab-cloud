@@ -1,5 +1,5 @@
 <% section = 'devices' %>
-<%- include header.ejs %>
+<%- include ('header.ejs') %>
 <style type="text/css">
     #map-canvas { width: 100%; height: 350px;}
     .nav-subitem {
@@ -18,7 +18,7 @@
     </header>
     <div class="slice clearfix">
         <div class="container">
-            <%- include alerts.ejs %>
+            <%- include ('alerts.ejs') %>
             <div class="row">
                 <aside class="span3" id="sidebar">
                     <nav id="subnav">
@@ -47,10 +47,10 @@
                         <tr>
                             <td><%= userDevices[selectedDeviceArrayId].deviceType%></td>
                             <td><%= userDevices[selectedDeviceArrayId].deviceId%></td>
-                            <td><%= date_util(userDevices[selectedDeviceArrayId].registered, timeZone).calendar()%></td>
+                            <td><%= date_util(userDevices[selectedDeviceArrayId].registered, timeZone).toRelativeCalendar()%></td>
                             <td>
                                 <% if (typeof userDevices[selectedDeviceArrayId].lastGlobalLocation != 'undefined') { %>
-                                <%= date_util(userDevices[selectedDeviceArrayId].lastGlobalLocation, timeZone).calendar()%>
+                                <%= date_util(userDevices[selectedDeviceArrayId].lastGlobalLocation, timeZone).toRelativeCalendar()%>
                                 <% } else { %>
                                     Never
                                 <% } %>
@@ -85,4 +85,4 @@
     </div>
 </section>
 <!-- page content -->
-<%- include footer.ejs %>
+<%- include ('footer.ejs') %>

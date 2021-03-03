@@ -1,5 +1,5 @@
 <% section = 'applications' %>
-<%- include header.ejs %>
+<%- include ('header.ejs') %>
 <style type="text/css">
     #map-canvas { width: 100%; height: 350px;}
     .nav-subitem {
@@ -18,7 +18,7 @@
     </header>
     <div class="slice clearfix">
         <div class="container">
-            <%- include alerts.ejs %>
+            <%- include ('alerts.ejs') %>
             <div class="row">
                 <aside class="span3" id="sidebar">
                     <nav id="subnav">
@@ -42,7 +42,7 @@
                         <% for (var i=0; i<oauth2tokens.length; i++) { %>
                         <tr>
                             <td>
-                                <%= date_util(oauth2tokens[i].created, timeZone).calendar() %>
+                                <%= date_util(oauth2tokens[i].created, timeZone).toRelativeCalendar() %>
                             </td>
                             <td>
                                 <a href="<% oauth2tokens[i].oAuthClient.homeUrl %>"><img style="height: 24px;" src="/img/oauth2/<%= oauth2tokens[i].oAuthClient.icon %>">&nbsp;<%= oauth2tokens[i].oAuthClient.name %></a>
@@ -63,4 +63,4 @@
     </div>
 </section>
 <!-- page content -->
-<%- include footer.ejs %>
+<%- include ('footer.ejs') %>

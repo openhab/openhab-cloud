@@ -1,7 +1,7 @@
 var apn = require('apn'),
     app = require('./../app'),
     logger = require('./../logger'),
-    apnConnection = new apn.Connection(app.config.apn);
+    apnConnection = new apn.Provider(app.config.apn);
 
 apnConnection.on('connected', function () {
     logger.info('openHAB-cloud: APN connected');

@@ -1,5 +1,5 @@
 <% section = 'notifications' %>
-<%- include header.ejs %>
+<%- include ('header.ejs') %>
 <!-- page content -->
 <section id="content" class="sidebar">
     <header class="headerPage">
@@ -12,7 +12,7 @@
     </header>
     <div class="slice clearfix">
         <div class="container">
-            <%- include alerts.ejs %>
+            <%- include ('alerts.ejs') %>
             <div class="row">
                 <aside class="span3" id="sidebar">
                     <nav id="subnav">
@@ -36,7 +36,7 @@
                         <tr><th class="col-sm-2">When</th><th class="col-sm-10">What</th></tr>
                         </thead>
                         <% for (var i=0; i<notifications.length; i++) { %>
-                        <tr><td class="col-sm-2"><%= date_util(notifications[i].created, timeZone).calendar() %></td>
+                        <tr><td class="col-sm-2"><%= date_util(notifications[i].created, timeZone).toRelativeCalendar() %></td>
                             <td class="col-sm-10"><%= notifications[i].message %></td>
                         </tr>
                         <% } %>
@@ -59,4 +59,4 @@
     </div>
 </section>
 <!-- page content -->
-<%- include footer.ejs %>
+<%- include ('footer.ejs') %>

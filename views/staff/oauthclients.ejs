@@ -1,5 +1,5 @@
 <% section = 'staff' %>
-<%- include ../header.ejs %>
+<%- include ('../header.ejs') %>
 <!-- page content -->
 <section id="content" class="sidebar">
     <header class="headerPage">
@@ -12,7 +12,7 @@
     </header>
     <div class="slice clearfix">
         <div class="container">
-            <%- include ../alerts.ejs %>
+           <%- include ('../alerts.ejs') %>
             <div class="row">
                 <aside class="span3" id="sidebar">
                     <nav id="subnav">
@@ -41,7 +41,7 @@
                             <td><%= oauthclients[i].name %></td>
                             <td><%= oauthclients[i].clientId %></td>
                             <td><%= oauthclients[i].active %></td>
-                            <td><%= date_util(oauthclients[i].created, timeZone).calendar() %></td>
+                            <td><%= date_util(oauthclients[i].created, timeZone).toRelativeCalendar() %></td>
                         </tr>
                         <% } %>
                     </table>
@@ -63,4 +63,4 @@
     </div>
 </section>
 <!-- page content -->
-<%- include ../footer.ejs %>
+<%- include ('../footer.ejs') %>

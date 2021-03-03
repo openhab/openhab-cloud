@@ -1,7 +1,4 @@
-FROM node:8-alpine
-
-# File Author / Maintainer
-MAINTAINER Mehmet Arziman
+FROM node:14-alpine
 
 RUN apk add --no-cache tzdata gettext
 
