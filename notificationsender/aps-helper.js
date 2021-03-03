@@ -26,24 +26,20 @@ apnConnection.on('disconnected', function () {
 apnConnection.on('socketError', logger.error);
 
 module.exports.test = function (deviceToken) {
-    var myDevice = new apn.Device(deviceToken);
     var note = new apn.Notification();
     note.expiry = Math.floor(Date.now() / 1000) + 3600; // Expires 1 hour from now.
     note.badge = 0;
     note.sound = 'ping.aiff';
-    note.alert = {};
-    note.alert.body = 'openHAB is offline';
+    note.body = 'openHAB is offline';
     note.payload = {'messageFrom': 'Caroline'};
-    apnConnection.pushNotification(note, myDevice);
+    apnConnection.send(note, deviceToken);
 }
 
 module.exports.sendAppleNotification = function (deviceToken, message, payload) {
-    var myDevice = new apn.Device(deviceToken);
     var note = new apn.Notification(payload);
     note.expiry = Math.floor(Date.now() / 1000) + 3600; // Expires 1 hour from now.
     note.badge = 0;
     note.sound = 'ping.aiff';
-    note.alert = {};
-    note.alert.body = message;
-    apnConnection.pushNotification(note, myDevice);
+    note.body = message;
+    apnConnection.send(note, deviceToken);
 }
