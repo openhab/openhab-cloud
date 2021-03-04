@@ -186,8 +186,8 @@ if (taskEnv === 'main') {
 setInterval(function () {
     var requests = requestTracker.getAll();
     logger.debug('openHAB-cloud: Checking orphaned rest requests (' + requestTracker.size() + ')');
-    for (var requestId in requests) {
-        var res = requestTracker.get(requestId);
+    Object.keys(requests).forEach(function (requestId) { 
+        var res = requests[requestId];
         if (res.finished) {
             logger.debug('openHAB-cloud: expiring orphaned response');
             requestTracker.remove(requestId);
@@ -197,7 +197,7 @@ setInterval(function () {
                 });
             }
         }
-    }
+    })
 }, 60000);
 
 // Setup mongoose data models
@@ -212,6 +212,7 @@ var OpenhabAccessLog = require('./models/openhabaccesslog');
 
 logger.info('openHAB-cloud: Scheduling a statistics job (every 5 min)');
 var every5MinStatJob = require('./jobs/every5minstat');
+const { request } = require('http');
 every5MinStatJob.start();
 
 // Configure the openHAB-cloud for development mode, if in development

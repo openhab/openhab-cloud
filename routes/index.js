@@ -393,21 +393,21 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
     res.openhab = req.openhab;
     this.requestTracker.add(res, requestId);
 
-    //we should only have to catch these two callbacks to hear about the response
-    //being close/finished, but thats not the case. Sometimes neither gets called
-    //and we have to manually clean up.  We have a interval for this above.
-
-    //when a response is closed by the requester
-    res.on('close', function () {
-        self.io.sockets.in(req.openhab.uuid).emit('cancel', {
-            id: requestId
-        });
+    res.on('finish', function () {
         self.requestTracker.remove(requestId);
     });
 
-    //when a response is closed by us
-    res.on('finish', function () {
-        self.requestTracker.remove(requestId);
+    // if 'closed' is emitted but 'finish' is not, cancel the event.
+    // this functionaility changed in node 12, not sure if this gets called like we think.
+    // see https://github.com/nodejs/node/issues/21063
+    res.on('close', function () {
+        // if we are tracking this, 'finish' was not emitted
+        if (self.requestTracker.has(requestId)) {
+            self.io.sockets.in(req.openhab.uuid).emit('cancel', {
+                id: requestId
+            });
+            self.requestTracker.remove(requestId);
+        }
     });
 };
 
