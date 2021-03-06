@@ -1,45 +1,26 @@
-var apn = require('apn'),
+const { APNS, Notification, Errors } = require('apns2'),
     app = require('./../app'),
     logger = require('./../logger'),
-    apnConnection = new apn.Provider(app.config.apn);
+    client = new APNS({
+        ...app.config.apn,
+        signingKey: fs.readFileSync(`${app.config.apn.signingKey}`)
+    });
 
-apnConnection.on('connected', function () {
-    logger.info('openHAB-cloud: APN connected');
-});
-
-apnConnection.on('transmitted', function (notification, device) {
-    logger.info('APN notification transmitted to:' + device.token.toString('hex'));
-});
-
-apnConnection.on('transmissionError', function (errCode, notification, device) {
-    logger.error('openHAB-cloud: APN notification caused error: ' + errCode + ' for device ', device, notification);
-});
-
-apnConnection.on('timeout', function () {
-    logger.error('openHAB-cloud: APN connection Timeout');
-});
-
-apnConnection.on('disconnected', function () {
-    logger.error('openHAB-cloud: APN disconnected');
-});
-
-apnConnection.on('socketError', logger.error);
-
-module.exports.test = function (deviceToken) {
-    var note = new apn.Notification();
-    note.expiry = Math.floor(Date.now() / 1000) + 3600; // Expires 1 hour from now.
-    note.badge = 0;
-    note.sound = 'ping.aiff';
-    note.body = 'openHAB is offline';
-    note.payload = {'messageFrom': 'Caroline'};
-    apnConnection.send(note, deviceToken);
-}
+client.on(Errors.error, (err) => {
+    logger.error(`openHAB-cloud: APN error ${err.reason} ${err.statusCode} ${err.notification.deviceToken}`)
+})
 
 module.exports.sendAppleNotification = function (deviceToken, message, payload) {
-    var note = new apn.Notification(payload);
-    note.expiry = Math.floor(Date.now() / 1000) + 3600; // Expires 1 hour from now.
-    note.badge = 0;
-    note.sound = 'ping.aiff';
-    note.body = message;
-    apnConnection.send(note, deviceToken);
+    logger.error(`aps-helper sending ${message} to device ${deviceToken}`)
+    const notification = new Notification(deviceToken, {
+        aps: {
+            alert: {
+                body: message,
+                badge: 0,
+                sound: 'default'
+            }
+        },
+        ...(payload)
+    })
+    client.send(notification).catch(err => {});
 }
