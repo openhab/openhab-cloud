@@ -9,7 +9,8 @@
     "integration_tests": "node tests/ohc_simulator_docker.js & mocha tests/mocha/integration/*.js"
   },
   "dependencies": {
-    "apn": "2.2.0",
+    "@xmpp/client": "^0.12.0",
+    "@xmpp/debug": "^0.12.0",
     "apns2": "^9.3.0",
     "bcrypt": "5.0.1",
     "bcrypt-cache": "^2.0.1",
@@ -36,8 +37,6 @@
     "mongoose": "5.11.18",
     "mongoose-types": "1.0.3",
     "morgan": "^1.10.0",
-    "node-gcm": "1.0.4",
-    "node-xmpp-client": "3.2.0",
     "nodemailer": "6.5.0",
     "oauth2orize": "^1.11.0",
     "passport": "0.4.1",

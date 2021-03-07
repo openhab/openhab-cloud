@@ -45,6 +45,7 @@ var internalAddress = system.getInternalAddress();
 logger.info('openHAB-cloud: Backend service is starting up...');
 
 process.on('uncaughtException', function (err) {
+    console.log(JSON.stringify(err))
     logger.error(err);
 });
 
@@ -186,7 +187,7 @@ if (taskEnv === 'main') {
 setInterval(function () {
     var requests = requestTracker.getAll();
     logger.debug('openHAB-cloud: Checking orphaned rest requests (' + requestTracker.size() + ')');
-    Object.keys(requests).forEach(function (requestId) { 
+    Object.keys(requests).forEach(function (requestId) {
         var res = requests[requestId];
         if (res.finished) {
             logger.debug('openHAB-cloud: expiring orphaned response');
@@ -327,7 +328,7 @@ app.use(function (req, res, next) {
     } else {
         res.locals.timeZone = 'undefined';
     }
-    
+
     res.locals.date_util = date_util;
 
     res.locals.legal = false;

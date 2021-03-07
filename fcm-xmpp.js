@@ -4,37 +4,34 @@ const system = require('./system');
  * This module maintains XMPP connection to FCM to receive messages from Android
  * app.
  */
-
-const UserDevice = require('./models/userdevice'),
-    UserDeviceLocationHistory = require('./models/userdevicelocationhistory'),
-    xmpp = require('node-xmpp-client'),
-    Firebase = require('firebase-messaging'),
-    firebase = require('./notificationsender/firebase'),
-    logger = require('./logger.js'),
-    xmppOptions = {
-        type: 'client',
-        jid: system.getGcmJid(),
-        password: system.getGcmPassword(),
-        port: 5235,
-        host: 'fcm-xmpp.googleapis.com',
-        legacySSL: true,
-    };
-
-let xmppClient;
-
 const ACK_MESSAGE_TYPE = 'ack';
 const NACK_MESSAGE_TYPE = 'nack';
+const { client, xml } = require("@xmpp/client");
+const UserDevice = require('./models/userdevice'),
+    UserDeviceLocationHistory = require('./models/userdevicelocationhistory'),
+    firebase = require('./notificationsender/firebase'),
+    logger = require('./logger.js');
 
 logger.info('openHAB-cloud: Initializing XMPP connection to GCM');
-xmppClient = new xmpp.Client(xmppOptions);
 
-xmppClient.on('online', function() {
+const xmppClient = client({
+    service: "xmpps://fcm-xmpp.googleapis.com:5235",
+    domain: "gcm.googleapis.com",
+    username: system.getGcmSenderId(),
+    password: system.getGcmPassword(),
+});
+
+xmppClient.start().catch(err => {
+    logger.error(`XMPP Error ${err}`);
+});
+
+xmppClient.on('online', function () {
     logger.info('openHAB-cloud: GCM XMPP connection is online');
 });
 
 function updateLocationOfDevice(messageData) {
     logger.info('openHAB-cloud: This is a location message');
-    UserDevice.findOne({androidRegistration: messageData.from}, function (error, userDevice) {
+    UserDevice.findOne({ androidRegistration: messageData.from }, function (error, userDevice) {
         let newLocation;
 
         if (error) {
@@ -51,7 +48,7 @@ function updateLocationOfDevice(messageData) {
         userDevice.globalAltitude = messageData.data.altitude;
         userDevice.lastGlobalLocation = new Date(messageData.data.timestamp);
         userDevice.save();
-        newLocation = new UserDeviceLocationHistory({userDevice: userDevice.id});
+        newLocation = new UserDeviceLocationHistory({ userDevice: userDevice.id });
         newLocation.globalLocation = [messageData.data.latitude, messageData.data.longitude];
         newLocation.when = new Date(messageData.data.timestamp);
         newLocation.globalAltitude = messageData.data.altitude;
@@ -62,7 +59,7 @@ function updateLocationOfDevice(messageData) {
 
 function hideNotificationInfo(messageData) {
     logger.info('openHAB-cloud: This is hideNotification message');
-    UserDevice.findOne({androidRegistration: messageData.from}, function (error, userDevice) {
+    UserDevice.findOne({ androidRegistration: messageData.from }, function (error, userDevice) {
         if (error) {
             logger.warn('openHAB-cloud: Error finding user device: ' + error);
             return;
@@ -73,7 +70,7 @@ function hideNotificationInfo(messageData) {
             return;
         }
 
-        UserDevice.find({owner: userDevice.owner}, function (error, userDevices) {
+        UserDevice.find({ owner: userDevice.owner }, function (error, userDevices) {
             // TODO: now send hideNotification data to all devices except the source one
             const registrationIds = [];
             for (let i = 0; i < userDevices.length; i++) {
@@ -92,7 +89,7 @@ function hideNotificationInfo(messageData) {
     });
 }
 
-xmppClient.on('stanza', function(stanza) {
+xmppClient.on('stanza', function (stanza) {
     if (!stanza.is('message') || stanza.attrs.type === 'error') {
         return;
     }
@@ -104,8 +101,8 @@ xmppClient.on('stanza', function(stanza) {
         return;
     }
 
-    const ackMsg = new xmpp.Element('message')
-        .c('gcm', { xmlns: 'google:mobile:data' })
+    const ackMsg = xml('message');
+    ackMsg.c('gcm', { xmlns: 'google:mobile:data' })
         .t(JSON.stringify({
             'to': messageData.from,
             'message_id': messageData.message_id,
