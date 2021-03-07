@@ -2,7 +2,6 @@ var User = require('../models/user');
 var Openhab = require('../models/openhab');
 var Notification = require('../models/notification');
 var logger = require('../logger');
-var moment = require('moment');
 var system = require('../system');
 
 exports.notificationsget = function(req, res) {

@@ -1,5 +1,5 @@
 <% section = 'items' %>
-<%- include header.ejs %>
+<%- include ('header.ejs') %>
     <!-- page content -->
     <section id="content" class="sidebar">
         <header class="headerPage">
@@ -12,7 +12,7 @@
         </header>
         <div class="slice clearfix">
             <div class="container">
-                <%- include alerts.ejs %>
+                <%- include ('alerts.ejs') %>
                 <div class="row">
                     <aside class="span3" id="sidebar">
                         <nav id="subnav">
@@ -36,7 +36,7 @@
                             <tr><th>Name</th><th>Status</th><th>Last update</th></tr>
                             </thead>
                             <% for (var i=0; i<items.length; i++) { %>
-                            <tr><td><a href="/events?source=<%=items[i].name%>"><%= items[i].name %></a></td><td><%= items[i].status %></td><td><%= date_util(items[i].last_update, timeZone).calendar() %></td></tr>
+                            <tr><td><a href="/events?source=<%=items[i].name%>"><%= items[i].name %></a></td><td><%= items[i].status %></td><td><%= date_util(items[i].last_update, timeZone).toRelativeCalendar() %></td></tr>
                             <% } %>
                         </table>
                     </div>
@@ -45,4 +45,4 @@
         </div>
     </section>
     <!-- page content -->
-<%- include footer.ejs %>
+<%- include ('footer.ejs') %>

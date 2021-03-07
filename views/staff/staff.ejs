@@ -1,5 +1,5 @@
 <% section = 'staff' %>
-<%- include ../header.ejs %>
+<%- include ('../header.ejs') %>
 <!-- page content -->
 <section id="content" class="sidebar">
     <header class="headerPage">
@@ -12,7 +12,7 @@
     </header>
     <div class="slice clearfix">
         <div class="container">
-            <%- include ../alerts.ejs %>
+           <%- include ('../alerts.ejs') %>
             <div class="row">
                 <aside class="span3" id="sidebar">
                     <nav id="subnav">
@@ -43,7 +43,7 @@
                         </thead>
                         <% for (var i=0; i<enrollments.length; i++) { %>
                         <tr >
-                            <td><%= date_util(enrollments[i].created, timeZone).calendar() %></td>
+                            <td><%= date_util(enrollments[i].created, timeZone).toRelativeCalendar() %></td>
                             <td><%= enrollments[i].email %></td>
                             <td><%= enrollments[i].platform %></td>
                             <td><%= enrollments[i].javaExp %></td>
@@ -70,4 +70,4 @@
     </div>
 </section>
 <!-- page content -->
-<%- include ../footer.ejs %>
+<%- include ('../footer.ejs') %>

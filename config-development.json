@@ -34,6 +34,13 @@
       "jid": "something@gcm.googleapis.com",
       "password": "password"
     },
+    "apn" : {
+      "team": "PB1234567",
+      "keyId": "BLABLA1",
+      "host": "api.development.push.apple.com",
+      "defaultTopic": "es.spaphone.openhab",
+      "signingKey": "certs/aps/AuthKey.p8"
+    },
     "ifttt" : {
       "iftttChannelKey" : "key",
       "iftttTestToken" : "token"

@@ -16,10 +16,10 @@
       "key" : "some express key"
     },
     "apn" : {
-      "gateway": "gateway.push.apple.com",
-      "cert": "certs/aps/aps_production_cert.pem",
-      "key": "certs/aps/aps_production_key.pem",
-      "passphrase": "passphrase"
+      "team": "PB1234567",
+      "keyId": "BLABLA1",
+      "defaultTopic": "es.spaphone.openhab",
+      "signingKey": "certs/aps/AuthKey.p8"
     },
     "gcm" : {
       "jid": "something@gcm.googleapis.com",

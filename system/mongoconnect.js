@@ -21,6 +21,9 @@ MongoConnect.prototype.connect = function (mongoose, callback) {
     if (typeof callback !== 'function') {
         callback = this.defaultCallback;
     }
+    mongoose.set('useNewUrlParser', true);
+    mongoose.set('useFindAndModify', false);
+    mongoose.set('useCreateIndex', true);   
     logger.info('opneHAB-cloud: Trying to connect to mongodb at: ' + this.getMongoUri());
     mongoose.connect(this.getMongoUri(), callback);
 };

@@ -1,5 +1,5 @@
 <% section = 'events' %>
-<%- include header.ejs %>
+<%- include ('header.ejs') %>
 <!-- page content -->
 <section id="content" class="sidebar">
     <header class="headerPage">
@@ -12,7 +12,7 @@
     </header>
     <div class="slice clearfix">
         <div class="container">
-            <%- include alerts.ejs %>
+            <%- include ('alerts.ejs') %>
             <div class="row">
                 <aside class="span3" id="sidebar">
                     <nav id="subnav">
@@ -36,7 +36,7 @@
                         <tr><th>When</th><th>Where</th><th>What</th></tr>
                         </thead>
                         <% for (var i=0; i<events.length; i++) { %>
-                        <tr bgcolor="<% if (events[i].color == 'good') { %>#e0f0d5<% } else if (events[i].color == 'bad') { %>#f1dede<% } else { %>#daedf8<% } %>"><td><%= date_util(events[i].when, timeZone).calendar() %></td>
+                        <tr bgcolor="<% if (events[i].color == 'good') { %>#e0f0d5<% } else if (events[i].color == 'bad') { %>#f1dede<% } else { %>#daedf8<% } %>"><td><%= date_util(events[i].when, timeZone).toRelativeCalendar() %></td>
                             <td><a href="/events?source=<%=events[i].source%>"><%= events[i].source %></a></td>
                             <td><%= events[i].status %></td>
                         </tr>
@@ -60,4 +60,4 @@
     </div>
 </section>
 <!-- page content -->
-<%- include footer.ejs %>
+<%- include ('footer.ejs') %>

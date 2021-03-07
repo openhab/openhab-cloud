@@ -1,5 +1,5 @@
 <% section = 'staff' %>
-<%- include ../header.ejs %>
+<%- include ('../header.ejs') %>
 <!-- page content -->
 <section id="content" class="sidebar">
     <header class="headerPage">
@@ -12,7 +12,7 @@
     </header>
     <div class="slice clearfix">
         <div class="container">
-            <%- include ../alerts.ejs %>
+           <%- include ('../alerts.ejs') %>
             <div class="row">
                 <aside class="span3" id="sidebar">
                     <nav id="subnav">
@@ -49,10 +49,10 @@
                         </thead>
                         <% for (var i=0; i<invitations.length; i++) { %>
                         <tr >
-                            <td><%= date_util(invitations[i].created, timeZone).calendar() %></td>
+                            <td><%= date_util(invitations[i].created, timeZone).toRelativeCalendar() %></td>
                             <td><%= invitations[i].email %></td>
                             <td><%= invitations[i].code %></td>
-                            <td><%= date_util(invitations[i].lastNotified, timeZone).calendar() %></td>
+                            <td><%= date_util(invitations[i].lastNotified, timeZone).toRelativeCalendar() %></td>
                             <td>
                                 <a href="/staff/resendinvitation/<%=invitations[i].id%>"><i class="icon-mail" title="Resend invitation"></i></a>
                                 <a href="/staff/deleteinvitation/<%=invitations[i].id%>"><i class="icon-trash" title="Delete"></i></a>
@@ -78,4 +78,4 @@
     </div>
 </section>
 <!-- page content -->
-<%- include ../footer.ejs %>
+<%- include ('../footer.ejs') %>

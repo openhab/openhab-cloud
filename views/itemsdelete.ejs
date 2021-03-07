@@ -1,5 +1,5 @@
 <% section = 'account' %>
-<%- include header.ejs %>
+<%- include ('header.ejs') %>
 <section id="content">
     <header class="headerPage">
         <div class="container clearfix">
@@ -12,7 +12,7 @@
 </section>
 <div class="slice clearfix">
     <div class="container">
-        <%- include alerts.ejs %>
+        <%- include ('alerts.ejs') %>
         <div class="row">
             <div class="span12">
                 <h2>Warning! You are going to delete your items and event data! All items and event data will be completely erased!</h2>
@@ -28,4 +28,4 @@
         </div>
     </div>
 </div>
-<%- include footer.ejs %>
+<%- include ('footer.ejs') %>

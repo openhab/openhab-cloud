@@ -4,13 +4,15 @@ var mongoose = require('mongoose'),
      Openhab = require('./openhab'),
      Email = mongoose.SchemaTypes.Email,
      UserAccount = require('./useraccount'),
-     ObjectId = mongoose.SchemaTypes.ObjectId;
+    ObjectId = mongoose.SchemaTypes.ObjectId,
+    { BcryptCache, MemoryCache } = require('bcrypt-cache');
 
-var MemoryBcryptCache = require('bcrypt-cache').MemoryBcryptCache;
-var memCache = new MemoryBcryptCache({
+
+var memCache = new MemoryCache({
     ttl: 60,
     pruneTimer: 60
 });
+const bcryptCache = new BcryptCache(memCache);
 
 
 var UserSchema = new Schema({
@@ -32,7 +34,7 @@ var UserSchema = new Schema({
 /*userSchema.plugin(passportLocalMongoose);*/
 
 UserSchema.method('checkPassword', function (password, callback) {
-    memCache.compare(this.hash,password).then(function (result) {
+    bcryptCache.compare(password, this.hash).then(function (result) {
       callback(null,result);
     });
 });

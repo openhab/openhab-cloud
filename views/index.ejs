@@ -1,5 +1,5 @@
 <% section = 'index' %>
-<%- include header.ejs %>
+<%- include ('header.ejs') %>
       <% if (!user) { %>
 
 <section id="content">
@@ -13,7 +13,7 @@
     </header>
     <div class="slice clearfix">
         <div class="container">
-            <%- include alerts.ejs %>
+            <%- include ('alerts.ejs') %>
             <div class="row">
                 <div class="span2"></div>
                 <div class="span4">
@@ -85,7 +85,7 @@
 <section id="content" class="portfolio">
     <header class="headerPage">
         <div class="container clearfix">
-            <%- include alerts.ejs %>
+            <%- include ('alerts.ejs') %>
             <div class="row">
                 <h1 class="span8">Home</h1>
                 <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a></div>
@@ -132,4 +132,4 @@
 </section>
       <% } %>
   </div>
-<%- include footer.ejs %>
+<%- include ('footer.ejs') %>

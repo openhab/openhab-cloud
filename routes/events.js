@@ -2,7 +2,6 @@ var User = require('../models/user');
 var Openhab = require('../models/openhab');
 var Event = require('../models/event');
 var logger = require('../logger');
-var moment = require('moment');
 
 exports.eventsget = function(req, res) {
     var perPage = 20,

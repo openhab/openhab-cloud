@@ -146,12 +146,12 @@
                         <% if (user) if (openhabstatus) { %>
                         <% if (openhabstatus == 'online') { %>
                         <li class="openhab-online">
-                            <a href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).calendar()%>">Online</a>
+                            <a href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).toRelativeCalendar()%>">Online</a>
                         </li>
                         <% } else { %>
                         <li class="openhab-offline">
                             <!-- <a data-toggle="tooltip" data-placement="left" title data-original-title="Last seen on xxx">openHAB <%= openhabstatus %></a> -->
-                            <a href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).calendar()%>">Offline</a>
+                            <a href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).toRelativeCalendar()%>">Offline</a>
                         </li>
                         <% } %>
                         <% } %>

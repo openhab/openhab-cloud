@@ -1,5 +1,5 @@
 <% section = '' %>
-<%- include header.ejs %>
+<%- include ('header.ejs') %>
 <!-- page content -->
 <section id="content" xmlns="http://www.w3.org/1999/html">
     <header class="headerPage">
@@ -12,7 +12,7 @@
     </header>
     <div class="slice clearfix">
         <div class="container">
-            <%- include alerts.ejs %>
+            <%- include ('alerts.ejs') %>
             <div class="row">
                 <div class="span12">
                     <h2>Early Beta</h2>
@@ -60,4 +60,4 @@
     </div>
 </section>
 <!-- page content -->
-<%- include footer.ejs %>
+<%- include ('footer.ejs') %>
