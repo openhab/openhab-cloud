@@ -136,7 +136,7 @@ exports.authorization = [
                     errormessages: errormessages,
                     infomessages: infomessages,
                     transactionID: req.oauth2.transactionID,
-                    client: req.oauth2.client,
+                    oauthClient: req.oauth2.client,
                     scope: scope
                 });
             }

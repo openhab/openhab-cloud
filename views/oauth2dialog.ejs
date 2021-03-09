@@ -28,7 +28,7 @@
                     <h3>OAuth2 application authorization</h3>
                     <div class="divider"><span></span></div>
                     <p>
-                        Application <strong><%= client.name %></strong> is requesting access to your account for the following scope:<br>
+                        Application <strong><%= oauthClient.name %></strong> is requesting access to your account for the following scope:<br>
                         <%= scope.description %>
                         <form action="/oauth2/authorize/decision" method="post">
                             <input name="transaction_id" type="hidden" value="<%= transactionID %>">
