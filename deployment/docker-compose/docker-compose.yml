@@ -9,7 +9,7 @@ services:
       #args:
       #  TZ: America/Los_Angeles
     volumes:
-    - ./config.json.template:/opt/openhabcloud/config.json.template
+    - ${PWD}/config.json.template:/opt/openhabcloud/config.json.template
     depends_on:
     - mongodb
     - redis
@@ -42,7 +42,7 @@ services:
     - "80:80"
     - "8080:8080"
     volumes:
-    - ./traefik.toml:/etc/traefik/traefik.toml:ro
+    - ${PWD}/traefik.toml:/etc/traefik/traefik.toml:ro
     - /var/run/docker.sock:/var/run/docker.sock
     - traefik-data:/data
     command:
