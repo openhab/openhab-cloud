@@ -14,13 +14,11 @@ module.exports.sendAppleNotification = function (deviceToken, message, payload) 
     logger.error(`aps-helper sending ${message} to device ${deviceToken}`)
     const notification = new Notification(deviceToken, {
         aps: {
-            alert: {
-                body: message,
-                badge: 0,
-                sound: 'default'
-            }
+            badge: 0,
+            sound: { name: 'default' },
+            alert: { body: message }
         },
         ...(payload)
     })
-    client.send(notification).catch(err => {});
+    client.send(notification).catch(err => { });
 }
