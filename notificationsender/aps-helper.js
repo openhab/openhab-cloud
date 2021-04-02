@@ -11,7 +11,7 @@ client.on(Errors.error, (err) => {
 })
 
 module.exports.sendAppleNotification = function (deviceToken, message, payload) {
-    logger.error(`aps-helper sending ${message} to device ${deviceToken}`)
+    logger.debug(`aps-helper sending ${message} to device ${deviceToken}`)
     const notification = new Notification(deviceToken, {
         aps: {
             badge: 0,
