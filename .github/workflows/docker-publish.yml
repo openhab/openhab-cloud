@@ -34,6 +34,8 @@ jobs:
       - name: Push image
         run: |
 
+          GIT_HASH=$(git rev-parse --short "$GITHUB_SHA")
+
           # Change all uppercase to lowercase
           IMAGE_NAME=$(echo $IMAGE_NAME | tr '[A-Z]' '[a-z]')
 
@@ -49,5 +51,6 @@ jobs:
           echo IMAGE_NAME=$IMAGE_NAME
           echo VERSION=$VERSION
 
+          docker tag $IMAGE_NAME $IMAGE_NAME:$GIT_HASH
           docker tag $IMAGE_NAME $IMAGE_NAME:$VERSION
-          docker push $IMAGE_NAME:$VERSION
+          docker push -a $IMAGE_NAME
