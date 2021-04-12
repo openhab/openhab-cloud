@@ -346,6 +346,12 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
     var self = this;
 
     this.logger.auditRequest(req);
+
+    for(var i in req.headers)
+    {
+        this.logger.debug("In: " + i + " -> " + req.headers[i]);
+    }
+
     req.connection.setTimeout(600000);
 
     if (req.openhab.status === 'offline') {
@@ -379,6 +385,16 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
         // TODO: this is too dirty :-(
         delete requestHeaders['host'];
         requestHeaders['host'] = 'home.' + system.getHost() + ':' + system.getPort();
+    }
+
+    if( (requestHeaders['content-length'] === '0') && (requestHeaders['content-type'] === undefined) )
+    {
+        requestHeaders['content-type'] = 'text/plain';
+    }
+
+    for(var i in req.headers)
+    {
+        this.logger.debug("Out: " + i + " -> " + req.headers[i]);
     }
 
     // Send a message with request to openhab agent module
