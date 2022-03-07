@@ -12,6 +12,10 @@ on:
 
   # Run tests for any PRs.
   pull_request:
+  
+  # Build image once a week to apply updates in base image.
+  schedule:
+    - cron: 0 0 */7 * *
 
 env:
   IMAGE_NAME: ${{github.repository}}
