@@ -2,7 +2,7 @@ version: '3'
 
 services:
   app:
-    image: openhab/openhabcloud-app:latest
+    image: openhab/openhab-cloud:latest
     build:
       context: ../..
       # Uncomment to customize timezone
