@@ -7,7 +7,7 @@ to spin up the dockerized openhab-cloud backend.
 
 The dockerized openhab-cloud uses a separate docker image and container for each part of the overall system
 according to the following stack:
-* `app`: node.js and express.js (`openhab/openhabcloud-app:latest`)
+* `app`: node.js and express.js (`openhab/openhab-cloud:latest`)
 * `mongodb`: MongoDB database (`mongo:4`)
 * `redis`: redis session manager (`bitnami/redis:latest`)
 * `traefik`: http proxy with LetsEncrypt SSL Certs (`traefik:1.7`)
