@@ -7,7 +7,6 @@ var system = require('../system'),
     events_routes = require('./events'),
     items_routes = require('./items'),
     notifications_routes = require('./notifications'),
-    configsystem_routes = require('./configsystem'),
     invitations_routes = require('./invitations'),
     users_routes = require('./users'),
     staff_routes = require('./staff'),
@@ -47,7 +46,6 @@ Routes.prototype.setupRoutes = function (app) {
     this.setupApplicationsRoutes(app);
     this.setupInvitationRoutes(app);
     this.setupUserManagementRoutes(app);
-    this.setupSystemConfigurationRoutes(app);
     this.setupOAuthRoutes(app);
     this.setupIFTTTRoutes(app);
     this.setupTimezoneRoutes(app);
@@ -164,11 +162,6 @@ Routes.prototype.setupUserManagementRoutes = function (app) {
     app.post('/users/add', this.ensureAuthenticated, this.ensureMaster, users_routes.usersaddpostvalidate, users_routes.usersaddpost);
     app.get('/users/delete/:id', this.ensureAuthenticated, this.ensureMaster, users_routes.usersdeleteget);
     app.get('/users/:id', this.ensureAuthenticated, this.ensureMaster, users_routes.usersget);
-};
-
-Routes.prototype.setupSystemConfigurationRoutes = function (app) {
-    app.get('/config/system', this.ensureAuthenticated, configsystem_routes.get);
-    app.get('/config/system/:id', this.ensureAuthenticated, configsystem_routes.get);
 };
 
 Routes.prototype.setupOAuthRoutes = function (app) {

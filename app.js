@@ -26,14 +26,15 @@
 var logger = require('./logger.js'),
     system = require('./system'),
     env = process.env.NODE_ENV || 'production',
-    config;
-
+    config,
+    offlineNotificationTime;
 
 //load and set our configuration, delete any cache first
 var loadConfig = function () {
     delete require.cache[require.resolve('./config.json')];
     config = require('./config.json');
     system.setConfiguration(config);
+    offlineNotificationTime = system.getOfflineNotificationTime()
 }
 
 loadConfig();
@@ -71,7 +72,6 @@ var flash = require('connect-flash'),
     express = require('express'),
     bodyParser = require('body-parser'),
     errorHandler = require('errorhandler'),
-    morgan = require('morgan'),
     cookieParser = require('cookie-parser'),
     session = require('express-session'),
     favicon = require('serve-favicon'),
@@ -93,7 +93,8 @@ var flash = require('connect-flash'),
     Limiter = require('ratelimiter'),
     requesttracker = require('./requesttracker'),
     routes = require('./routes'),
-    MongoConnect = require('./system/mongoconnect');
+    MongoConnect = require('./system/mongoconnect'),
+    uuid = require('uuid');
 
 // MongoDB connection settings
 var mongoose = require('mongoose');
@@ -123,58 +124,27 @@ var requestTracker = new requesttracker();
 // key is openHAB UUID, value is Date when openHAB was disconnected
 var offlineOpenhabs = {};
 
-/**
- * Callback for the 'check offline openHABs' scheduled task to notify the owner of an openHAB, that the instance
- * is offline.
- *
- * @param error The error, if an error occured
- * @param {Openhab} openhab The openHAB instance
- */
-function notifyOpenHABOwnerOffline(openhab) {
-
-    openhab.status = 'offline';
-    openhab.last_online = new Date();
-    openhab.save(function (error) {
-        if (error) {
-            logger.error('openHAB-cloud: Error saving openHAB status: ' + error);
-        }
-    });
-    var disconnectevent = new Event({
-        openhab: openhab.id,
-        source: 'openhab',
-        status: 'offline',
-        color: 'bad'
-    });
-    disconnectevent.save(function (error) {
-        if (error) {
-            logger.error('openHAB-cloud: Error saving disconnect event: ' + error);
-        }
-    });
-    notifyOpenHABStatusChange(openhab, 'offline');
-}
-
 // This timer runs every minute and checks if there are any openHABs in offline status for more then 300 sec
 // Then it sends notifications to openHAB's owner if it is offline for more then 300 sec
 // This timer only runs on the job task
 if (taskEnv === 'main') {
     setInterval(function () {
         logger.debug('openHAB-cloud: Checking for offline openHABs (' + Object.keys(offlineOpenhabs).length + ')');
-        for (var offlineOpenhabUuid in offlineOpenhabs) {
-            if (Date.now() - offlineOpenhabs[offlineOpenhabUuid] < 5 * 60 * 1000) {
+        for (const offlineOpenhabUuid in offlineOpenhabs) {
+            const offlineOpenhab = offlineOpenhabs[offlineOpenhabUuid];
+            if (Date.now() - offlineOpenhab.date < offlineNotificationTime) {
                 continue;
             }
             delete offlineOpenhabs[offlineOpenhabUuid];
-            logger.debug('openHAB-cloud: openHAB with ' + offlineOpenhabUuid + ' is offline > 300 sec, time to notify the owner');
+            //check if our connection (connectionId) is still set, if not the user has reconnected
             Openhab.findOne({
-                uuid: offlineOpenhabUuid
+                connectionId: offlineOpenhab.connectionId
             }).exec(function (error, openhab) {
                 if (!openhab || error) {
                     return;
                 }
-                //if this has not connected to another server, then notify
-                if (openhab.serverAddress == internalAddress) {
-                    notifyOpenHABOwnerOffline(openhab);
-                }
+                logger.debug('openHAB-cloud: openHAB with ' + offlineOpenhabUuid + ' is offline > ' + offlineNotificationTime + ' millis, time to notify the owner');
+                notifyOpenHABStatusChange(openhab, 'offline');
             });
         }
     }, 60000);
@@ -204,16 +174,14 @@ setInterval(function () {
 // Setup mongoose data models
 var User = require('./models/user');
 var Openhab = require('./models/openhab');
-var OpenhabConfig = require('./models/openhabconfig');
 var Event = require('./models/event');
 var Item = require('./models/item');
 var UserDevice = require('./models/userdevice');
 var Notification = require('./models/notification');
-var OpenhabAccessLog = require('./models/openhabaccesslog');
 
 logger.info('openHAB-cloud: Scheduling a statistics job (every 5 min)');
 var every5MinStatJob = require('./jobs/every5minstat');
-const { request } = require('http');
+
 every5MinStatJob.start();
 
 // Configure the openHAB-cloud for development mode, if in development
@@ -446,6 +414,7 @@ io.use(function (socket, next) {
             next(error);
         } else {
             if (openhab) {
+                socket.openhab = openhab; // will use this reference in 'connect' to save on mongo calls
                 next();
             } else {
                 logger.info('openHAB-cloud: openHAB ' + handshakeData.uuid + ' not found');
@@ -457,72 +426,87 @@ io.use(function (socket, next) {
 
 io.sockets.on('connection', function (socket) {
     logger.info('openHAB-cloud: Incoming openHAB connection for uuid ' + socket.handshake.uuid);
+    if(!socket.openhab){
+        logger.info('openHAB-cloud: openhab schema not found on socket for uuid' + socket.handshake.uuid);
+        socket.disconnect();
+        return;
+    }
     socket.join(socket.handshake.uuid);
-    // Remove openHAB from offline array if needed
-    delete offlineOpenhabs[socket.handshake.uuid];
-    Openhab.findOne({
-        uuid: socket.handshake.uuid
-    }, function (error, openhab) {
-        if (!error && openhab) {
-            logger.info('openHAB-cloud: Connected openHAB with ' + socket.handshake.uuid + ' successfully');
-            // Make an openhabaccesslog entry anyway
-            var remoteHost = socket.handshake.headers['x-forwarded-for'] || socket.client.conn.remoteAddress;
-            var newOpenhabAccessLog = new OpenhabAccessLog({
+    socket.connectionId = uuid.v1(); //we will check this when we handle disconnects
+
+    const openhab = socket.openhab;
+    const lastOnline = openhab.last_online;
+    const lastStatus = openhab.status;
+    const lastServerAddress = openhab.serverAddress
+
+    openhab.status = 'online';
+    openhab.serverAddress = internalAddress;
+    openhab.connectionId = socket.connectionId;
+    openhab.last_online = new Date();
+    openhab.openhabVersion = socket.handshake.openhabVersion;
+    openhab.clientVersion = socket.handshake.clientVersion;
+    openhab.save(
+        function (error) {
+            if(error){
+                logger.error('openHAB-cloud: save error: ' + error);
+                socket.disconnect();
+                return;
+            }
+            logger.info('openHAB-cloud: connect success uuid ' + openhab.uuid + ' prevous address ' + lastServerAddress + " my address " + internalAddress);      
+
+            socket.openhabId = openhab.id;
+            
+            var connectevent = new Event({
                 openhab: openhab.id,
-                remoteHost: remoteHost,
-                remoteVersion: socket.handshake.openhabVersion,
-                remoteClientVersion: socket.handshake.clientVersion
+                source: 'openhab',
+                status: 'online',
+                color: 'good'
             });
-            newOpenhabAccessLog.save(function (error) {
+            connectevent.save(function (error) {
                 if (error) {
-                    logger.error('openHAB-cloud: Error saving openHAB access log: ' + error);
+                    logger.error('openHAB-cloud: Error saving connect event: ' + error);
                 }
             });
-            // Make an event and notification only if openhab was offline
-            // If it was marked online, means reconnect appeared because of my.oh fault
-            // We don't want massive events and notifications when node is restarted
-            logger.info('openHAB-cloud: uuid ' + socket.handshake.uuid + ' server address ' + openhab.serverAddress + " my address " + internalAddress);
-            if (openhab.status === 'offline' || openhab.serverAddress !== internalAddress) {
-                openhab.status = 'online';
-                openhab.serverAddress = internalAddress;
-                openhab.last_online = new Date();
-                openhab.openhabVersion = socket.handshake.openhabVersion;
-                openhab.clientVersion = socket.handshake.clientVersion;
-                openhab.save(function (error) {
-                    if (error) {
-                        logger.error('openHAB-cloud: Error saving openHAB: ' + error);
-                    }
-                });
-                var connectevent = new Event({
-                    openhab: openhab.id,
-                    source: 'openhab',
-                    status: 'online',
-                    color: 'good'
-                });
-                connectevent.save(function (error) {
-                    if (error) {
-                        logger.error('openHAB-cloud: Error saving connect event: ' + error);
-                    }
-                });
+
+            //notify user that connection is online
+            if(lastStatus === 'offline' && Date.now() -  lastOnline > offlineNotificationTime){
                 notifyOpenHABStatusChange(openhab, 'online');
-            } else {
-                openhab.openhabVersion = socket.handshake.openhabVersion;
-                openhab.clientVersion = socket.handshake.clientVersion;
-                openhab.save(function (error) {
-                    if (error) {
-                        logger.error('openHAB-cloud: Error saving openhab: ' + error);
-                    }
-                });
-            }
-            socket.openhabUuid = openhab.uuid;
-            socket.openhabId = openhab.id;
-        } else {
-            if (error) {
-                logger.error('openHAB-cloud: Error looking up openHAB: ' + error);
-            } else {
-                logger.warn('openHAB-cloud: Unable to find openHAB ' + socket.handshake.uuid);
+            } else if(lastStatus === 'online') {
+                logger.warn('openHAB-cloud: connected openhab ' + socket.handshake.uuid + ' was previously marked as online')
             }
         }
+    );
+
+    socket.on('disconnect', function () {
+        logger.info('openHAB-cloud: Disconnected uuid ' + socket.handshake.uuid + ' connectionId ' + socket.connectionId);
+        Openhab.setOffline(socket.connectionId, function (error, openhab) {
+            if (error) {
+                logger.error('openHAB-cloud: Error saving openHAB disconnect: ' + error);
+                return;
+            }
+            if(openhab) {
+                //we will try and notifiy users of being offline
+                offlineOpenhabs[openhab.uuid] =  {
+                    date: Date.now(),
+                    connectionId: socket.connectionId
+                }
+
+                var disconnectevent = new Event({
+                    openhab: openhab.id,
+                    source: 'openhab',
+                    status: 'offline',
+                    color: 'bad'
+                });
+
+                disconnectevent.save(function (error) {
+                    if (error) {
+                        logger.error('openHAB-cloud: Error saving disconnect event: ' + error);
+                    }
+                });
+            } else {
+                logger.warn(`openHAB-cloud: ${openhab.uuid} Did not mark as offline, another instance is connected`);
+            }
+        });
     });
 
     /*
@@ -865,99 +849,6 @@ io.sockets.on('connection', function (socket) {
                     }
                 });
             });
-        });
-    });
-
-    socket.on('updateConfig', function (data) {
-        var self = this;
-        Openhab.findOne({
-            uuid: self.handshake.uuid
-        }, function (error, openhab) {
-            if (error) {
-                logger.warn(error);
-                return;
-            }
-            if (!openhab) {
-                logger.warn('openHAB-cloud: Unable to find openhab ' + self.handshake.uuid);
-                return;
-            }
-            logger.info('openHAB-cloud: openHAB ' + self.handshake.uuid + ' requested to update ' + data.type + ' config ' +
-                data.name + ' with timestamp = ' + data.timestamp);
-            OpenhabConfig.findOne({
-                openhab: openhab.id,
-                type: data.type,
-                name: data.name
-            },
-                function (error, openhabConfig) {
-                    if (error) {
-                        logger.warn('openHAB-cloud: Failed to find ' + self.openhab.uuid + ' config: ' + error);
-                        return;
-                    }
-                    if (!openhabConfig) {
-                        logger.info('openHAB-cloud: No config found, creating new one');
-                        openhabConfig = new OpenhabConfig({
-                            type: data.type,
-                            name: data.name,
-                            timestamp: new Date(data.timestamp),
-                            config: data.config,
-                            openhab: openhab.id
-                        });
-                        openhabConfig.markModified();
-                        openhabConfig.save(function (error) {
-                            if (error !== null) {
-                                logger.warn('openHAB-cloud: Error saving new openhab config: ' + error);
-                            }
-                        });
-                    } else {
-                        logger.info('openHAB-cloud: My timestamp = ' + openhabConfig.timestamp + ', remote timestamp = ' +
-                            new Date(data.timestamp));
-                        if (openhabConfig.timestamp > new Date(data.timestamp)) {
-                            logger.info('openHAB-cloud: My config is newer');
-                            io.sockets.in(openhab.uuid).emit('updateConfig', {
-                                timestamp: openhabConfig.timestamp,
-                                name: openhabConfig.name,
-                                type: openhabConfig.type,
-                                config: openhabConfig.config
-                            });
-                        } else {
-                            if (openhabConfig.timestamp < new Date(data.timestamp)) {
-                                logger.info('openHAB-cloud: Remote config is newer, updating');
-                                openhabConfig.config = data.config;
-                                openhabConfig.timestamp = new Date(data.timestamp);
-                                openhabConfig.markModified();
-                                openhabConfig.save();
-                                io.sockets.in(openhab.uuid).emit('updateConfig', {
-                                    timestamp: openhabConfig.timestamp,
-                                    config: openhabConfig.config
-                                });
-                            } else {
-                                logger.info('openHAB-cloud: My config = remote config');
-                                io.sockets.in(openhab.uuid).emit('updateConfig', {
-                                    timestamp: openhabConfig.timestamp,
-                                    config: openhabConfig.config
-                                });
-                            }
-                        }
-                    }
-                });
-        });
-    });
-
-    socket.on('disconnect', function () {
-        var self = this;
-        // Find any other sockets for this openHAB and if any, don't mark openHAB as offline
-        for (var connectedSocketId in io.sockets.connected) {
-            var connectedSocket = io.sockets.connected[connectedSocketId];
-            if (connectedSocket !== self && connectedSocket.openhabUuid === self.handshake.uuid) {
-                logger.info('openHAB-cloud: Found another connected socket for ' + self.handshake.uuid + ', will not mark offline');
-                return;
-            }
-        }
-        Openhab.findById(self.openhabId, function (error, openhab) {
-            if (!error && openhab) {
-                offlineOpenhabs[openhab.uuid] = Date.now();
-                logger.info('openHAB-cloud: Disconnected ' + openhab.uuid);
-            }
         });
     });
 });
