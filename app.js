@@ -504,7 +504,7 @@ io.sockets.on('connection', function (socket) {
                     }
                 });
             } else {
-                logger.warn(`openHAB-cloud: ${openhab.uuid} Did not mark as offline, another instance is connected`);
+                logger.warn(`openHAB-cloud: ${socket.handshake.uuid} Did not mark as offline, another instance is connected`);
             }
         });
     });
