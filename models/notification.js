@@ -8,7 +8,7 @@ var NotificationSchema = new Schema({
     icon: String,
     severity: String,
     acknowledged: Boolean,
-    created: { type: Date, default: Date.now }
+    created: { type: Date, default: Date.now, expires: '30d' }
 });
 
 NotificationSchema.index({user:1, created:1});

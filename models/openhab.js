@@ -1,8 +1,7 @@
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
-    ObjectId = mongoose.SchemaTypes.ObjectId,
-    OpenhabConfig = require('./openhabconfig')
-
+    ObjectId = mongoose.SchemaTypes.ObjectId;
+    
 var OpenhabSchema = new Schema({
     name: String,                                       // A meaningfull name of openHAB
     uuid: {type: String, unique: true},                 // openHAB generated UUID
@@ -16,7 +15,8 @@ var OpenhabSchema = new Schema({
     last_online: { type: Date },                        // last seen this openHAB online
     last_email_notification: {type: Date},              // last notification about openHAB being offline for long time
     status: {type: String, default: "offline"},         // current openHAB status (online/offline)
-    serverAddress: {type: String}                       // the host:port that this openhab is connected to
+    serverAddress: {type: String},                      // the host:port that this openhab is connected to
+    connectionId: {type: String}                        // the local instance ID needed when marking openHABs offline
 });
 
 // Index for lookups by uuid
@@ -25,6 +25,8 @@ OpenhabSchema.index({uuid:1});
 OpenhabSchema.index({account:1});
 // Index for lookups by status
 OpenhabSchema.index({status:1, last_online:1});
+// Index for lookups by connectionId
+OpenhabSchema.index({connectionId:1});
 
 OpenhabSchema.methods.authenticate = function(openhabUuid, openhabSecret, callback) {
     this.model('Openhab').findOne({uuid: openhabUuid, secret: openhabSecret}, function(error, openhab) {
@@ -38,6 +40,13 @@ OpenhabSchema.methods.authenticate = function(openhabUuid, openhabSecret, callba
             }
         }
     });
+}
+
+OpenhabSchema.statics.setOffline = function(connectionId, callback) {
+    this.model('Openhab').findOneAndUpdate(
+        { connectionId: connectionId },
+        { $set: { status: 'offline', last_online: new Date()}},
+        callback );
 }
 
 module.exports = mongoose.model('Openhab', OpenhabSchema);

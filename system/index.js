@@ -168,6 +168,18 @@ System.prototype.getMuteNotifications = function() {
 };
 
 /**
+ * Returns the amount of milliseconds to wait until we let users know they are offline
+ * @returns {Number}
+ */
+ System.prototype.getOfflineNotificationTime = function() {
+    try {
+        return this.getConfig(['system', 'offlineNotificationTime']);
+    } catch (e) {
+        return 300 * 1000;
+    }
+};
+
+/**
  * Checks, if new user registration should be enabled or not.
  *
  * @return {boolean}
