@@ -316,6 +316,7 @@ var server = app.listen(system.getNodeProcessPort(), config.system.listenIp, fun
 });
 
 var io = require('socket.io')(server, {
+    maxHttpBufferSize: 1e8, //100mb, this was a previous default in engine.io before the upgrade to 3.6.0 which sets it to 1mb.  May want to revisit.
     logger: logger
 });
 
