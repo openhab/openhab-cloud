@@ -311,7 +311,7 @@ app.use(function (req, res, next) {
 
 app.use(serveStatic(path.join(__dirname, 'public')));
 
-var server = app.listen(system.getNodeProcessPort(), function () {
+var server = app.listen(system.getNodeProcessPort(), config.system.listenIp, function () {
     logger.info('openHAB-cloud: express server listening on port ' + system.getNodeProcessPort());
 });
 
