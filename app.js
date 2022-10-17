@@ -99,7 +99,7 @@ var flash = require('connect-flash'),
 // MongoDB connection settings
 var mongoose = require('mongoose');
 // MongoDB Caching for Item updates
-var cachegoose = require('cachegoose');
+var cachegoose = require('recachegoose');
 cachegoose(mongoose, {
     engine: 'redis',
     port: config.redis.port,
