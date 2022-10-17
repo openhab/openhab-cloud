@@ -38,7 +38,7 @@
     "mongoose": "^5.11.18",
     "mongoose-types": "1.0.3",
     "morgan": "^1.10.0",
-    "nodemailer": "^6.7.5",
+    "nodemailer": "^6.6.1",
     "oauth2orize": "^1.11.0",
     "passport": "0.4.1",
     "passport-http": "0.3.0",
