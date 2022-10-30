@@ -407,16 +407,20 @@ io.use(function (socket, next) {
         handshakeData.clientVersion = 'unknown';
     }
     Openhab.findOne({
-        uuid: handshakeData.uuid,
-        secret: handshakeSecret
+        uuid: handshakeData.uuid
     }, function (error, openhab) {
         if (error) {
             logger.error('openHAB-cloud: openHAB lookup error: ' + error);
             next(error);
         } else {
             if (openhab) {
-                socket.openhab = openhab; // will use this reference in 'connect' to save on mongo calls
-                next();
+                if(openhab.secret === handshakeSecret) {
+                    socket.openhab = openhab; // will use this reference in 'connect' to save on mongo calls
+                    next();
+                } else {
+                    logger.info('openHAB-cloud: openHAB ' + handshakeData.uuid + ' secret does not match');
+                    next(new Error('not authorized'));
+                }
             } else {
                 logger.info('openHAB-cloud: openHAB ' + handshakeData.uuid + ' not found');
                 next(new Error('not authorized'));
