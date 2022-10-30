@@ -393,7 +393,7 @@ io.use(function (socket, next) {
     handshakeData.openhabVersion = handshakeData.query['openhabversion'];
     handshakeData.clientVersion = handshakeData.query['clientVersion'];
     handshakeSecret = handshakeData.query['secret'];
-    ogger.info('openHAB-cloud: Authorizing incoming openHAB connection for ' + handshakeData.uuid );
+    logger.info('openHAB-cloud: Authorizing incoming openHAB connection for ' + handshakeData.uuid );
     if (!handshakeData.uuid) {
         handshakeData.uuid = handshakeData.headers['uuid'];
         handshakeSecret = handshakeData.headers['secret'];
