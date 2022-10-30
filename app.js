@@ -389,7 +389,6 @@ function sendIosNotifications(iosDeviceTokens, notification) {
 
 io.use(function (socket, next) {
     var handshakeData = socket.handshake;
-    logger.info('openHAB-cloud: Authorizing incoming openHAB connection');
     handshakeData.uuid = handshakeData.query['uuid'];
     handshakeData.openhabVersion = handshakeData.query['openhabversion'];
     handshakeData.clientVersion = handshakeData.query['clientVersion'];
@@ -406,6 +405,7 @@ io.use(function (socket, next) {
     if (!handshakeData.clientVersion) {
         handshakeData.clientVersion = 'unknown';
     }
+    logger.info('openHAB-cloud: Authorizing incoming openHAB connection for ' + handshakeData.uuid );
     Openhab.findOne({
         uuid: handshakeData.uuid,
         secret: handshakeSecret
@@ -453,7 +453,7 @@ io.sockets.on('connection', function (socket) {
                 socket.disconnect();
                 return;
             }
-            logger.info('openHAB-cloud: connect success uuid ' + openhab.uuid + ' prevous address ' + lastServerAddress + " my address " + internalAddress);      
+            logger.info('openHAB-cloud: connect success uuid ' + openhab.uuid + ' connectionId ' + socket.connectionId  + ' prevous address ' + lastServerAddress + " my address " + internalAddress);      
 
             socket.openhabId = openhab.id;
             
@@ -536,7 +536,7 @@ io.sockets.on('connection', function (socket) {
                     request.send(data.responseStatusCode, new Buffer(data.body, 'base64'));
                 }
             } else {
-                logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
+                logger.warn('openHAB-cloud: response ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own' + request.openhab.uuid);
             }
         } else {
             self.emit('cancel', {
@@ -553,7 +553,7 @@ io.sockets.on('connection', function (socket) {
             if (self.handshake.uuid === request.openhab.uuid && !request.headersSent) {
                 request.writeHead(data.responseStatusCode, data.responseStatusText, data.headers);
             } else {
-                logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
+                logger.warn('openHAB-cloud: responseHeader ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own ' + request.openhab.uuid + " or headers have already been sent");
             }
         } else {
             self.emit('cancel', {
@@ -571,7 +571,7 @@ io.sockets.on('connection', function (socket) {
             if (self.handshake.uuid === request.openhab.uuid) {
                 request.write(new Buffer(data.body, 'base64'));
             } else {
-                logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
+                logger.warn('openHAB-cloud: responseContent ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own' + request.openhab.uuid);
             }
         } else {
             self.emit('cancel', {
@@ -589,7 +589,7 @@ io.sockets.on('connection', function (socket) {
             if (self.handshake.uuid === request.openhab.uuid) {
                 request.write(data.body);
             } else {
-                logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
+                logger.warn('openHAB-cloud: responseContentBinary ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own ' + request.openhab.uuid);
             }
         } else {
             self.emit('cancel', {
@@ -606,7 +606,7 @@ io.sockets.on('connection', function (socket) {
             if (self.handshake.uuid === request.openhab.uuid) {
                 request.end();
             } else {
-                logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
+                logger.warn('openHAB-cloud: responseFinished ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own' + request.openhab.uuid);
             }
         }
     });
@@ -619,7 +619,7 @@ io.sockets.on('connection', function (socket) {
             if (self.handshake.uuid === request.openhab.uuid) {
                 request.send(500, data.responseStatusText);
             } else {
-                logger.warn('openHAB-cloud: ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own');
+                logger.warn('openHAB-cloud: responseError ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own' + request.openhab.uuid);
             }
         }
     });
