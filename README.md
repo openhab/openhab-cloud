@@ -360,7 +360,7 @@ Now you should be ready with your instance and see the welcome information of ub
 
 
 
-As next step go to back to the [Quickstart](#-quick-start) and follow the installation steps.
+As next step go to back to the [Quickstart](#quick-start) and follow the installation steps.
 You should jump to the [Setting up Nginx](#setupNginx) section and follow the instructions.
 
 
