@@ -31,7 +31,7 @@ openHAB Cloud is mainly based on the following frameworks and technologies:
 * [Socket.IO](http://socket.io/) - Bi-directional communication between web clients and servers
 
 
-### <a name="quickStart"></a> Quick start ###
+### Quick start ###
 
 Installing openHAB Cloud on Linux (ubuntu).
 
@@ -360,7 +360,7 @@ Now you should be ready with your instance and see the welcome information of ub
 
 
 
-As next step go to back to the [Quickstart](#quickStart) and follow the installation steps.
+As next step go to back to the [Quickstart](#-quick-start) and follow the installation steps.
 You should jump to the [Setting up Nginx](#setupNginx) section and follow the instructions.
 
 
