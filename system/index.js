@@ -180,6 +180,18 @@ System.prototype.getMuteNotifications = function() {
 };
 
 /**
+ * Returns the amount of seconds for openhab connection locks to persist in redis
+ * @returns {Number}
+ */
+System.prototype.getConnectionLockTimeSeconds = function() {
+    try {
+        return this.getConfig(['system', 'connectionLockTimeSeconds']);
+    } catch (e) {
+        return 70;
+    }
+};
+
+/**
  * Checks, if new user registration should be enabled or not.
  *
  * @return {boolean}

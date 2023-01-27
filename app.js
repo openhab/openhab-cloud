@@ -384,9 +384,7 @@ function sendIosNotifications(iosDeviceTokens, notification) {
     }
 }
 
-// In case of polling transport set poll duration to 300 seconds
-//io.set('polling duration', 300);
-
+// Socket.io Routes
 io.use(function (socket, next) {
     var handshakeData = socket.handshake;
     handshakeData.uuid = handshakeData.query['uuid'];
@@ -425,15 +423,41 @@ io.use(function (socket, next) {
     });
 });
 
-io.sockets.on('connection', function (socket) {
-    logger.info('openHAB-cloud: Incoming openHAB connection for uuid ' + socket.handshake.uuid);
-    if(!socket.openhab){
-        logger.info('openHAB-cloud: openhab schema not found on socket for uuid' + socket.handshake.uuid);
-        socket.disconnect();
-        return;
-    }
-    socket.join(socket.handshake.uuid);
+io.use(function (socket, next) {
+    logger.info('openHAB-cloud: obtaining lock for connection for uuid ' + socket.handshake.uuid);
     socket.connectionId = uuid.v1(); //we will check this when we handle disconnects
+    //set a lock so only one connection from the same client can connect, avoids split brain when clients reconnect
+    socket.redisLockKey = 'connection:' + socket.handshake.uuid;
+    const redisLockValue = JSON.stringify({
+        uuid: socket.handshake.uuid,
+        connectionId: socket.connectionId,
+        serverAddress: internalAddress
+    });
+    redis.set(socket.redisLockKey, redisLockValue, 'NX', 'EX', system.getConnectionLockTimeSeconds(), (err, result) => {
+        if(err) {
+            logger.info('openHAB-cloud: error attaining connection lock for  uuid ' + socket.handshake.uuid + ' connectionId ' + socket.connectionId + ' ' + err);
+            next(new Error('connection lock error'));
+        }
+
+        if(!result){
+            //this key already exists, which means another connection exists
+            logger.info('openHAB-cloud: another connection has lock for uuid ' + socket.handshake.uuid + ' my connectionId ' + socket.connectionId);
+            next(new Error('already connected'));
+        }
+        next();
+    });
+});
+
+io.sockets.on('connection', function (socket) {
+    logger.info('openHAB-cloud: connection for uuid ' + socket.handshake.uuid);
+    socket.join(socket.handshake.uuid);
+    //listen for pings from the client
+    socket.conn.on('packet', function (packet) {
+        if (packet.type === 'ping') {
+            //reset the expire time for 2 heart beats plus 10 seconds, so 70 seconds
+            redis.expire(socket.redisLockKey, system.getConnectionLockTimeSeconds());
+        };
+    });
 
     const openhab = socket.openhab;
     const lastOnline = openhab.last_online;
@@ -477,35 +501,51 @@ io.sockets.on('connection', function (socket) {
             }
         }
     );
-
     socket.on('disconnect', function () {
         logger.info('openHAB-cloud: Disconnected uuid ' + socket.handshake.uuid + ' connectionId ' + socket.connectionId);
-        Openhab.setOffline(socket.connectionId, function (error, openhab) {
-            if (error) {
-                logger.error('openHAB-cloud: Error saving openHAB disconnect: ' + error);
+
+        //remove our lock, but make sure its our connection id, and not a healthy reconnection from the same client 
+        redis.get(socket.redisLockKey, (err, reply) => {
+            if (err) {
+                logger.info('openHAB-cloud: error removing connection lock for  uuid ' + openhab.uuid + ' connectionId ' + socket.connectionId + ' ' + err);
                 return;
             }
-            if(openhab) {
-                //we will try and notifiy users of being offline
-                offlineOpenhabs[openhab.uuid] =  {
-                    date: Date.now(),
-                    connectionId: socket.connectionId
-                }
+            const lock = reply ? JSON.parse(reply) : null;
 
-                var disconnectevent = new Event({
-                    openhab: openhab.id,
-                    source: 'openhab',
-                    status: 'offline',
-                    color: 'bad'
-                });
-
-                disconnectevent.save(function (error) {
+            //check if either null, in which case the lock is gone and we should clean up, 
+            //or check if its's there and belongs to this connectionId (and not a reconnect)
+            if (!lock || lock.connectionId === socket.connectionId) {
+                redis.del(socket.redisLockKey); //just ignore if the key does not exist
+                Openhab.setOffline(socket.connectionId, function (error, openhab) {
                     if (error) {
-                        logger.error('openHAB-cloud: Error saving disconnect event: ' + error);
+                        logger.error('openHAB-cloud: Error saving openHAB disconnect: ' + error);
+                        return;
+                    }
+                    if(openhab) {
+                        //we will try and notifiy users of being offline
+                        offlineOpenhabs[openhab.uuid] =  {
+                            date: Date.now(),
+                            connectionId: socket.connectionId
+                        }
+        
+                        var disconnectevent = new Event({
+                            openhab: openhab.id,
+                            source: 'openhab',
+                            status: 'offline',
+                            color: 'bad'
+                        });
+        
+                        disconnectevent.save(function (error) {
+                            if (error) {
+                                logger.error('openHAB-cloud: Error saving disconnect event: ' + error);
+                            }
+                        });
+                    } else {
+                        logger.warn(`openHAB-cloud: ${socket.handshake.uuid} Did not mark as offline, another instance is connected`);
                     }
                 });
             } else {
-                logger.warn(`openHAB-cloud: ${socket.handshake.uuid} Did not mark as offline, another instance is connected`);
+                logger.info('openHAB-cloud: will not delete lock, another connection has lock for uuid ' + socket.handshake.uuid + ' my connectionId ' + socket.connectionId + ' their info: ' + reply);
             }
         });
     });
