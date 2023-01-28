@@ -27,7 +27,7 @@
     "ejs-locals": "1.0.2",
     "email-templates": "8.0.3",
     "errorhandler": "^1.5.1",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "express-form": "0.12.6",
     "express-session": "^1.17.1",
     "firebase-messaging": "^1.0.6",
