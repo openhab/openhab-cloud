@@ -428,12 +428,7 @@ io.use(function (socket, next) {
     socket.connectionId = uuid.v1(); //we will check this when we handle disconnects
     //set a lock so only one connection from the same client can connect, avoids split brain when clients reconnect
     socket.redisLockKey = 'connection:' + socket.handshake.uuid;
-    const redisLockValue = JSON.stringify({
-        uuid: socket.handshake.uuid,
-        connectionId: socket.connectionId,
-        serverAddress: internalAddress
-    });
-    redis.set(socket.redisLockKey, redisLockValue, 'NX', 'EX', system.getConnectionLockTimeSeconds(), (err, result) => {
+    redis.set(socket.redisLockKey, socket.connectionId, 'NX', 'EX', system.getConnectionLockTimeSeconds(), (err, result) => {
         if(err) {
             logger.info('openHAB-cloud: error attaining connection lock for  uuid ' + socket.handshake.uuid + ' connectionId ' + socket.connectionId + ' ' + err);
             next(new Error('connection lock error'));
@@ -521,11 +516,10 @@ io.sockets.on('connection', function (socket) {
                 logger.info('openHAB-cloud: error removing connection lock for  uuid ' + openhab.uuid + ' connectionId ' + socket.connectionId + ' ' + err);
                 return;
             }
-            const lock = reply ? JSON.parse(reply) : null;
 
             //check if either null, in which case the lock is gone and we should clean up, 
             //or check if its's there and belongs to this connectionId (and not a reconnect)
-            if (!lock || lock.connectionId === socket.connectionId) {
+            if (!reply || reply === socket.connectionId) {
                 redis.del(socket.redisLockKey); //just ignore if the key does not exist
                 Openhab.setOffline(socket.connectionId, function (error, openhab) {
                     if (error) {
