@@ -449,13 +449,24 @@ io.use(function (socket, next) {
 });
 
 io.sockets.on('connection', function (socket) {
-    logger.info('openHAB-cloud: connection for uuid ' + socket.handshake.uuid);
+    logger.info('openHAB-cloud: connection for uuid ' + socket.handshake.uuid + + ' connectionId ' + socket.connectionId);
     socket.join(socket.handshake.uuid);
     //listen for pings from the client
     socket.conn.on('packet', function (packet) {
         if (packet.type === 'ping') {
-            //reset the expire time for 2 heart beats plus 10 seconds, so 70 seconds
-            redis.expire(socket.redisLockKey, system.getConnectionLockTimeSeconds());
+            //reset the expire time
+            redis.expire(socket.redisLockKey, system.getConnectionLockTimeSeconds(), (error, number) => {
+                if(error){
+                    logger.error('openHAB-cloud: error updating lock expire for uuid ' + socket.handshake.uuid + + ' connectionId ' + socket.connectionId + " " + error);
+                    return;
+                }
+                if(number === 0){
+                    logger.error('openHAB-cloud: lock no longer present for for uuid ' + socket.handshake.uuid + + ' connectionId ' + socket.connectionId + " " + error);
+                    //we have lost our lock, something has gone wrong, lets cleanup
+                    socket.disconnect();
+                    return;
+                }
+            });
         };
     });
 
