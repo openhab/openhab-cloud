@@ -34,7 +34,7 @@
     "heapdump": "0.3.15",
     "ioredis": "^4.28.5",
     "less-middleware": "3.1.0",
-    "luxon": "^1.26.0",
+    "luxon": "^1.28.1",
     "mongoose": "^5.11.18",
     "mongoose-types": "1.0.3",
     "morgan": "^1.10.0",
