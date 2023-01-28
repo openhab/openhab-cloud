@@ -6,10 +6,7 @@ var cronJob = require('cron').CronJob,
     Openhab = require('../models/openhab'),
     UserDevice = require('../models/userdevice'),
     Invitation = require('../models/invitation'),
-    Myohstat = require('../models/myohstat'),
-    stats = [],
-    openhabCount, userCount, openhabOnlineCount, invitationUsedCount,
-    invitationUnusedCount, userDeviceCount;
+    stats = [];
 
 /**
  * Callback function for a count operation on a Mongoose model. It will save the count in the
@@ -31,24 +28,12 @@ function countCallback (err, count) {
  * validation succeeds, save the values to redis.
  */
 function saveStats() {
-    var newStat;
-
     // validate the results
     if (Object.keys(stats).length !== 6) {
         // not all data could be retrieved
         logger.info('The length of the stats object does not match the expected one, can not save statistical data.');
         return;
     }
-
-    newStat = new Myohstat({
-        uC: stats['userCount'],
-        oC: stats['openhabCount'],
-        ooC: stats['openhabOnlineCount'],
-        iuC: stats['invitationUsedCount'],
-        iuuC: stats['invitationUnusedCount'],
-        udC: stats['userDeviceCount']
-    });
-    newStat.save();
 
     // Set current statistics to redis
     redis.mset(

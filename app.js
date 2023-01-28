@@ -561,40 +561,6 @@ io.sockets.on('connection', function (socket) {
         });
     });
 
-    /*
-    on('response') is a method for old versions of openHAB-cloud bundle which served the whole response as a single
-    chunk, while on('responseHeader|responseContent|responseFinished') is for newer versions which send response
-    in chunks in an async way enabling streaming responses.
-    Every handler checks if request exists, if not - sends cancel signal to openhab to eliminate abusive
-    data exchange in case openhab somehow missed previous cancel, then checks if request belongs to openHAB
-    which sent response to this request id.
-    */
-
-    socket.on('response', function (data) {
-        var self = this;
-        var requestId = data.id,
-            request;
-        if (requestTracker.has(requestId)) {
-            request = requestTracker.get(requestId);
-            if (self.handshake.uuid === request.openhab.uuid) {
-                if (data.error !== null) {
-                    request.send(500, 'Timeout in transit');
-                } else {
-                    if (data.headers['Content-Type'] !== null) {
-                        var contentType = data.headers['Content-Type'];
-                        request.contentType(contentType);
-                    }
-                    request.send(data.responseStatusCode, new Buffer(data.body, 'base64'));
-                }
-            } else {
-                logger.warn('openHAB-cloud: response ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own' + request.openhab.uuid);
-            }
-        } else {
-            self.emit('cancel', {
-                id: requestId
-            });
-        }
-    });
     socket.on('responseHeader', function (data) {
         var self = this;
         var requestId = data.id,
@@ -612,25 +578,6 @@ io.sockets.on('connection', function (socket) {
             });
         }
     });
-    // This is a method for old versions of openHAB-cloud bundle which use base64 encoding for binary
-    socket.on('responseContent', function (data) {
-        var self = this;
-        var requestId = data.id,
-            request;
-        if (requestTracker.has(requestId)) {
-            request = requestTracker.get(requestId);
-            if (self.handshake.uuid === request.openhab.uuid) {
-                request.write(new Buffer(data.body, 'base64'));
-            } else {
-                logger.warn('openHAB-cloud: responseContent ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own' + request.openhab.uuid);
-            }
-        } else {
-            self.emit('cancel', {
-                id: requestId
-            });
-        }
-    });
-    // This is a method for new versions of openHAB-cloud bundle which use bindary encoding
     socket.on('responseContentBinary', function (data) {
         var self = this;
         var requestId = data.id,
