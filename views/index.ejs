@@ -104,9 +104,9 @@
                             break;
                         case 'online':
                             switch (openhabMajorVersion){
-                                case 3:
+                                case 1:
                 %>
-                                    Your openHAB is online. <a href="<%=proxyUrl%>/">Click here to access your openHAB's dashboard</a>
+                                    To remotely access your openHAB's web interface go to <code><%=proxyUrl%>/openhab.app?sitemap=yoursitemapname</code>
                 <%
                                     break;
                                 case 2:
@@ -116,7 +116,7 @@
                                     break;
                                 default:
                 %>
-                                    To remotely access your openHAB's web interface go to <code><%=proxyUrl%>/openhab.app?sitemap=yoursitemapname</code>
+                                    Your openHAB is online. <a href="<%=proxyUrl%>/">Click here to access your openHAB's dashboard</a>
                 <%
                             }
                             break;
