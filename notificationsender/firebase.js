@@ -18,7 +18,7 @@ function sendNotificationWithData(registrationIds, data) {
         data.notificationId = androidNotificationId;
         firebaseClient.message(registrationIds, data, firebaseOptions, function (result) {
             if (result.failure) {
-                logger.error("openHAB-cloud: GCM send error: " + JSON.stringify(result));
+                logger.error("GCM send error: " + JSON.stringify(result));
             }
         });
     });
@@ -50,7 +50,7 @@ exports.hideNotification = function(registrationIds, notificationId) {
     };
     firebaseClient.message(registrationIds, data, firebaseOptions, function (result) {
         if (result.failure) {
-            logger.error('openHAB-cloud: GCM send error: ' + result);
+            logger.error('GCM send error: ' + result);
         }
     });
 };

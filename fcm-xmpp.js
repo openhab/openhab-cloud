@@ -12,7 +12,7 @@ const UserDevice = require('./models/userdevice'),
     firebase = require('./notificationsender/firebase'),
     logger = require('./logger.js');
 
-logger.info('openHAB-cloud: Initializing XMPP connection to GCM');
+logger.info('Initializing XMPP connection to GCM');
 
 const xmppClient = client({
     service: "xmpps://fcm-xmpp.googleapis.com:5235",
@@ -26,20 +26,20 @@ xmppClient.start().catch(err => {
 });
 
 xmppClient.on('online', function () {
-    logger.info('openHAB-cloud: GCM XMPP connection is online');
+    logger.info('GCM XMPP connection is online');
 });
 
 function updateLocationOfDevice(messageData) {
-    logger.info('openHAB-cloud: This is a location message');
+    logger.info('This is a location message');
     UserDevice.findOne({ androidRegistration: messageData.from }, function (error, userDevice) {
         let newLocation;
 
         if (error) {
-            logger.warn('openHAB-cloud: Error finding user device: ' + error);
+            logger.warn('Error finding user device: ' + error);
             return;
         }
         if (!userDevice) {
-            logger.warn('openHAB-cloud: Unable to find user device with reg id = ' + messageData.from);
+            logger.warn('Unable to find user device with reg id = ' + messageData.from);
             return;
         }
 
@@ -58,15 +58,15 @@ function updateLocationOfDevice(messageData) {
 }
 
 function hideNotificationInfo(messageData) {
-    logger.info('openHAB-cloud: This is hideNotification message');
+    logger.info('This is hideNotification message');
     UserDevice.findOne({ androidRegistration: messageData.from }, function (error, userDevice) {
         if (error) {
-            logger.warn('openHAB-cloud: Error finding user device: ' + error);
+            logger.warn('Error finding user device: ' + error);
             return;
         }
 
         if (!userDevice) {
-            logger.warn('openHAB-cloud: Unable to find user device with reg id = ' + messageData.from);
+            logger.warn('Unable to find user device with reg id = ' + messageData.from);
             return;
         }
 
@@ -94,7 +94,7 @@ xmppClient.on('stanza', function (stanza) {
         return;
     }
 
-    logger.info('openHAB-cloud: GCM XMPP received message');
+    logger.info('GCM XMPP received message');
 
     const messageData = JSON.parse(stanza.getChildText('gcm'));
     if (messageData && messageData.message_type === ACK_MESSAGE_TYPE || messageData.message_type === NACK_MESSAGE_TYPE) {
@@ -111,7 +111,7 @@ xmppClient.on('stanza', function (stanza) {
 
     xmppClient.send(ackMsg);
 
-    logger.info('openHAB-cloud: GCM XMPP ack sent');
+    logger.info('GCM XMPP ack sent');
     if (messageData.data.type === 'location') {
         updateLocationOfDevice(messageData);
     }
@@ -122,7 +122,7 @@ xmppClient.on('stanza', function (stanza) {
 });
 
 xmppClient.on('error', function (error) {
-    logger.warn('openHAB-cloud: GCM XMPP error: ' + error);
+    logger.warn('GCM XMPP error: ' + error);
 });
 
 module.exports = xmppClient;

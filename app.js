@@ -43,7 +43,7 @@ var internalAddress = system.getInternalAddress();
 
 //require('heapdump');
 
-logger.info('openHAB-cloud: Backend service is starting up...');
+logger.info('Backend service is starting up...');
 
 process.on('uncaughtException', function (err) {
     console.log(JSON.stringify(err))
@@ -55,7 +55,7 @@ process.on('SIGHUP', function () {
     loadConfig();
 });
 
-logger.info('openHAB-cloud: Backend logging initialized...');
+logger.info('Backend logging initialized...');
 
 // Initialize the main configuration
 var taskEnv = process.env.TASK || 'main';
@@ -129,7 +129,7 @@ var offlineOpenhabs = {};
 // This timer only runs on the job task
 if (taskEnv === 'main') {
     setInterval(function () {
-        logger.debug('openHAB-cloud: Checking for offline openHABs (' + Object.keys(offlineOpenhabs).length + ')');
+        logger.debug('Checking for offline openHABs (' + Object.keys(offlineOpenhabs).length + ')');
         for (const offlineOpenhabUuid in offlineOpenhabs) {
             const offlineOpenhab = offlineOpenhabs[offlineOpenhabUuid];
             if (Date.now() - offlineOpenhab.date < offlineNotificationTime) {
@@ -143,7 +143,7 @@ if (taskEnv === 'main') {
                 if (!openhab || error) {
                     return;
                 }
-                logger.debug('openHAB-cloud: openHAB with ' + offlineOpenhabUuid + ' is offline > ' + offlineNotificationTime + ' millis, time to notify the owner');
+                logger.debug('openHAB with ' + offlineOpenhabUuid + ' is offline > ' + offlineNotificationTime + ' millis, time to notify the owner');
                 notifyOpenHABStatusChange(openhab, 'offline');
             });
         }
@@ -156,11 +156,11 @@ if (taskEnv === 'main') {
 //responses and cleans them up, otherwise memory goes through the roof.
 setInterval(function () {
     var requests = requestTracker.getAll();
-    logger.debug('openHAB-cloud: Checking orphaned rest requests (' + requestTracker.size() + ')');
+    logger.debug('Checking orphaned rest requests (' + requestTracker.size() + ')');
     Object.keys(requests).forEach(function (requestId) {
         var res = requests[requestId];
         if (res.finished) {
-            logger.debug('openHAB-cloud: expiring orphaned response');
+            logger.debug('expiring orphaned response');
             requestTracker.remove(requestId);
             if (res.openhab) {
                 io.sockets.in(res.openhab.uuid).emit('cancel', {
@@ -179,7 +179,7 @@ var Item = require('./models/item');
 var UserDevice = require('./models/userdevice');
 var Notification = require('./models/notification');
 
-logger.info('openHAB-cloud: Scheduling a statistics job (every 5 min)');
+logger.info('Scheduling a statistics job (every 5 min)');
 var every5MinStatJob = require('./jobs/every5minstat');
 
 every5MinStatJob.start();
@@ -211,7 +211,7 @@ var cookie = {};
 if (config.system.subDomainCookies) {
     cookie.path = '/';
     cookie.domain = '.' + system.getHost();
-    logger.info('openHAB-cloud: Cross sub domain cookie support is configured for domain: ' + cookie.domain);
+    logger.info('Cross sub domain cookie support is configured for domain: ' + cookie.domain);
 }
 app.use(session({
     secret: config.express.key,
@@ -312,7 +312,7 @@ app.use(function (req, res, next) {
 app.use(serveStatic(path.join(__dirname, 'public')));
 
 var server = app.listen(system.getNodeProcessPort(), config.system.listenIp, function () {
-    logger.info('openHAB-cloud: express server listening on port ' + system.getNodeProcessPort());
+    logger.info('express server listening on port ' + system.getNodeProcessPort());
 });
 
 var io = require('socket.io')(server, {
@@ -336,14 +336,14 @@ function sendNotificationToUser(user, message, icon, severity) {
     });
     newNotification.save(function (error) {
         if (error) {
-            logger.error('openHAB-cloud: Error saving notification: ' + error);
+            logger.error('Error saving notification: ' + error);
         }
     });
     UserDevice.find({
         owner: user.id
     }, function (error, userDevices) {
         if (error) {
-            logger.warn('openHAB-cloud: Error fetching devices for user: ' + error);
+            logger.warn('Error fetching devices for user: ' + error);
             return;
         }
         if (!userDevices) {
@@ -430,20 +430,20 @@ io.use(function (socket, next) {
     if (!handshakeData.clientVersion) {
         handshakeData.clientVersion = 'unknown';
     }
-    logger.info('openHAB-cloud: Authorizing incoming openHAB connection for ' + handshakeData.uuid + ' version ' + handshakeData.openhabVersion);
+    logger.info('Authorizing incoming openHAB connection for ' + handshakeData.uuid + ' version ' + handshakeData.openhabVersion);
     Openhab.findOne({
         uuid: handshakeData.uuid,
         secret: handshakeSecret
     }, function (error, openhab) {
         if (error) {
-            logger.error('openHAB-cloud: openHAB lookup error: ' + error);
+            logger.error('openHAB lookup error: ' + error);
             next(error);
         } else {
             if (openhab) {
                 socket.openhab = openhab; // will use this reference in 'connect' to save on mongo calls
                 next();
             } else {
-                logger.info('openHAB-cloud: openHAB ' + handshakeData.uuid + ' not found');
+                logger.info('openHAB ' + handshakeData.uuid + ' not found');
                 redis.set('blocked:' + handshakeData.uuid, handshakeData.openhabVersion, 'NX', 'EX', 60, (err, result) => {
                     if(err){
                         logger.info('setting blocked: error talking with redis for ' + handshakeData.uuid + ' ' + err);
@@ -456,19 +456,19 @@ io.use(function (socket, next) {
 });
 
 io.use(function (socket, next) {
-    logger.info('openHAB-cloud: obtaining lock for connection for uuid ' + socket.handshake.uuid);
+    logger.info('obtaining lock for connection for uuid ' + socket.handshake.uuid);
     socket.connectionId = uuid.v1(); //we will check this when we handle disconnects
     //set a lock so only one connection from the same client can connect, avoids split brain when clients reconnect
     socket.redisLockKey = 'connection:' + socket.handshake.uuid;
     redis.set(socket.redisLockKey, socket.connectionId, 'NX', 'EX', system.getConnectionLockTimeSeconds(), (err, result) => {
         if(err) {
-            logger.info('openHAB-cloud: error attaining connection lock for  uuid ' + socket.handshake.uuid + ' connectionId ' + socket.connectionId + ' ' + err);
+            logger.info('error attaining connection lock for  uuid ' + socket.handshake.uuid + ' connectionId ' + socket.connectionId + ' ' + err);
             return next(new Error('connection lock error'));
         }
 
         if(!result){
             //this key already exists, which means another connection exists
-            logger.info('openHAB-cloud: another connection has lock for uuid ' + socket.handshake.uuid + ' my connectionId ' + socket.connectionId);
+            logger.info('another connection has lock for uuid ' + socket.handshake.uuid + ' my connectionId ' + socket.connectionId);
             return next(new Error('already connected'));
         }
         next();
@@ -476,7 +476,7 @@ io.use(function (socket, next) {
 });
 
 io.sockets.on('connection', function (socket) {
-    logger.info('openHAB-cloud: connection for uuid ' + socket.handshake.uuid + + ' connectionId ' + socket.connectionId);
+    logger.info('connection for uuid ' + socket.handshake.uuid + + ' connectionId ' + socket.connectionId);
     socket.join(socket.handshake.uuid);
     //listen for pings from the client
     socket.conn.on('packet', function (packet) {
@@ -484,11 +484,11 @@ io.sockets.on('connection', function (socket) {
             //reset the expire time
             redis.expire(socket.redisLockKey, system.getConnectionLockTimeSeconds(), (error, number) => {
                 if(error){
-                    logger.error('openHAB-cloud: error updating lock expire for uuid ' + socket.handshake.uuid + + ' connectionId ' + socket.connectionId + " " + error);
+                    logger.error('error updating lock expire for uuid ' + socket.handshake.uuid + + ' connectionId ' + socket.connectionId + " " + error);
                     return;
                 }
                 if(number === 0){
-                    logger.error('openHAB-cloud: lock no longer present for for uuid ' + socket.handshake.uuid + + ' connectionId ' + socket.connectionId + " " + error);
+                    logger.error('lock no longer present for for uuid ' + socket.handshake.uuid + + ' connectionId ' + socket.connectionId + " " + error);
                     //we have lost our lock, something has gone wrong, lets cleanup
                     socket.disconnect();
                     return;
@@ -511,11 +511,11 @@ io.sockets.on('connection', function (socket) {
     openhab.save(
         function (error) {
             if(error){
-                logger.error('openHAB-cloud: save error: ' + error);
+                logger.error('save error: ' + error);
                 socket.disconnect();
                 return;
             }
-            logger.info('openHAB-cloud: connect success uuid ' + openhab.uuid + ' connectionId ' + socket.connectionId  + ' prevous address ' + lastServerAddress + " my address " + internalAddress);      
+            logger.info('connect success uuid ' + openhab.uuid + ' connectionId ' + socket.connectionId  + ' prevous address ' + lastServerAddress + " my address " + internalAddress);      
 
             socket.openhabId = openhab.id;
             
@@ -527,7 +527,7 @@ io.sockets.on('connection', function (socket) {
             });
             connectevent.save(function (error) {
                 if (error) {
-                    logger.error('openHAB-cloud: Error saving connect event: ' + error);
+                    logger.error('Error saving connect event: ' + error);
                 }
             });
 
@@ -535,17 +535,17 @@ io.sockets.on('connection', function (socket) {
             if(lastStatus === 'offline' && Date.now() -  lastOnline > offlineNotificationTime){
                 notifyOpenHABStatusChange(openhab, 'online');
             } else if(lastStatus === 'online') {
-                logger.warn('openHAB-cloud: connected openhab ' + socket.handshake.uuid + ' was previously marked as online')
+                logger.warn('connected openhab ' + socket.handshake.uuid + ' was previously marked as online')
             }
         }
     );
     socket.on('disconnect', function () {
-        logger.info('openHAB-cloud: Disconnected uuid ' + socket.handshake.uuid + ' connectionId ' + socket.connectionId);
+        logger.info('Disconnected uuid ' + socket.handshake.uuid + ' connectionId ' + socket.connectionId);
 
         //remove our lock, but make sure its our connection id, and not a healthy reconnection from the same client 
         redis.get(socket.redisLockKey, (err, reply) => {
             if (err) {
-                logger.info('openHAB-cloud: error removing connection lock for  uuid ' + openhab.uuid + ' connectionId ' + socket.connectionId + ' ' + err);
+                logger.info('error removing connection lock for  uuid ' + openhab.uuid + ' connectionId ' + socket.connectionId + ' ' + err);
                 return;
             }
 
@@ -555,7 +555,7 @@ io.sockets.on('connection', function (socket) {
                 redis.del(socket.redisLockKey); //just ignore if the key does not exist
                 Openhab.setOffline(socket.connectionId, function (error, openhab) {
                     if (error) {
-                        logger.error('openHAB-cloud: Error saving openHAB disconnect: ' + error);
+                        logger.error('Error saving openHAB disconnect: ' + error);
                         return;
                     }
                     if(openhab) {
@@ -574,15 +574,15 @@ io.sockets.on('connection', function (socket) {
         
                         disconnectevent.save(function (error) {
                             if (error) {
-                                logger.error('openHAB-cloud: Error saving disconnect event: ' + error);
+                                logger.error('Error saving disconnect event: ' + error);
                             }
                         });
                     } else {
-                        logger.warn(`openHAB-cloud: ${socket.handshake.uuid} Did not mark as offline, another instance is connected`);
+                        logger.warn(`${socket.handshake.uuid} Did not mark as offline, another instance is connected`);
                     }
                 });
             } else {
-                logger.info('openHAB-cloud: will not delete lock, another connection has lock for uuid ' + socket.handshake.uuid + ' my connectionId ' + socket.connectionId + ' their info: ' + reply);
+                logger.info('will not delete lock, another connection has lock for uuid ' + socket.handshake.uuid + ' my connectionId ' + socket.connectionId + ' their info: ' + reply);
             }
         });
     });
@@ -596,7 +596,7 @@ io.sockets.on('connection', function (socket) {
             if (self.handshake.uuid === request.openhab.uuid && !request.headersSent) {
                 request.writeHead(data.responseStatusCode, data.responseStatusText, data.headers);
             } else {
-                logger.warn('openHAB-cloud: responseHeader ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own ' + request.openhab.uuid + " or headers have already been sent");
+                logger.warn('responseHeader ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own ' + request.openhab.uuid + " or headers have already been sent");
             }
         } else {
             self.emit('cancel', {
@@ -613,7 +613,7 @@ io.sockets.on('connection', function (socket) {
             if (self.handshake.uuid === request.openhab.uuid) {
                 request.write(data.body);
             } else {
-                logger.warn('openHAB-cloud: responseContentBinary ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own ' + request.openhab.uuid);
+                logger.warn('responseContentBinary ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own ' + request.openhab.uuid);
             }
         } else {
             self.emit('cancel', {
@@ -630,7 +630,7 @@ io.sockets.on('connection', function (socket) {
             if (self.handshake.uuid === request.openhab.uuid) {
                 request.end();
             } else {
-                logger.warn('openHAB-cloud: responseFinished ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own' + request.openhab.uuid);
+                logger.warn('responseFinished ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own' + request.openhab.uuid);
             }
         }
     });
@@ -643,18 +643,18 @@ io.sockets.on('connection', function (socket) {
             if (self.handshake.uuid === request.openhab.uuid) {
                 request.send(500, data.responseStatusText);
             } else {
-                logger.warn('openHAB-cloud: responseError ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own' + request.openhab.uuid);
+                logger.warn('responseError ' + self.handshake.uuid + ' tried to respond to request which it doesn\'t own' + request.openhab.uuid);
             }
         }
     });
     socket.on('notification', function (data) {
         var self = this;
-        logger.info('openHAB-cloud: Notification request from ' + self.handshake.uuid + ' to user ' + data.userId);
+        logger.info('Notification request from ' + self.handshake.uuid + ' to user ' + data.userId);
         User.findOne({
             username: data.userId
         }, function (error, user) {
             if (error) {
-                logger.error('openHAB-cloud: User lookup error: ' + error);
+                logger.error('User lookup error: ' + error);
                 return;
             }
             if (!user) {
@@ -663,16 +663,16 @@ io.sockets.on('connection', function (socket) {
             user.openhab(function (error, openhab) {
                 if (!error && openhab) {
                     if (openhab.uuid === self.handshake.uuid) {
-                        logger.info('openHAB-cloud: Notification from ' + self.handshake.uuid + ' to ' + user.username);
+                        logger.info('Notification from ' + self.handshake.uuid + ' to ' + user.username);
                         sendNotificationToUser(user, data.message, data.icon, data.severity);
                     } else {
-                        logger.warn('openHAB-cloud: oopenHAB ' + self.handshake.uuid + ' requested notification for user (' + user.username + ') which it does not belong to');
+                        logger.warn('oopenHAB ' + self.handshake.uuid + ' requested notification for user (' + user.username + ') which it does not belong to');
                     }
                 } else {
                     if (error) {
-                        logger.error('openHAB-cloud: openHAB lookup error: ' + error);
+                        logger.error('openHAB lookup error: ' + error);
                     } else {
-                        logger.warn('openHAB-cloud: Unable to find openHAB for user ' + user.username);
+                        logger.warn('Unable to find openHAB for user ' + user.username);
                     }
                 }
             });
@@ -682,11 +682,11 @@ io.sockets.on('connection', function (socket) {
     socket.on('broadcastnotification', function (data) {
         Openhab.findById(this.openhabId, function (error, openhab) {
             if (error) {
-                logger.error('openHAB-cloud: openHAB lookup error: ' + error);
+                logger.error('openHAB lookup error: ' + error);
                 return;
             }
             if (!openhab) {
-                logger.debug('openHAB-cloud: openHAB not found');
+                logger.debug('openHAB not found');
                 return;
             }
 
@@ -694,12 +694,12 @@ io.sockets.on('connection', function (socket) {
                 account: openhab.account
             }, function (error, users) {
                 if (error) {
-                    logger.error('openHAB-cloud: Error getting users list: ' + error);
+                    logger.error('Error getting users list: ' + error);
                     return;
                 }
 
                 if (!users) {
-                    logger.debug('openHAB-cloud: No users found for openHAB');
+                    logger.debug('No users found for openHAB');
                     return;
                 }
 
@@ -724,12 +724,12 @@ io.sockets.on('connection', function (socket) {
                 account: openhab.account
             }, function (error, users) {
                 if (error) {
-                    logger.error('openHAB-cloud: Error getting users list: ' + error);
+                    logger.error('Error getting users list: ' + error);
                     return;
                 }
 
                 if (!users) {
-                    logger.debug('openHAB-cloud: No users found for openHAB');
+                    logger.debug('No users found for openHAB');
                     return;
                 }
 
@@ -766,7 +766,7 @@ io.sockets.on('connection', function (socket) {
         });
         limiter.get(function (err, limit) {
             if (err) {
-                logger.error('openHAB-cloud: Rate limit error ' + err);
+                logger.error('Rate limit error ' + err);
                 return;
             }
             if (!limit.remaining) {
@@ -776,16 +776,16 @@ io.sockets.on('connection', function (socket) {
             var itemStatus = data.itemStatus;
             // Find openhab
             if (itemStatus && itemStatus.length > 100) {
-                logger.info('openHAB-cloud: Item ' + itemName + ' status.length (' + (itemStatus ? itemStatus.length : 'null') + ') is too big or null, ignoring update');
+                logger.info('Item ' + itemName + ' status.length (' + (itemStatus ? itemStatus.length : 'null') + ') is too big or null, ignoring update');
                 return;
             }
             Openhab.findById(self.openhabId).cache(cacheTTL).exec(function (error, openhab) {
                 if (error) {
-                    logger.warn('openHAB-cloud: Unable to find openHAB for itemUpdate: ' + error);
+                    logger.warn('Unable to find openHAB for itemUpdate: ' + error);
                     return;
                 }
                 if (!openhab) {
-                    logger.info('openHAB-cloud: Unable to find openHAB for itemUpdate: openHAB doesn\'t exist');
+                    logger.info('Unable to find openHAB for itemUpdate: openHAB doesn\'t exist');
                     return;
                 }
                 // Find the item (which should belong to this openhab)
@@ -795,12 +795,12 @@ io.sockets.on('connection', function (socket) {
                     name: itemName
                 }).cache(cacheTTL, cacheKey).exec(function (error, itemToUpdate) {
                     if (error) {
-                        logger.warn('openHAB-cloud: Unable to find item for itemUpdate: ' + error);
+                        logger.warn('Unable to find item for itemUpdate: ' + error);
                     }
 
                     // If no item found for this openhab with this name, create a new one
                     if (!itemToUpdate) {
-                        logger.info('openHAB-cloud: Item ' + itemName + ' for openHAB ' + openhab.uuid + ' not found, creating new one');
+                        logger.info('Item ' + itemName + ' for openHAB ' + openhab.uuid + ' not found, creating new one');
                         itemToUpdate = new Item({
                             openhab: openhab.id,
                             name: itemName,
@@ -819,7 +819,7 @@ io.sockets.on('connection', function (socket) {
                         // Save the updated item
                         itemToUpdate.save(function (error) {
                             if (error) {
-                                logger.error('openHAB-cloud: Error saving item: ' + error);
+                                logger.error('Error saving item: ' + error);
                             }
                             cachegoose.clearCache(cacheKey);
                         });
@@ -838,7 +838,7 @@ io.sockets.on('connection', function (socket) {
                                     when: new Date
                                 }, function (error) {
                                     if (error) {
-                                        logger.error('openHAB-cloud: Error saving event: ' + error);
+                                        logger.error('Error saving event: ' + error);
                                     }
                                 });
                             } else {
@@ -852,7 +852,7 @@ io.sockets.on('connection', function (socket) {
                                     when: new Date
                                 }, function (error) {
                                     if (error) {
-                                        logger.error('openHAB-cloud: Error saving event: ' + error);
+                                        logger.error('Error saving event: ' + error);
                                     }
                                 });
                             }
@@ -866,7 +866,7 @@ io.sockets.on('connection', function (socket) {
                                 when: new Date
                             }, function (error) {
                                 if (error) {
-                                    logger.error('openHAB-cloud: Error saving event: ' + error);
+                                    logger.error('Error saving event: ' + error);
                                 }
                             });
                         }
@@ -899,9 +899,9 @@ function notifyOpenHABStatusChange(openhab, status) {
             }
         } else {
             if (error) {
-                logger.warn('openHAB-cloud: Error finding users to notify: ' + error);
+                logger.warn('Error finding users to notify: ' + error);
             } else {
-                logger.warn('openHAB-cloud: Unable to find any masters for openHAB ' + openhab.uuid);
+                logger.warn('Unable to find any masters for openHAB ' + openhab.uuid);
             }
         }
     });
@@ -909,20 +909,20 @@ function notifyOpenHABStatusChange(openhab, status) {
 
 function shutdown() {
     // TODO: save current request id?
-    logger.info('openHAB-cloud: Stopping every5min statistics job');
+    logger.info('Stopping every5min statistics job');
     every5MinStatJob.stop();
 
-    logger.info('openHAB-cloud: Safe shutdown complete');
+    logger.info('Safe shutdown complete');
     process.exit();
 }
 
 process.on('SIGINT', function () {
-    logger.info('openHAB-cloud frontend is shutting down from SIGINT');
+    logger.info('frontend is shutting down from SIGINT');
     shutdown();
 });
 
 process.on('SIGTERM', function () {
-    logger.info('openHAB-cloud frontend is shutting down from SIGTERM');
+    logger.info('frontend is shutting down from SIGTERM');
     shutdown();
 });
 

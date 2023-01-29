@@ -55,7 +55,7 @@ exports.devicessendmessage = function(req, res) {
             res.redirect('/devices/');
         });
     } else {
-        logger.info("openHAB-cloud: sending message to device " + req.params.id);
+        logger.info("sending message to device " + req.params.id);
         var sendMessageDeviceId = mongoose.Types.ObjectId(req.params.id);
         var message = req.form.messagetext;
         UserDevice.findOne({owner: req.user.id, _id: sendMessageDeviceId}, function (error, sendMessageDevice) {
@@ -77,7 +77,7 @@ exports.devicessendmessage = function(req, res) {
 }
 
 exports.devicesdelete = function(req, res) {
-    logger.info("openHAB-cloud: deleting device " + req.params.id);
+    logger.info("deleting device " + req.params.id);
     var deleteId = mongoose.Types.ObjectId(req.params.id);
     UserDevice.findOne({owner: req.user.id, _id: deleteId}, function(error, userDevice) {
         if (!error && userDevice) {

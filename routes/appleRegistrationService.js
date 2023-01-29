@@ -23,24 +23,24 @@ module.exports = function (req, res) {
         deviceId: deviceId
     }, function (error, userDevice) {
         if (error) {
-            logger.warn('openHAB-cloud: Error looking up device: ' + error);
+            logger.warn('Error looking up device: ' + error);
             res.send(500, 'Internal server error');
             return;
         }
         if (userDevice) {
             // If found, update device token and save
-            logger.info('openHAB-cloud: Found iOS device for user ' + req.user.username + ', updating');
+            logger.info('Found iOS device for user ' + req.user.username + ', updating');
             userDevice.iosDeviceToken = regId;
             userDevice.lastUpdate = new Date();
             userDevice.save(function (error) {
                 if (error) {
-                    logger.error('openHAB-cloud: Error saving user device: ' + error);
+                    logger.error('Error saving user device: ' + error);
                 }
             });
             res.send(200, 'Updated');
         } else {
             // If not found, add new device registration
-            logger.info('openHAB-cloud: Registering new iOS device for user ' + req.user.username);
+            logger.info('Registering new iOS device for user ' + req.user.username);
             userDevice = new UserDevice({
                 owner: req.user.id,
                 deviceType: 'ios',
@@ -52,7 +52,7 @@ module.exports = function (req, res) {
             });
             userDevice.save(function (error) {
                 if (error) {
-                    logger.error('openHAB-cloud: Error saving user device: ' + error);
+                    logger.error('Error saving user device: ' + error);
                 }
             });
             res.send(200, 'Added');
