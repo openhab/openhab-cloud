@@ -59,46 +59,46 @@ function sendEmail (email, templateName, cb) {
 }
 
 if (!template) {
-    console.log('openHAB-cloud: Usage: node sendmail.js <template name> [<user email>]')
-    console.log('openHAB-cloud: WARNING! If user email is not specified, e-mail will be sent to all openhab-cloud users!');
+    console.log('Usage: node sendmail.js <template name> [<user email>]')
+    console.log('WARNING! If user email is not specified, e-mail will be sent to all openhab-cloud users!');
     return;
 }
 
 if (userMail) {
     sendEmail(userMail, template, function (error) {
         if (!error) {
-            console.log('openHAB-cloud: Mail sent!');
+            console.log('Mail sent!');
             process.exit(0);
         } else {
-            console.log('openHAB-cloud: Error sending mail: ' + error);
+            console.log('Error sending mail: ' + error);
             process.exit(0);
         }
     });
 } else {
     User.find({}, function (error, users) {
-        console.log('openHAB-cloud: Sending mail to ' + users.length + ' users');
+        console.log('Sending mail to ' + users.length + ' users');
 
         if (error) {
-            console.log('openHAB-cloud: Error selecting users: ' + error);
+            console.log('Error selecting users: ' + error);
             process.exit(0);
         }
 
         if (!users) {
-            console.log('openHAB-cloud: Unable to find any users');
+            console.log('Unable to find any users');
             process.exit(0);
         }
 
         for (var i=0; i<users.length; i++) {
             var user = users[i];
-            console.log('openHAB-cloud: Sending mail to ' + user.username);
+            console.log('Sending mail to ' + user.username);
             sendEmail(user.username, template, function (error) {
                 if (error) {
-                    console.log('openHAB-cloud: Error sending mail: ' + error);
+                    console.log('Error sending mail: ' + error);
                 } else {
-                    console.log('openHAB-cloud: Mail sent!');
+                    console.log('Mail sent!');
                 }
             });
         }
-        console.log('openHAB-cloud: All mails sent!');
+        console.log('All mails sent!');
     });
 }

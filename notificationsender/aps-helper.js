@@ -9,7 +9,7 @@ if (app.config.apn && app.config.apn.signingKey) {
         signingKey: fs.readFileSync(`${app.config.apn.signingKey}`)
     });
     client.on(Errors.error, (err) => {
-        logger.error(`openHAB-cloud: APN error ${err.reason} ${err.statusCode} ${err.notification.deviceToken}`)
+        logger.error(`APN error ${err.reason} ${err.statusCode} ${err.notification.deviceToken}`)
     })
 }
 

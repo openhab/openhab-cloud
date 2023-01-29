@@ -24,19 +24,19 @@ module.exports = function (req, res) {
         deviceId: deviceId
     }, function (error, userDevice) {
         if (error) {
-            logger.warn('openHAB-cloud: Error looking up device: ' + error);
+            logger.warn('Error looking up device: ' + error);
             res.send(500, 'Internal server error');
             return;
         }
 
         if (userDevice) {
             // If found, update the changed registration id
-            logger.info('openHAB-cloud: Found an Android device for user ' + req.user.username + ', updating');
+            logger.info('Found an Android device for user ' + req.user.username + ', updating');
             userDevice.androidRegistration = regId;
             userDevice.lastUpdate = new Date();
             userDevice.save(function (error) {
                 if (error) {
-                    logger.error('openHAB-cloud: Error saving user device: ' + error);
+                    logger.error('Error saving user device: ' + error);
                 }
             });
             res.send(200, 'Updated');
@@ -67,7 +67,7 @@ module.exports = function (req, res) {
         },
             function (error, userDevice) {
                 if (error) {
-                    logger.warn('openHAB-cloud: Error looking up device: ' + error);
+                    logger.warn('Error looking up device: ' + error);
                     res.send(500, 'Internal server error');
                     return;
                 }
@@ -77,7 +77,7 @@ module.exports = function (req, res) {
                     userDevice.lastUpdate = new Date();
                     userDevice.save(function (error) {
                         if (error) {
-                            logger.error('openHAB-cloud: Error saving user device: ' + error);
+                            logger.error('Error saving user device: ' + error);
                         }
                     });
                     res.send(200, 'Updated');
@@ -94,7 +94,7 @@ module.exports = function (req, res) {
                     });
                     userDevice.save(function (error) {
                         if (error) {
-                            logger.error('openHAB-cloud: Error saving user device: ' + error);
+                            logger.error('Error saving user device: ' + error);
                         }
                     });
                     res.send(200, 'Added');

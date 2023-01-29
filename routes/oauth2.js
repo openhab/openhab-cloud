@@ -21,7 +21,7 @@ server.deserializeClient(function (id, done) {
         _id: id
     }, function (error, client) {
         if (error) {
-            logger.error('openHAB-cloud: deserializeClient: ' + error);
+            logger.error('deserializeClient: ' + error);
             return done(error);
         }
         return done(null, client);
@@ -46,7 +46,7 @@ server.grant(oauth2orize.grant.code(function (client, redirectURI, user, ares, d
     });
     newOAuthCode.save(function (error) {
         if (error) {
-            logger.error('openHAB-cloud: server.grant: ' + error);
+            logger.error('server.grant: ' + error);
             return done(error);
         }
         done(null, code);
@@ -68,7 +68,7 @@ server.exchange(oauth2orize.exchange.code(function (client, code, redirectURI, d
         redirectURI: redirectURI
     }, function (error, oauth2code) {
         if (error) {
-            logger.error('openHAB-cloud: server.exchange: ' + error);
+            logger.error('server.exchange: ' + error);
             return done(error);
         }
         if (oauth2code === undefined) {
@@ -104,7 +104,7 @@ exports.authorization = [
             clientId: clientId
         }, function (error, client) {
             if (error) {
-                logger.error('openHAB-cloud: server.authorization ' + error);
+                logger.error('server.authorization ' + error);
                 return done(error);
             }
 
@@ -119,7 +119,7 @@ exports.authorization = [
         errormessages = req.flash('error');
         infomessages = req.flash('info');
         scope = req.oauth2.req.scope;
-        logger.info('openHAB-cloud: server.authorization oauth2 request for scope: ' + scope);
+        logger.info('server.authorization oauth2 request for scope: ' + scope);
         OAuth2Scope.findOne({
             name: scope
         }, function (error, scope) {

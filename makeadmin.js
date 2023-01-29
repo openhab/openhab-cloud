@@ -15,22 +15,22 @@ mongoConnect.connect(mongoose);
 username = process.argv[2];
 
 if (!username) {
-    console.log('openHAB-cloud: Usage: node makeadmin.js <username>');
+    console.log('Usage: node makeadmin.js <username>');
     process.exit(0);
 }
 
 User.findOne({username: username}, function(error, user) {
     if (!error && user) {
-        console.log('openHAB-cloud: Found ' + username + 'user, making him staff');
+        console.log('Found ' + username + 'user, making him staff');
         user.group = 'staff';
         user.save(function(error) {
             process.exit(0);
         });
     } else if (!user) {
-        console.log('openHAB-cloud: User ' + username + ' not found!');
+        console.log('User ' + username + ' not found!');
         process.exit(0);
     } else {
-        console.log('openHAB-cloud: Error: ' + error);
+        console.log('Error: ' + error);
         process.exit(0);
     }
 });

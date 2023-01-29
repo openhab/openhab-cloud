@@ -19,7 +19,7 @@ for (i=0; i<10; i++) {
 
     invitationCode = uuid.v1();
     invite = new Invitation({code: invitationCode, email: 'openhab@openhab.org'});
-    console.log('openHAB-cloud: New invitation code ' + invitationCode);
+    console.log('New invitation code ' + invitationCode);
     invite.save(function (err, invitation) {
         console.log('callback');
         if (err) {

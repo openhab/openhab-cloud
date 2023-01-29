@@ -24,7 +24,7 @@ MongoConnect.prototype.connect = function (mongoose, callback) {
     mongoose.set('useNewUrlParser', true);
     mongoose.set('useFindAndModify', false);
     mongoose.set('useCreateIndex', true);   
-    logger.info('openHAB-cloud: Trying to connect to mongodb at: ' + this.system.getDbHostsString());
+    logger.info('Trying to connect to mongodb at: ' + this.system.getDbHostsString());
     mongoose.connect(this.getMongoUri(), callback);
 };
 
@@ -36,12 +36,12 @@ MongoConnect.prototype.connect = function (mongoose, callback) {
  */
 MongoConnect.prototype.defaultCallback = function (error) {
     if (error) {
-        logger.error('openHAB-cloud: Error while connecting from openHAB-cloud to mongodb: ' + error);
-        logger.error('openHAB-cloud: Stopping openHAB-cloud due to error with mongodb');
+        logger.error('Error while connecting from openHAB-cloud to mongodb: ' + error);
+        logger.error('Stopping openHAB-cloud due to error with mongodb');
         process.exit(1);
     }
 
-    logger.info('openHAB-cloud: Successfully connected to mongodb');
+    logger.info('Successfully connected to mongodb');
 };
 
 /**

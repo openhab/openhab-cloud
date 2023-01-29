@@ -186,7 +186,7 @@ Routes.prototype.setupIFTTTRoutes = function (app) {
     if (!system.isIFTTTEnabled()) {
         return;
     }
-    this.logger.info('openHAB-cloud: IFTTT is configured, app handling IFTTT capabilities...');
+    this.logger.info('IFTTT is configured, app handling IFTTT capabilities...');
     app.get('/ifttt/v1/user/info', ifttt_routes.userinfo);
     app.get('/ifttt/v1/status', ifttt_routes.v1status);
     app.post('/ifttt/v1/test/setup', ifttt_routes.v1testsetup);
@@ -301,14 +301,14 @@ Routes.prototype.setOpenhab = function (req, res, next) {
             return;
         }
         if (error) {
-            self.logger.error('openHAB-cloud: openHAB lookup error: ' + error);
+            self.logger.error('openHAB lookup error: ' + error);
             return res.status(500).json({
                 errors: [{
                     message: error
                 }]
             });
         } else {
-            self.logger.warn('openHAB-cloud: Can\'t find the openHAB of user which is unbelievable');
+            self.logger.warn('Can\'t find the openHAB of user which is unbelievable');
             return res.status(500).json({
                 errors: [{
                     message: 'openHAB not found'

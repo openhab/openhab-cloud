@@ -248,13 +248,13 @@ exports.itemsdeletepost = function(req, res) {
                         req.flash('info', 'Items and events deleted successfully');
                         res.redirect('/account');
                     } else {
-                        logger.error('openHAB-cloud: Error deleting events: ' + error);
+                        logger.error('Error deleting events: ' + error);
                         req.flash('error', 'There was an error while processing your request');
                         res.redirect('/account');
                     }
                 });
             } else {
-                logger.error('openHAB-cloud: Error deleting items: ' + error);
+                logger.error('Error deleting items: ' + error);
                 req.flash('error', 'There was an error while processing your request');
                 res.redirect('/account');
             }
@@ -273,7 +273,7 @@ exports.accountdeleteget = function(req, res) {
 
 // !!! This is a very dangerous function, it deletes all account data !!!
 exports.accountdeletepost = function(req, res) {
-    logger.info('openHAB-cloud: Deleting data for ' + req.user.username);
+    logger.info('Deleting data for ' + req.user.username);
     UserAccount.findOne({_id: req.user.account}, function(error, userAccount) {
         if (!error && userAccount) {
             Openhab.findOne({account: userAccount.id}, function(error, openhab) {

@@ -64,11 +64,11 @@ exports.processenroll = function(req, res) {
                 }
             });
         } else if (error) {
-            logger.error("openHAB-cloud: Error finding enrollment: " + error);
+            logger.error("Error finding enrollment: " + error);
             req.flash('error', 'There was an error while processing your request');
             res.redirect('/staff');
         } else {
-            logger.error("openHAB-cloud: Unable to find enrollment");
+            logger.error("Unable to find enrollment");
             req.flash('error', 'There was an error while processing your request');
             res.redirect('/staff');
         }

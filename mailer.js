@@ -28,7 +28,7 @@ if (productionEnv === 'production') {
 			}
 			transport = nodemailer.createTransport(smtpConfig);
 		} catch (error) {
-			logger.error('openHAB-cloud: sendMail error occured during SMTP transport: ' + error );
+			logger.error('sendMail error occured during SMTP transport: ' + error );
 		}
 		try {
 			const message = {
@@ -54,13 +54,13 @@ if (productionEnv === 'production') {
 			});
 			cb(null);
 		} catch (error) {
-			logger.error('openHAB-cloud: sendMail error occured during sending: ' + error);
+			logger.error('sendMail error occured during sending: ' + error);
 		}
 	}
 } else {
-	logger.info('openHAB-cloud: Mailer will emulate sending in development environment');
+	logger.info('Mailer will emulate sending in development environment');
 	module.exports.sendEmail = function(email, subject, templateName, locals, cb) {
-		logger.info('openHAB-cloud: Emulating sendEmail to ' + email + ' about ' + subject);
+		logger.info('Emulating sendEmail to ' + email + ' about ' + subject);
 		cb(null);
 	}
 }

@@ -12,10 +12,10 @@ mongoConnect.connect(mongoose);
 
 mongoose.connect(mongoConnectionString, function (err) {
     if (err) {
-        logger.error('openHAB-cloud: mongo connection error: ' + err);
+        logger.error('mongo connection error: ' + err);
         return;
     }
-    logger.info('openHAB-cloud: connected to mongodb');
+    logger.info('connected to mongodb');
     User.find({role:'master'}, function (error, users) {
         for (var i=0; i<users.length; i++) {
             console.log(users[i].username);

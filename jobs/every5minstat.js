@@ -54,7 +54,7 @@ function saveStats() {
             new Date()
         ],
         function (err, result) {
-            logger.info('openHAB-cloud: every5min statistics collection job finished');
+            logger.info('every5min statistics collection job finished');
         }
     );
 }
@@ -62,7 +62,7 @@ function saveStats() {
 module.exports = new cronJob('00 */5 * * * *', function () {
     var promises = [];
 
-    logger.info('openHAB-cloud: every5min statistics collection job started');
+    logger.info('every5min statistics collection job started');
 
     promises.push(Openhab.count({}, countCallback.bind('openhabCount')).exec());
     promises.push(Openhab.count({status: 'online'}, countCallback.bind('openhabOnlineCount')).exec());
