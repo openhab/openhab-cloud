@@ -386,6 +386,33 @@ function sendIosNotifications(iosDeviceTokens, notification) {
 
 // Socket.io Routes
 io.use(function (socket, next) {
+    const uuid = socket.handshake.query['uuid'] || socket.handshake.headers['uuid'];
+    if (uuid) {
+        redis.ttl('blocked:' + uuid, (err, result) => {
+            if (err) {
+                logger.info('blocked: error talking with redis for ' + uuid + ' ' + err);
+                next();
+            } else {
+                switch (result) {
+                    case -2: // key does not exist
+                        next();
+                        break;
+                    case -1: // key exists but no TTL
+                        next(new Error('your connection is blocked'));
+                        break;
+                    default: // seconds left on TTL
+                        next(new Error('try again in ' + result + ' seconds'));
+                        break;
+                }
+            }
+
+        })
+    } else {
+        next(new Error('missing uuid'));
+    }
+});
+
+io.use(function (socket, next) {
     var handshakeData = socket.handshake;
     handshakeData.uuid = handshakeData.query['uuid'];
     handshakeData.openhabVersion = handshakeData.query['openhabversion'];
@@ -403,7 +430,7 @@ io.use(function (socket, next) {
     if (!handshakeData.clientVersion) {
         handshakeData.clientVersion = 'unknown';
     }
-    logger.info('openHAB-cloud: Authorizing incoming openHAB connection for ' + handshakeData.uuid );
+    logger.info('openHAB-cloud: Authorizing incoming openHAB connection for ' + handshakeData.uuid + ' version ' + handshakeData.openhabVersion);
     Openhab.findOne({
         uuid: handshakeData.uuid,
         secret: handshakeSecret
@@ -417,7 +444,12 @@ io.use(function (socket, next) {
                 next();
             } else {
                 logger.info('openHAB-cloud: openHAB ' + handshakeData.uuid + ' not found');
-                next(new Error('not authorized'));
+                redis.set('blocked:' + handshakeData.uuid, handshakeData.openhabVersion, 'NX', 'EX', 60, (err, result) => {
+                    if(err){
+                        logger.info('setting blocked: error talking with redis for ' + handshakeData.uuid + ' ' + err);
+                    }
+                    next(new Error('not authorized'));
+                });
             }
         }
     });
