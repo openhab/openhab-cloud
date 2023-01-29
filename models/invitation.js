@@ -10,7 +10,7 @@ var InvitationSchema = new Schema({
     email: String,
     used: {type: Boolean, default: false},
     lastNotified: {type: Date},
-    created: { type: Date, default: Date.now, expires: '7d' },
+    created: { type: Date, default: Date.now, expires: '30d' },
     activated: { type: Date }
 });
 

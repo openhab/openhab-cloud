@@ -10,7 +10,7 @@ var EmailVerificationSchema = new Schema({
     email: String,
     user: {type: ObjectId, ref: 'User'},
     used: {type: Boolean, default: false},
-    created: { type: Date, default: Date.now }
+    created: { type: Date, default: Date.now, expires: '30d'}
 });
 
 // This is a static method to create and send a new invitation in one shot!
