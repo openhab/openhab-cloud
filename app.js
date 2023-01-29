@@ -431,13 +431,13 @@ io.use(function (socket, next) {
     redis.set(socket.redisLockKey, socket.connectionId, 'NX', 'EX', system.getConnectionLockTimeSeconds(), (err, result) => {
         if(err) {
             logger.info('openHAB-cloud: error attaining connection lock for  uuid ' + socket.handshake.uuid + ' connectionId ' + socket.connectionId + ' ' + err);
-            next(new Error('connection lock error'));
+            return next(new Error('connection lock error'));
         }
 
         if(!result){
             //this key already exists, which means another connection exists
             logger.info('openHAB-cloud: another connection has lock for uuid ' + socket.handshake.uuid + ' my connectionId ' + socket.connectionId);
-            next(new Error('already connected'));
+            return next(new Error('already connected'));
         }
         next();
     });
