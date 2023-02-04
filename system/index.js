@@ -187,7 +187,7 @@ System.prototype.getConnectionLockTimeSeconds = function() {
     try {
         return this.getConfig(['system', 'connectionLockTimeSeconds']);
     } catch (e) {
-        return 70;
+        return 60;
     }
 };
 
