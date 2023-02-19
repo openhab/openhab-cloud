@@ -33,14 +33,12 @@ exports.devicesget = function(req, res) {
                 selectedDeviceArrayId = i;
             }
         }
-        UserDeviceLocationHistory.find({userDevice: selectedDeviceId}, function(error, locationHistory) {
-//            logger.info("Location history size = " + locationHistory.length);
-            res.render('devices', { userDevices: userDevices,
-                title: "Devices", user: req.user, selectedDeviceId: selectedDeviceId,
-                selectedDeviceArrayId: selectedDeviceArrayId, locationHistory: locationHistory,
-                baseUrl: system.getBaseURL(), appleLink: system.getAppleLink(), androidLink: system.getAndroidLink(),
-                errormessages:req.flash('error'), infomessages:req.flash('info') });
-        });
+
+        res.render('devices', { userDevices: userDevices,
+            title: "Devices", user: req.user, selectedDeviceId: selectedDeviceId,
+            selectedDeviceArrayId: selectedDeviceArrayId,
+            baseUrl: system.getBaseURL(), appleLink: system.getAppleLink(), androidLink: system.getAndroidLink(),
+            errormessages:req.flash('error'), infomessages:req.flash('info') });
     });
 }
 

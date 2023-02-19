@@ -8,7 +8,6 @@ const ACK_MESSAGE_TYPE = 'ack';
 const NACK_MESSAGE_TYPE = 'nack';
 const { client, xml } = require("@xmpp/client");
 const UserDevice = require('./models/userdevice'),
-    UserDeviceLocationHistory = require('./models/userdevicelocationhistory'),
     firebase = require('./notificationsender/firebase'),
     logger = require('./logger.js');
 
@@ -28,34 +27,6 @@ xmppClient.start().catch(err => {
 xmppClient.on('online', function () {
     logger.info('GCM XMPP connection is online');
 });
-
-function updateLocationOfDevice(messageData) {
-    logger.info('This is a location message');
-    UserDevice.findOne({ androidRegistration: messageData.from }, function (error, userDevice) {
-        let newLocation;
-
-        if (error) {
-            logger.warn('Error finding user device: ' + error);
-            return;
-        }
-        if (!userDevice) {
-            logger.warn('Unable to find user device with reg id = ' + messageData.from);
-            return;
-        }
-
-        userDevice.globalLocation = [messageData.data.latitude, messageData.data.longitude];
-        userDevice.globalAccuracy = messageData.data.accuracy;
-        userDevice.globalAltitude = messageData.data.altitude;
-        userDevice.lastGlobalLocation = new Date(messageData.data.timestamp);
-        userDevice.save();
-        newLocation = new UserDeviceLocationHistory({ userDevice: userDevice.id });
-        newLocation.globalLocation = [messageData.data.latitude, messageData.data.longitude];
-        newLocation.when = new Date(messageData.data.timestamp);
-        newLocation.globalAltitude = messageData.data.altitude;
-        newLocation.globalAccuracy = messageData.data.accuracy;
-        newLocation.save();
-    });
-}
 
 function hideNotificationInfo(messageData) {
     logger.info('This is hideNotification message');
@@ -112,9 +83,6 @@ xmppClient.on('stanza', function (stanza) {
     xmppClient.send(ackMsg);
 
     logger.info('GCM XMPP ack sent');
-    if (messageData.data.type === 'location') {
-        updateLocationOfDevice(messageData);
-    }
 
     if (messageData.data.type === 'hideNotification') {
         hideNotificationInfo(messageData);

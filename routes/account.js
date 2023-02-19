@@ -1,9 +1,6 @@
-var passport = require('passport');
 var User = require('../models/user');
 var UserAccount = require('../models/useraccount');
 var Openhab = require('../models/openhab');
-var Invitation = require('../models/invitation');
-var Enrollment = require('../models/enrollment');
 var LostPassword = require('../models/lostpassword');
 var EmailVerification = require('../models/emailverification');
 var Event = require('../models/event');
@@ -11,7 +8,6 @@ var Item = require('../models/item');
 var Notification = require('../models/notification');
 var OAuth2Token = require('../models/oauth2token');
 var UserDevice = require('../models/userdevice');
-var UserDeviceLocationHistory = require('../models/userdevicelocationhistory');
 var form = require('express-form'),
     field = form.field;
 var path           = require('path')
