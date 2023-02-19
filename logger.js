@@ -96,7 +96,7 @@ logger.auditRequest = function (req) {
         requestPath = requestPath.replace('/remote', '');
     }
 
-    this.audit("%s | %s | %s | %s | %s | %s | %s", req.user.username, req.openhab.status, req.method, requestPath, headers[`x-real-ip`], headers['host'], headers['user-agent'])
+    this.audit("%s | %s | %s | %s | %s | %s | %s", req.user.username, req.connectionInfo.status, req.method, requestPath, headers[`x-real-ip`], headers['host'], headers['user-agent'])
 }
 
 module.exports = logger;

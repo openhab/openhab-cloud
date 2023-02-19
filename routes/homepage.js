@@ -36,7 +36,3 @@ exports.docsifttt = function(req, res) {
     res.render('docs/ifttt', {title: "Docs - IFTTT", user: req.user, errormessages: errormessages,
         infomessages: infomessages});
 };
-
-exports.getv2 = function(req, res) {
-    res.send('Yes, I am!');
-};

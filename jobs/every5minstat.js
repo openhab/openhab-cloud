@@ -17,7 +17,7 @@ var cronJob = require('cron').CronJob,
  *
  * @private
  */
-function countCallback (err, count) {
+function countCallback(err, count) {
     if (!err) {
         stats[this] = count;
     }
@@ -31,10 +31,9 @@ function saveStats() {
     // validate the results
     if (Object.keys(stats).length !== 6) {
         // not all data could be retrieved
-        logger.info('The length of the stats object does not match the expected one, can not save statistical data.');
+        logger.info('The length of the stats object does not match the expected one, can not save statistical data. %s', stats);
         return;
     }
-
     // Set current statistics to redis
     redis.mset(
         [
@@ -61,15 +60,26 @@ function saveStats() {
 
 module.exports = new cronJob('00 */5 * * * *', function () {
     var promises = [];
-
     logger.info('every5min statistics collection job started');
+    //obtain a lock to update, we don't bother removing as it has a short expire, this is just to avoid unnecessary updates from multiple servers. 
+    redis.set("jobs:every5minstat", "", 'NX', 'EX', 10, (error, result) => {
+        if (result) {
+            logger.info('every5min statistics collection job obtained lock');
+            promises.push(Openhab.count({}, countCallback.bind('openhabCount')).exec());
+            promises.push(new Promise(resolve => {
+                redis.eval("return #redis.pcall('keys', 'connection:*')", 0, (err, res) => {
+                    const f = countCallback.bind('openhabOnlineCount');
+                    f(err, res);
+                    resolve(res);
+                });
+            }));
+            //promises.push(Openhab.count({status: 'online'}, countCallback.bind('openhabOnlineCount')).exec());
+            promises.push(User.count({}, countCallback.bind('userCount')).exec());
+            promises.push(Invitation.count({ used: true }, countCallback.bind('invitationUsedCount')).exec());
+            promises.push(Invitation.count({ used: false }, countCallback.bind('invitationUnusedCount')).exec());
+            promises.push(UserDevice.count({}, countCallback.bind('userDeviceCount')).exec());
 
-    promises.push(Openhab.count({}, countCallback.bind('openhabCount')).exec());
-    promises.push(Openhab.count({status: 'online'}, countCallback.bind('openhabOnlineCount')).exec());
-    promises.push(User.count({}, countCallback.bind('userCount')).exec());
-    promises.push(Invitation.count({used:true}, countCallback.bind('invitationUsedCount')).exec());
-    promises.push(Invitation.count({used:false}, countCallback.bind('invitationUnusedCount')).exec());
-    promises.push(UserDevice.count({}, countCallback.bind('userDeviceCount')).exec());
-
-    Promise.all(promises).then(saveStats);
+            Promise.all(promises).then(saveStats);
+        }
+    });
 });
