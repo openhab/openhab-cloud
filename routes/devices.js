@@ -5,7 +5,6 @@ var logger = require('../logger');
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 var ObjectId = mongoose.SchemaTypes.ObjectId;
-var UserDeviceLocationHistory = require('../models/userdevicelocationhistory');
 var appleSender = require('../notificationsender/aps-helper');
 var firebase = require('../notificationsender/firebase');
 var form = require('express-form'),
