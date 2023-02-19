@@ -11,6 +11,7 @@ var form = require('express-form'),
     field = form.field,
     system = require('../system');
 
+    
 exports.devicesget = function(req, res) {
     UserDevice.find({owner: req.user.id}, function(error, userDevices) {
         if (!userDevices || error) {
