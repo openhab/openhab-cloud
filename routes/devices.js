@@ -8,7 +8,6 @@ var ObjectId = mongoose.SchemaTypes.ObjectId;
 var UserDeviceLocationHistory = require('../models/userdevicelocationhistory');
 var appleSender = require('../notificationsender/aps-helper');
 var firebase = require('../notificationsender/firebase');
-var redis = require('../redis-helper');
 var form = require('express-form'),
     field = form.field,
     system = require('../system');

@@ -1,6 +1,8 @@
 const system = require('../system');
 const Firebase = require('firebase-messaging');
 const logger = require('../logger.js');
+const redis = require('../redis-helper');
+
 const firebaseClient = new Firebase(system.getGcmPassword());
 
 const firebaseOptions = {

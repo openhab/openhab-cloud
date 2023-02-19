@@ -23,7 +23,7 @@ MongoConnect.prototype.connect = function (mongoose, callback) {
     }
     mongoose.set('useNewUrlParser', true);
     mongoose.set('useFindAndModify', false);
-    mongoose.set('useCreateIndex', true);   
+    mongoose.set('useCreateIndex', true); 
     logger.info('Trying to connect to mongodb at: ' + this.system.getDbHostsString());
     mongoose.connect(this.getMongoUri(), callback);
 };

@@ -1,6 +1,7 @@
 const { APNS, Notification, Errors } = require('apns2'),
     app = require('./../app'),
-    logger = require('./../logger');
+    logger = require('./../logger'),
+    fs = require('fs');
 let client = null;
 
 if (app.config.apn && app.config.apn.signingKey) {
