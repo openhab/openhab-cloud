@@ -12,12 +12,6 @@ var UserDeviceSchema = new Schema({
     deviceType: {type: String},
     deviceModel: {type: String},
     deviceId: {type: String},
-    globalLocation: {type: [Number], index: '2d'},
-    globalAltitude: {type: Number},
-    globalAccuracy: {type: Number},
-    lastGlobalLocation: {type: Date},
-    indoorLocation: {type: [Number], index: '2d'},
-    lastIndoorLocation: {type: Date},
     lastUpdate: { type: Date },
     registered: { type: Date }
 });

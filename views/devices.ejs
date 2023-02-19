@@ -42,19 +42,12 @@
                     <% if (userDevices.length > 0 ) { %>
                     <table class="table">
                         <thead>
-                        <tr><th>Type</th><th>ID</th><th>Registered</th><th>Last location</th><th></th></tr>
+                        <tr><th>Type</th><th>ID</th><th>Registered</th><th></th></tr>
                         </thead>
                         <tr>
                             <td><%= userDevices[selectedDeviceArrayId].deviceType%></td>
                             <td><%= userDevices[selectedDeviceArrayId].deviceId%></td>
                             <td><%= date_util(userDevices[selectedDeviceArrayId].registered, timeZone).toRelativeCalendar()%></td>
-                            <td>
-                                <% if (typeof userDevices[selectedDeviceArrayId].lastGlobalLocation != 'undefined') { %>
-                                <%= date_util(userDevices[selectedDeviceArrayId].lastGlobalLocation, timeZone).toRelativeCalendar()%>
-                                <% } else { %>
-                                    Never
-                                <% } %>
-                            </td>
                             <td>
                                 <a href="/devices/<%=userDevices[selectedDeviceArrayId].id%>/delete"><i class="icon-trash"></i></a>
                                 <a href="#"><i class="icon-edit"></i> </a>
