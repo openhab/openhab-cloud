@@ -143,7 +143,7 @@
                         <% } %>
                         <li><a href="/notifications" class="firstLevel <% if (section == 'notifications')  { %>active<% } %>">Notifications</a></li>
                         <% } %>
-                        <% if (user) if (openhabstatus) { %>
+                        <% if (user) if (locals.openhabstatus) { %>
                         <% if (openhabstatus == 'online') { %>
                         <li class="openhab-online">
                             <a href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).toRelativeCalendar()%>">Online</a>
