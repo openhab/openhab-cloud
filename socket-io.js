@@ -76,6 +76,7 @@ function SocketIO(server, system) {
             } else {
                 if (openhab) {
                     socket.openhab = openhab; // will use this reference in 'connect' to save on mongo calls
+                    socket.openhabId = openhab.id;
                     next();
                 } else {
                     logger.info('openHAB %s not found', handshakeData.uuid);
