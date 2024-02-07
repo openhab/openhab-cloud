@@ -95,7 +95,7 @@ Routes.prototype.setupLoginLogoutRoutes = function (app) {
     });
 
     app.post('/login', account_routes.loginpostvalidate,
-        //use express-form sanitized data for passport  
+        //use express-form sanitized data for passport
         function (req, res, next) {
             req.body.username = req.form.username;
             req.body.password = req.form.password;
@@ -104,7 +104,8 @@ Routes.prototype.setupLoginLogoutRoutes = function (app) {
         passport.authenticate('local', {
             successReturnToOrRedirect: '/',
             failureRedirect: '/login',
-            failureFlash: true
+            failureFlash: true,
+            keepSessionInfo: true
         }));
 };
 
