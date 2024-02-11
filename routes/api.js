@@ -34,3 +34,13 @@ exports.notificationssettingsget = function(req, res) {
     }
     res.send(config);
 };
+
+exports.proxyurlget = function(req, res) {
+    var config = {};
+
+   
+    config.proxyurl = {
+        "url": system.getProxyURL()
+    };
+    res.send(config);
+};
