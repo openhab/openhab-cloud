@@ -17,12 +17,14 @@
  * @author Victor Belov - Initial contribution
  * @author Dan Cunningham - Extended Features
  * @author Mehmet Arziman - Extended Features
+ * @author Miguel Álvarez Díez - Proxy WebSocket connections
  *
  */
 
 // Main Logging setup
 var logger = require('./logger.js'),
     system = require('./system'),
+    http = require('http'),
     config;
 
 //load and set our configuration, delete any cache first
@@ -110,7 +112,7 @@ if (config.system.subDomainCookies) {
 if (app.get('env') === 'development') {
     app.use(errorHandler());
 }
-if (system.getLoggerMorganOption()){
+if (system.getLoggerMorganOption()) {
     app.use(system.getLoggerMorganOption());
 }
 // App configuration for all environments
@@ -159,7 +161,7 @@ app.use(function (req, res, next) {
 app.use(function (req, res, next) {
     var csrf = csurf();
     // Check if url needs csrf, remote connections and REST connections are excluded from CSRF
-    if (!req.path.match('/rest*') && !req.path.match('/oauth2/token') && !req.path.match('/ifttt/*') && !req.path.match('/remote/*'))
+    if (!req.path.match('/rest*') && !req.path.match('/ws/*') && !req.path.match('/oauth2/token') && !req.path.match('/ifttt/*') && !req.path.match('/remote/*'))
         csrf(req, res, next);
     else
         next();
@@ -197,6 +199,17 @@ app.use(serveStatic(path.join(__dirname, 'public')));
 var server = app.listen(system.getNodeProcessPort(), config.system.listenIp, function () {
     logger.info('express server listening on port ' + system.getNodeProcessPort());
 });
+
+// Route upgrade event through express
+server.on('upgrade', (req, socket, head) => {
+    // need to filter by path to void handling the Socket.IO upgrade event
+    if (req.url && req.url.startsWith('/ws/')) {
+        let res = new http.ServerResponse(req)
+        res.assignSocket(socket)
+        res.on('finish', () => res.socket.destroy());
+        app(req, res)
+    }
+})
 
 // setup socket.io connections from openHABs
 var socketIO = new SocketIO(server, system);

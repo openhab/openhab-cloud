@@ -10,7 +10,7 @@ var logger = require('../logger');
  */
 module.exports = function (req, res) {
     if (!req.query.hasOwnProperty('regId') || !req.query.hasOwnProperty('deviceId')) {
-        res.send(404, 'Parameters missing');
+        res.status(404).send('Parameters missing');
         return;
     }
     var regId = req.query['regId'];
@@ -24,7 +24,7 @@ module.exports = function (req, res) {
     }, function (error, userDevice) {
         if (error) {
             logger.warn('Error looking up device: ' + error);
-            res.send(500, 'Internal server error');
+            res.status(500).send('Internal server error');
             return;
         }
         if (userDevice) {
@@ -37,7 +37,7 @@ module.exports = function (req, res) {
                     logger.error('Error saving user device: ' + error);
                 }
             });
-            res.send(200, 'Updated');
+            res.status(200).send('Updated');
         } else {
             // If not found, add new device registration
             logger.info('Registering new iOS device for user ' + req.user.username);
@@ -55,7 +55,7 @@ module.exports = function (req, res) {
                     logger.error('Error saving user device: ' + error);
                 }
             });
-            res.send(200, 'Added');
+            res.status(200).send('Added');
         }
     });
 };

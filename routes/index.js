@@ -203,6 +203,7 @@ Routes.prototype.setupTimezoneRoutes = function (app) {
 
 Routes.prototype.setupProxyRoutes = function (app) {
     app.all('/rest*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, this.ensureServer, this.proxyRouteOpenhab.bind(this));
+    app.all('/ws/*', this.ensureRestAuthenticated, this.setOpenhab, this.ensureServer, this.allowWebSocketUpgrade, this.proxyRouteOpenhab.bind(this));
     app.all('/images/*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, this.ensureServer, this.proxyRouteOpenhab.bind(this));
     app.all('/static/*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, this.ensureServer, this.proxyRouteOpenhab.bind(this));
     app.all('/rrdchart.png*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, this.ensureServer, this.proxyRouteOpenhab.bind(this));
@@ -221,7 +222,7 @@ Routes.prototype.setupProxyRoutes = function (app) {
     app.all('/start/*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, this.ensureServer, this.proxyRouteOpenhab.bind(this));
     app.all('/icon*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, this.ensureServer, this.proxyRouteOpenhab.bind(this));
     app.all('/habmin/*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, this.ensureServer, this.proxyRouteOpenhab.bind(this));
-    app.all('/remote*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, this.ensureServer, this.proxyRouteOpenhab.bind(this));
+    app.all('/remote*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, this.ensureServer, this.allowWebSocketUpgrade, this.proxyRouteOpenhab.bind(this));
     app.all('/habpanel/*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, this.ensureServer, this.proxyRouteOpenhab.bind(this));
 };
 
@@ -365,6 +366,15 @@ Routes.prototype.preassembleBody = function (req, res, next) {
     }
 };
 
+Routes.prototype.allowWebSocketUpgrade = function (req, res, next) {
+    res.locals.allowUpgrade = 
+        !!req.headers['connection'] &&
+        !!req.headers['upgrade'] &&
+        req.headers['connection'].toUpperCase() === "UPGRADE" &&
+        req.headers['upgrade'].toUpperCase() === "WEBSOCKET";
+    return next();
+};
+
 Routes.prototype.proxyRouteOpenhab = function (req, res) {
     var self = this;
 
@@ -384,7 +394,9 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
     delete requestHeaders['x-real-ip'];
     delete requestHeaders['x-forwarded-for'];
     delete requestHeaders['x-forwarded-proto'];
-    delete requestHeaders['connection'];
+    if (!res.locals.allowUpgrade) {
+        delete requestHeaders['connection'];
+    }
     requestHeaders['host'] = req.headers.host || system.getHost() + ':' + system.getPort();
     requestHeaders['user-agent'] = 'openhab-cloud/0.0.1';
     // Strip off path prefix for remote vhosts hack

@@ -210,7 +210,42 @@ function SocketIO(server, system) {
             if (requestTracker.has(requestId)) {
                 request = requestTracker.get(requestId);
                 if (self.handshake.uuid === request.openhab.uuid && !request.headersSent) {
-                    request.writeHead(data.responseStatusCode, data.responseStatusText, data.headers);
+                    if (data.responseStatusCode != '101')  {
+                        request.writeHead(data.responseStatusCode, data.responseStatusText, data.headers);
+                    } else {
+                        // request was upgraded on the remote
+                        logger.debug('Upgrading request ' + requestId);
+                        const websocket = request.socket;
+                        websocket.setTimeout(0);
+                        websocket.setNoDelay();
+                        // setup socket event listeners
+                        websocket.on('data', (data) => {
+                            self.emit('websocket', requestId, new Uint8Array(data).buffer);
+                        });
+                        websocket.on('error', (error) => {
+                            logger.warn("Socket error for request " + requestId + ": " + error.message);
+                        });
+                        websocket.on('close', () => {
+                            logger.debug("Socket closed for request " + requestId);
+                            if(requestTracker.has(requestId)) {
+                                requestTracker.remove(requestId);
+                                self.emit('cancel', { id: requestId });
+                            }
+                        });
+                        websocket.on('end', () => {
+                            logger.debug("Socket ended for request " + requestId);
+                            if(requestTracker.has(requestId)) {
+                                requestTracker.remove(requestId);
+                                self.emit('cancel', { id: requestId });
+                            }
+                        });
+                        // write upgrade to client
+                        const statusLine = `HTTP/1.1 ${data.responseStatusCode} ${data.responseStatusText || 'Switching Protocols'}\r\n`
+                        const headerList = Object.entries(data.headers).map(entry => `${entry[0]}: ${entry[1]}`);
+                        const header = `${statusLine}${headerList.concat('\r\n').join('\r\n')}`;
+                        // note response writeHead method can not be used because it will close the socket
+                        websocket.write(header);
+                    }
                 } else {
                     logger.warn('responseHeader %s tried to respond to request which it doesn\'t own %s or headers have already been sent', self.handshake.uuid, request.openhab.uuid);
                 }
@@ -257,9 +292,21 @@ function SocketIO(server, system) {
             if (requestTracker.has(requestId)) {
                 request = requestTracker.get(requestId);
                 if (self.handshake.uuid === request.openhab.uuid) {
-                    request.send(500, data.responseStatusText);
+                    request.status(500).send(data.responseStatusText);
                 } else {
                     logger.warn('responseError %s tried to respond to request which it doesn\'t own %s', self.handshake.uuid, request.openhab.uuid);
+                }
+            }
+        });
+        socket.on('websocket', function (requestId, data) {
+            var self = this;
+            if (requestTracker.has(requestId)) {
+                var request = requestTracker.get(requestId);
+                if (self.handshake.uuid === request.openhab.uuid) {
+                    // write data to upgraded request socket handling backpressure
+                    writeToSocket(request.socket, data);
+                } else {
+                    logger.warn('responseError %s tried to send websocket data to request which it doesn\'t own %s', self.handshake.uuid, request.openhab.uuid);
                 }
             }
         });
@@ -377,6 +424,43 @@ function SocketIO(server, system) {
                 logger.error('Error saving connect event: %s', error);
             }
         });
+    }
+    /**
+     * Symbol used to indicate whetter the socket can be written
+     */
+    const WritingState = Symbol('writing');
+    /**
+     * Symbol used hold a queue of pending writes
+     */
+    const PendingWrites = Symbol('pending');
+    /**
+     * Write to socket handling backpressure
+     */
+    function writeToSocket(stream, data) {
+        const pending = stream[PendingWrites] = (stream[PendingWrites] || []);
+        if (stream[WritingState]) {
+            pending.push(data);
+        } else {
+            const cb = () => {
+                if (pending.length) {
+                    process.nextTick(()=> _writeToSocket(stream, pending.shift(), cb));
+                } else {
+                    stream[WritingState] = false;
+                }
+            };
+            stream[WritingState] = true;
+            _writeToSocket(stream, data, cb)
+        }
+    }
+    /**
+     * Internal function called from writeToSocket 
+     */
+    function _writeToSocket(stream, data, cb) {
+        if (!stream.write(data)) {
+            stream.once('drain', cb);
+        } else {
+            cb();
+        }
     }
 
     /**
