@@ -1,12 +1,7 @@
 const url = require('url');
 const System = function() {};
+const path = require('node:path'); 
 
-/**
- * The suffix, which is appended to the GCM sender ID to build the full jid.
- *
- * @type {string}
- */
-System.jidSuffix = '@gcm.googleapis.com';
 
 /**
  * Sets the configuration object for this System object which should holf the configuration options for this instance
@@ -34,17 +29,6 @@ System.prototype.setConfiguration = function(config) {
         this.config.system.host = parsedUrl.hostname;
         this.config.system.port = parsedUrl.port;
         this.config.system.protocol = (parsedUrl.protocol || 'http:').replace(':', '');
-    }
-
-    // backward-compatibility to jid/senderId setting of GCM
-    if (this.config && this.config.gcm && this.config.gcm.hasOwnProperty('jid')) {
-        let splittedConfig = this.config.gcm.jid.split('@');
-
-        if (splittedConfig.length !== 2) {
-            throw new Error('The Google Cloud Message JID needs to be of format: jid' + System.jidSuffix + ' but got:' +
-                this.config.gcm.jid + '. Can\'t migrate to use sender ID only.');
-        }
-        this.config.gcm.senderId = splittedConfig[0];
     }
 };
 
@@ -282,7 +266,7 @@ System.prototype.getAndroidLink = function () {
  */
 System.prototype.isGcmConfigured = function() {
     try {
-        this.getGcmSenderId();
+        this.getGcmSenderId() && this.getFirebaseServiceFile();
         return true;
     } catch(e) {
         return false;
@@ -299,21 +283,12 @@ System.prototype.getGcmSenderId = function() {
 };
 
 /**
- * Returns the JID used to login to GCM services, if the sender ID is set. Throws an error otherwise.
- *
- * @return {string}
- */
-System.prototype.getGcmJid = function() {
-    return this.getGcmSenderId() + System.jidSuffix;
-};
-
-/**
- * Returns the configured pssword for GCM for the configured sender ID. If it isn't set, it throws an error.
+ * Returns the location of the Firebase Service Account File relative to the project base, if it exists, throws an error otherwise.
  *
  * @return {*}
  */
-System.prototype.getGcmPassword = function() {
-    return this.getConfig(['gcm', 'password']);
+System.prototype.getFirebaseServiceFile = function() {
+    return path.resolve(this.getConfig(['gcm', 'serviceFile']));
 };
 
 /**

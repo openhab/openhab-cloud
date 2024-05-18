@@ -227,7 +227,8 @@ Routes.prototype.setupProxyRoutes = function (app) {
 
 Routes.prototype.setupAppRoutes = function (app) {
     // myOH API for mobile apps
-    app.all('/api/v1/notifications*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.notificationsget);
+    app.all('/api/v1/notifications', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.notificationsget);
+    app.all('/api/v1/hidenotification', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.hidenotification);
     app.all('/api/v1/settings/notifications', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.notificationssettingsget);
 
     // Android app registration

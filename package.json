@@ -9,8 +9,6 @@
     "integration_tests": "node tests/ohc_simulator_docker.js & mocha tests/mocha/integration/*.js"
   },
   "dependencies": {
-    "@xmpp/client": "^0.13.1",
-    "@xmpp/debug": "^0.12.0",
     "apns2": "^9.3.0",
     "bcrypt": "^5.0.1",
     "bcrypt-cache": "^2.0.1",
@@ -30,7 +28,7 @@
     "express": "^4.17.3",
     "express-form": "0.12.6",
     "express-session": "^1.17.1",
-    "firebase-messaging": "^1.0.6",
+    "firebase-admin": "^12.1.0",
     "heapdump": "0.3.15",
     "ioredis": "^4.28.5",
     "less-middleware": "3.1.0",

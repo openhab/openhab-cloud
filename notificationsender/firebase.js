@@ -1,58 +1,63 @@
 const system = require('../system');
-const Firebase = require('firebase-messaging');
+const firebase = require('firebase-admin');
 const logger = require('../logger.js');
 const redis = require('../redis-helper');
 
-const firebaseClient = new Firebase(system.getGcmPassword());
+if(system.isGcmConfigured()) {
+    const serviceAccount = require(system.getFirebaseServiceFile());
+    firebase.initializeApp({
+        credential: firebase.credential.cert(serviceAccount)
+    });
+}
 
-const firebaseOptions = {
-    delay_while_idle: false,
+const messagingOptions = {
     priority: 'high'
 };
 
 function sendNotificationWithData(registrationIds, data) {
-    redis.incr("androidNotificationId", function(error, androidNotificationId) {
+    //TODO remove notificationId as we are going to use persistedId
+    redis.incr("androidNotificationId", function (error, androidNotificationId) {
         if (error) {
             return;
         }
-
         data.type = 'notification';
-        data.notificationId = androidNotificationId;
-        firebaseClient.message(registrationIds, data, firebaseOptions, function (result) {
-            if (result.failure) {
-                logger.error("GCM send error: " + JSON.stringify(result));
-            }
-        });
+        data.notificationId = androidNotificationId.toString();
+        firebase.messaging().sendToDevice(registrationIds, { data: data }, messagingOptions)
+            .then((response) => {
+                logger.info("Response: " + JSON.stringify(response));
+            })
+            .catch(error => {
+                logger.error("GCM send error: ", error);
+            });
     });
 };
 
-exports.sendMessageNotification = function(registrationIds, message) {
-    var data = {
+exports.sendMessageNotification = function (registrationIds, message) {
+    const data = {
         message: message,
-        timestamp: Date.now()
+        timestamp: Date.now().toString()
     };
     sendNotificationWithData(registrationIds, data);
 };
 
-exports.sendNotification = function(registrationIds, notification) {
-    var data = {
+exports.sendNotification = function (registrationIds, notification) {
+    const data = {
         message: notification.message,
         severity: notification.severity,
         icon: notification.icon,
-        persistedId: notification._id,
-        timestamp: notification.created.getTime()
+        persistedId: notification._id.toString(),
+        timestamp: notification.created.getTime().toString()
     };
     sendNotificationWithData(registrationIds, data);
 };
 
-exports.hideNotification = function(registrationIds, notificationId) {
+exports.hideNotification = function (registrationIds, notificationId) {
     const data = {
         type: 'hideNotification',
-        notificationId: notificationId
+        notificationId: notificationId.toString()
     };
-    firebaseClient.message(registrationIds, data, firebaseOptions, function (result) {
-        if (result.failure) {
-            logger.error('GCM send error: ' + result);
-        }
-    });
+    firebase.messaging().sendToDevice(registrationIds, { data: data }, messagingOptions)
+        .catch(error => {
+            logger.error("GCM send error: ", error);
+        });
 };

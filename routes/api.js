@@ -1,6 +1,5 @@
-var User = require('../models/user');
-var Openhab = require('../models/openhab');
 var Notification = require('../models/notification');
+var UserDevice = require('../models/userdevice');
 var logger = require('../logger');
 var system = require('../system');
 
@@ -26,7 +25,6 @@ exports.notificationsget = function(req, res) {
 
 exports.notificationssettingsget = function(req, res) {
     var config = {};
-
     if (system.isGcmConfigured()) {
         config.gcm = {
             "senderId": system.getGcmSenderId()
@@ -34,3 +32,21 @@ exports.notificationssettingsget = function(req, res) {
     }
     res.send(config);
 };
+
+exports.hidenotification = function (req, res) {
+    const deviceId = req.query['deviceId'];
+    const persistedId = req.query['persistedId'];
+    UserDevice.find({ owner: req.user.id }, function (error, userDevices) {
+        const registrationIds = [];
+        for (const uDevice of userDevices) {
+            // Skip the device which sent notification hide itself
+            if (uDevice.deviceId !== deviceId) {
+                registrationIds.push(uDevice.androidRegistration);
+            }
+        }
+        if (registrationIds.length < 0) {
+            return;
+        }
+        firebase.hideNotification(registrationIds, persistedId);
+    });
+}
