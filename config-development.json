@@ -32,8 +32,8 @@
         "from": "<your-mail>"
     },
     "gcm" : {
-      "jid": "something@gcm.googleapis.com",
-      "password": "password"
+      "senderId": "1234567890",
+      "serviceFile" : "serviceAccountKey.json"
     },
     "apn" : {
       "team": "PB1234567",
