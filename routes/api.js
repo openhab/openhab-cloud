@@ -35,9 +35,9 @@ exports.notificationssettingsget = function(req, res) {
 };
 
 exports.hidenotification = function (req, res) {
-    const deviceId = req.query['deviceId'];
-    const persistedId = req.query['persistedId'];
-    if (!deviceId || !persistedId) {
+    const persistedId = req.params.id;
+    const deviceId = req.query['deviceId']; //optional
+    if (!persistedId) {
         return res.status(400).json({
             errors: [{
                 message: "Invalid request"
