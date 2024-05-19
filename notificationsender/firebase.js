@@ -10,25 +10,32 @@ if(system.isGcmConfigured()) {
     });
 }
 
-const messagingOptions = {
-    priority: 'high'
-};
-
 function sendNotificationWithData(registrationIds, data) {
-    //TODO remove notificationId as we are going to use persistedId
-    redis.incr("androidNotificationId", function (error, androidNotificationId) {
-        if (error) {
-            return;
-        }
-        data.type = 'notification';
-        data.notificationId = androidNotificationId.toString();
-        firebase.messaging().sendToDevice(registrationIds, { data: data }, messagingOptions)
-            .then((response) => {
-                logger.info("Response: " + JSON.stringify(response));
-            })
-            .catch(error => {
-                logger.error("GCM send error: ", error);
-            });
+    //TODO remove redis/notificationId as we are going to use persistedId
+    return new Promise((resolve, reject) => {
+        redis.incr("androidNotificationId", function (error, androidNotificationId) {
+            if (error) {
+                return;
+            }
+            data.type = 'notification';
+            data.notificationId = androidNotificationId.toString();
+            const message = {
+                data: data,
+                tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
+                android: {
+                    priority: 'high',
+                }
+            };
+            firebase.messaging().sendMulticast(message)
+                .then((response) => {
+                    logger.info("Response: " + JSON.stringify(response));
+                    resolve(androidNotificationId);
+                })
+                .catch(error => {
+                    logger.error("GCM send error: ", error);
+                    reject(error);
+                });
+        });
     });
 };
 
@@ -37,7 +44,7 @@ exports.sendMessageNotification = function (registrationIds, message) {
         message: message,
         timestamp: Date.now().toString()
     };
-    sendNotificationWithData(registrationIds, data);
+    return sendNotificationWithData(registrationIds, data);
 };
 
 exports.sendNotification = function (registrationIds, notification) {
@@ -48,7 +55,7 @@ exports.sendNotification = function (registrationIds, notification) {
         persistedId: notification._id.toString(),
         timestamp: notification.created.getTime().toString()
     };
-    sendNotificationWithData(registrationIds, data);
+    return sendNotificationWithData(registrationIds, data);
 };
 
 exports.hideNotification = function (registrationIds, notificationId) {
