@@ -10,55 +10,7 @@ if (system.isGcmConfigured()) {
     });
 }
 
-function sendNotificationWithData(registrationIds, data) {
-    //TODO remove redis/notificationId as we are going to use persistedId
-    redis.incr("androidNotificationId", function (error, androidNotificationId) {
-        if (error) {
-            return;
-        }
-        data.type = 'notification';
-        data.notificationId = androidNotificationId.toString();
-        const message = {
-            data: data,
-            tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
-            android: {
-                priority: 'high',
-            }
-        };
-        firebase.messaging().sendMulticast(message)
-            .then((response) => {
-                logger.info("Response: " + JSON.stringify(response));
-            })
-            .catch(error => {
-                logger.error("GCM send error: ", error);
-            });
-    });
-};
-
-exports.sendMessageNotification = function (registrationIds, message) {
-    const data = {
-        message: message,
-        timestamp: Date.now().toString()
-    };
-    sendNotificationWithData(registrationIds, data);
-};
-
-exports.sendNotification = function (registrationIds, notification) {
-    const data = {
-        message: notification.message,
-        severity: notification.severity,
-        icon: notification.icon,
-        persistedId: notification._id.toString(),
-        timestamp: notification.created.getTime().toString()
-    };
-    endNotificationWithData(registrationIds, data);
-};
-
-exports.hideNotification = function (registrationIds, notificationId) {
-    const data = {
-        type: 'hideNotification',
-        notificationId: notificationId.toString()
-    };
+function sendMessage(registrationIds, data) {
     const message = {
         data: data,
         tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
@@ -68,9 +20,49 @@ exports.hideNotification = function (registrationIds, notificationId) {
     };
     firebase.messaging().sendMulticast(message)
         .then((response) => {
-            logger.info("Hide Notification Response: " + JSON.stringify(response));
+            logger.info("Response: " + JSON.stringify(response));
         })
         .catch(error => {
-            logger.error("Hide Notification GCM send error: ", error);
+            logger.error("GCM send error: ", error);
         });
+};
+
+function sendIncrementingMessage(registrationIds, data) {
+    //TODO remove redis/notificationId as we are going to use persistedId
+    redis.incr("androidNotificationId", function (error, androidNotificationId) {
+        if (error) {
+            return;
+        }
+        data.notificationId = androidNotificationId.toString();
+        sendMessage(registrationIds, data);
+    });
+};
+
+exports.sendMessageNotification = function (registrationIds, message) {
+    const data = {
+        message: message,
+        type : 'notification',
+        timestamp: Date.now().toString()
+    };
+    sendIncrementingMessage(registrationIds, data);
+};
+
+exports.sendNotification = function (registrationIds, notification) {
+    const data = {
+        message: notification.message,
+        type : 'notification',
+        severity: notification.severity,
+        icon: notification.icon,
+        persistedId: notification._id.toString(),
+        timestamp: notification.created.getTime().toString()
+    };
+    sendIncrementingMessage(registrationIds, data);
+};
+
+exports.hideNotification = function (registrationIds, notificationId) {
+    const data = {
+        type: 'hideNotification',
+        notificationId: notificationId.toString()
+    };
+    sendMessage(registrationIds, data);
 };
