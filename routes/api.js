@@ -36,6 +36,13 @@ exports.notificationssettingsget = function(req, res) {
 exports.hidenotification = function (req, res) {
     const deviceId = req.query['deviceId'];
     const persistedId = req.query['persistedId'];
+    if (!deviceId || !persistedId) {
+        return res.status(400).json({
+            errors: [{
+                message: "Invalid request"
+            }]
+        });
+    }
     UserDevice.find({ owner: req.user.id }, function (error, userDevices) {
         const registrationIds = [];
         for (const uDevice of userDevices) {

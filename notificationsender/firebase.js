@@ -3,7 +3,7 @@ const firebase = require('firebase-admin');
 const logger = require('../logger.js');
 const redis = require('../redis-helper');
 
-if(system.isGcmConfigured()) {
+if (system.isGcmConfigured()) {
     const serviceAccount = require(system.getFirebaseServiceFile());
     firebase.initializeApp({
         credential: firebase.credential.cert(serviceAccount)
@@ -12,30 +12,26 @@ if(system.isGcmConfigured()) {
 
 function sendNotificationWithData(registrationIds, data) {
     //TODO remove redis/notificationId as we are going to use persistedId
-    return new Promise((resolve, reject) => {
-        redis.incr("androidNotificationId", function (error, androidNotificationId) {
-            if (error) {
-                return;
+    redis.incr("androidNotificationId", function (error, androidNotificationId) {
+        if (error) {
+            return;
+        }
+        data.type = 'notification';
+        data.notificationId = androidNotificationId.toString();
+        const message = {
+            data: data,
+            tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
+            android: {
+                priority: 'high',
             }
-            data.type = 'notification';
-            data.notificationId = androidNotificationId.toString();
-            const message = {
-                data: data,
-                tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
-                android: {
-                    priority: 'high',
-                }
-            };
-            firebase.messaging().sendMulticast(message)
-                .then((response) => {
-                    logger.info("Response: " + JSON.stringify(response));
-                    resolve(androidNotificationId);
-                })
-                .catch(error => {
-                    logger.error("GCM send error: ", error);
-                    reject(error);
-                });
-        });
+        };
+        firebase.messaging().sendMulticast(message)
+            .then((response) => {
+                logger.info("Response: " + JSON.stringify(response));
+            })
+            .catch(error => {
+                logger.error("GCM send error: ", error);
+            });
     });
 };
 
@@ -44,7 +40,7 @@ exports.sendMessageNotification = function (registrationIds, message) {
         message: message,
         timestamp: Date.now().toString()
     };
-    return sendNotificationWithData(registrationIds, data);
+    sendNotificationWithData(registrationIds, data);
 };
 
 exports.sendNotification = function (registrationIds, notification) {
@@ -55,7 +51,7 @@ exports.sendNotification = function (registrationIds, notification) {
         persistedId: notification._id.toString(),
         timestamp: notification.created.getTime().toString()
     };
-    return sendNotificationWithData(registrationIds, data);
+    endNotificationWithData(registrationIds, data);
 };
 
 exports.hideNotification = function (registrationIds, notificationId) {
@@ -63,8 +59,18 @@ exports.hideNotification = function (registrationIds, notificationId) {
         type: 'hideNotification',
         notificationId: notificationId.toString()
     };
-    firebase.messaging().sendToDevice(registrationIds, { data: data }, messagingOptions)
+    const message = {
+        data: data,
+        tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
+        android: {
+            priority: 'high',
+        }
+    };
+    firebase.messaging().sendMulticast(message)
+        .then((response) => {
+            logger.info("Hide Notification Response: " + JSON.stringify(response));
+        })
         .catch(error => {
-            logger.error("GCM send error: ", error);
+            logger.error("Hide Notification GCM send error: ", error);
         });
 };
