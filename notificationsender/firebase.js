@@ -27,36 +27,22 @@ function sendMessage(registrationIds, data) {
         });
 };
 
-function sendIncrementingMessage(registrationIds, data) {
-    //TODO remove redis/notificationId as we are going to use persistedId
+exports.sendNotification = function (registrationIds, notification) {
     redis.incr("androidNotificationId", function (error, androidNotificationId) {
         if (error) {
             return;
         }
-        data.notificationId = androidNotificationId.toString();
+        const data = {
+            message: notification.message,
+            type: 'notification',
+            severity: notification.severity || '',
+            icon: notification.icon || '',
+            persistedId: notification._id.toString(),
+            timestamp: notification.created.getTime().toString(),
+            notificationId: androidNotificationId.toString()
+        };
         sendMessage(registrationIds, data);
     });
-};
-
-exports.sendMessageNotification = function (registrationIds, message) {
-    const data = {
-        message: message,
-        type : 'notification',
-        timestamp: Date.now().toString()
-    };
-    sendIncrementingMessage(registrationIds, data);
-};
-
-exports.sendNotification = function (registrationIds, notification) {
-    const data = {
-        message: notification.message,
-        type : 'notification',
-        severity: notification.severity,
-        icon: notification.icon,
-        persistedId: notification._id.toString(),
-        timestamp: notification.created.getTime().toString()
-    };
-    sendIncrementingMessage(registrationIds, data);
 };
 
 exports.hideNotification = function (registrationIds, notificationId) {
