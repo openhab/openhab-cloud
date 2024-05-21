@@ -48,8 +48,8 @@ exports.hidenotification = function (req, res) {
         const registrationIds = [];
         for (const uDevice of userDevices) {
             // Skip the device which sent notification hide itself
-            if (uDevice.deviceId !== deviceId && uDevice.androidRegistration) {
-                registrationIds.push(uDevice.androidRegistration);
+            if (uDevice.deviceId !== deviceId && uDevice.fcmRegistration) {
+                registrationIds.push(uDevice.fcmRegistration);
             }
         }
         if (registrationIds.length > 0) {

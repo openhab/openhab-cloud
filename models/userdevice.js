@@ -7,8 +7,9 @@ var mongoose = require('mongoose'),
 
 var UserDeviceSchema = new Schema({
     owner: {type: ObjectId, required: true},
-    androidRegistration: {type: String},
-    iosDeviceToken: {type: String},
+    androidRegistration: {type: String}, // Deprecated in favor of fcmRegistration
+    iosDeviceToken: {type: String}, // will migrate to fcmRegistration in the future
+    fcmRegistration : {type: String}, //Firebase Cloud Messaging registration token
     deviceType: {type: String},
     deviceModel: {type: String},
     deviceId: {type: String},
@@ -22,5 +23,7 @@ UserDeviceSchema.index({owner:1, deviceType:1, deviceId:1});
 UserDeviceSchema.index({androidRegistration:1});
 // Index for lookups by ios device token
 UserDeviceSchema.index({iosDeviceToken:1});
+// Index for lookups by FCM device token
+UserDeviceSchema.index({fcmRegistration:1});
 
 module.exports = mongoose.model('UserDevice', UserDeviceSchema);

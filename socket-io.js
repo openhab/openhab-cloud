@@ -406,7 +406,7 @@ function SocketIO(server, system) {
     }
 
     function sendNotificationToUser(user, message, icon, severity) {
-        var androidRegistrations = [];
+        var fcmRegistrations = [];
         var iosDeviceTokens = [];
         var newNotification = new Notification({
             user: user.id,
@@ -432,15 +432,15 @@ function SocketIO(server, system) {
             }
 
             for (var i = 0; i < userDevices.length; i++) {
-                if (userDevices[i].deviceType === 'android') {
-                    androidRegistrations.push(userDevices[i].androidRegistration);
+                if (userDevices[i].fcmRegistration) {
+                    fcmRegistrations.push(userDevices[i].fcmRegistration);
                 } else if (userDevices[i].deviceType === 'ios') {
                     iosDeviceTokens.push(userDevices[i].iosDeviceToken);
                 }
             }
-            // If we found any android devices, send notification
-            if (androidRegistrations.length > 0) {
-                firebase.sendNotification(androidRegistrations, newNotification);
+            // If we found any FCM devices, send notification
+            if (fcmRegistrations.length > 0) {
+                firebase.sendNotification(fcmRegistrations, newNotification);
             }
             // If we found any ios devices, send notification
             if (iosDeviceTokens.length > 0) {

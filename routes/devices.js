@@ -69,11 +69,10 @@ exports.devicessendmessage = function (req, res) {
             } else {
                 UserDevice.findOne({ owner: req.user.id, _id: sendMessageDeviceId }, function (error, sendMessageDevice) {
                     if (!error && sendMessageDevice) {
-                        if (sendMessageDevice.deviceType == 'ios') {
+                        if (sendMessageDevice.fcmRegistration) {
+                            firebase.sendNotification(sendMessageDevice.fcmRegistration, newNotification);
+                        } else if (sendMessageDevice.deviceType == 'ios') {
                             appleSender.sendAppleNotification(sendMessageDevice.iosDeviceToken, message);
-                        }
-                        if (sendMessageDevice.deviceType == 'android') {
-                            firebase.sendNotification(sendMessageDevice.androidRegistration, newNotification);
                         }
                         req.flash('info', 'Your message was sent');
                         res.redirect('/devices/' + sendMessageDevice._id);
