@@ -53,7 +53,7 @@ exports.hidenotification = function (req, res) {
             }
         }
         if (registrationIds.length > 0) {
-            logger.info(`Hiding notification ${persistedId} on device ${deviceId} to ${JSON.stringify(registrationIds)}`);
+            logger.debug(`Hiding notification ${persistedId} on device ${deviceId} to ${JSON.stringify(registrationIds)}`);
             firebase.hideNotification(registrationIds, persistedId);
         }
         return res.status(200).json({});
