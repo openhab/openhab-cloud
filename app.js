@@ -52,11 +52,6 @@ process.on('SIGHUP', function () {
 
 logger.info('Backend logging initialized...');
 
-// If Firebase Cloud Messaging is configured set it up
-if (system.isGcmConfigured()) {
-    require('./fcm-xmpp');
-}
-
 // Setup all homepage
 var flash = require('connect-flash'),
     express = require('express'),

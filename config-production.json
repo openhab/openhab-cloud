@@ -23,8 +23,8 @@
       "signingKey": "certs/aps/AuthKey.p8"
     },
     "gcm" : {
-      "jid": "something@gcm.googleapis.com",
-      "password": "password"
+      "senderId": "1234567890",
+      "serviceFile" : "serviceAccountKey.json"
     },
     "ifttt" : {
       "iftttChannelKey" : "key",

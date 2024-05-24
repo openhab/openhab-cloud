@@ -25,6 +25,8 @@ module.exports.sendAppleNotification = function (deviceToken, message, payload) 
         ...(payload)
     })
     if (client) {
-        client.send(notification).catch(err => { });
+        client.send(notification).catch(err => {
+            logger.error(`APN error ${err.reason} ${err.statusCode} ${err.notification.deviceToken}`)
+         });
     }
 }

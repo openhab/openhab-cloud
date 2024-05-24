@@ -32,7 +32,7 @@ module.exports = function (req, res) {
         if (userDevice) {
             // If found, update the changed registration id
             logger.info('Found an Android device for user ' + req.user.username + ', updating');
-            userDevice.androidRegistration = regId;
+            userDevice.fcmRegistration = regId;
             userDevice.lastUpdate = new Date();
             userDevice.save(function (error) {
                 if (error) {
@@ -63,7 +63,7 @@ module.exports = function (req, res) {
         UserDevice.findOne({
             owner: req.user.id,
             deviceType: 'android',
-            androidRegistration: registrationId
+            fcmRegistration: registrationId
         },
             function (error, userDevice) {
                 if (error) {
@@ -87,7 +87,7 @@ module.exports = function (req, res) {
                         owner: req.user.id,
                         deviceType: 'android',
                         deviceId: deviceId,
-                        androidRegistration: registrationId,
+                        fcmRegistration: registrationId,
                         deviceModel: deviceModel,
                         lastUpdate: new Date(),
                         registered: new Date()
