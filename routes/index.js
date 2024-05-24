@@ -13,7 +13,7 @@ const system = require('../system'),
     api_routes = require('./api'),
     oauth2 = require('./oauth2'),
     setSessionTimezone = require('./setTimezone'),
-    androidRegistrationService = require('./androidRegistrationService'),
+    fcmRegistrationService = require('./fcmRegistrationService'),
     appleRegistrationService = require('./appleRegistrationService'),
     ifttt_routes = require('./ifttt'),
     redis = require('../redis-helper');
@@ -226,7 +226,7 @@ Routes.prototype.setupAppRoutes = function (app) {
     app.all('/api/v1/settings/notifications', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.notificationssettingsget);
 
     // Android app registration
-    app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, androidRegistrationService);
+    app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, fcmRegistrationService.registerAndroid);
     app.all('/addAppleRegistration*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, appleRegistrationService);
 };
 
