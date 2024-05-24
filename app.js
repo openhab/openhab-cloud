@@ -143,7 +143,7 @@ app.use(function (req, res, next) {
         next(); // No host in header, just go ahead
     }
     // If host matches names for full /* proxying, go ahead and just proxy it.
-    if (host.indexOf('remote.') === 0 || host.indexOf('home.') === 0) {
+    if (host.indexOf('remote.') === 0 || host === system.getProxyHost()) {
         //make sure this was not set by another server
         if (req.url.indexOf('/remote') != 0) {
             req.url = '/remote' + req.url;

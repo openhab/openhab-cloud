@@ -224,10 +224,12 @@ Routes.prototype.setupAppRoutes = function (app) {
     app.all('/api/v1/notifications', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.notificationsget);
     app.all('/api/v1/hidenotification/:id', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.hidenotification);
     app.all('/api/v1/settings/notifications', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.notificationssettingsget);
+    app.all('/api/v1/proxyurl', this.ensureRestAuthenticated, this.preassembleBody, this.setOpenhab, api_routes.proxyurlget);
 
     // Android app registration
     app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, fcmRegistrationService.registerAndroid);
     app.all('/addAppleRegistration*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, appleRegistrationService);
+    
 };
 
 // Ensure user is authenticated for web requests
@@ -388,7 +390,7 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
         requestPath = requestPath.replace('/remote', '');
         // TODO: this is too dirty :-(
         delete requestHeaders['host'];
-        requestHeaders['host'] = 'home.' + system.getHost() + ':' + system.getPort();
+        requestHeaders['host'] = system.getProxyURL();
     }
 
     // Send a message with request to openhab agent module

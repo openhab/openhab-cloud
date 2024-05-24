@@ -59,3 +59,9 @@ exports.hidenotification = function (req, res) {
         return res.status(200).json({});
     });
 }
+
+exports.proxyurlget = function(req, res) {
+    res.status(200).json({
+        "url": system.getProxyURL()
+    });
+};
