@@ -56,8 +56,9 @@ function register(req, res, deviceType) {
             if (error) {
                 logger.error('Error saving user device: ' + error);
                 res.send(500, 'Error Saving Registration');
+            } else {
+                res.send(200, 'Updated');
             }
-            res.send(200, 'Updated');
         });
     });
 }
