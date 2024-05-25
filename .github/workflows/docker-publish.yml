@@ -64,6 +64,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          GIT_HASH=$(git rev-parse --short "$GITHUB_SHA")
           TAG_NAME="build-${{ github.run_number }}-${GIT_HASH}"
           git tag $TAG_NAME
           git push origin $TAG_NAME
