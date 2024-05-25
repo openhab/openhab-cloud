@@ -225,8 +225,11 @@ Routes.prototype.setupAppRoutes = function (app) {
     app.all('/api/v1/hidenotification/:id', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.hidenotification);
     app.all('/api/v1/settings/notifications', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.notificationssettingsget);
 
-    // Android app registration
+    // Android app registration (FCM)
     app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, fcmRegistrationService.registerAndroid);
+    // Apple app registration (FCM)
+    app.all('/addIosRegistration*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, fcmRegistrationService.registerIos);
+    // Apple app registration (legacy)
     app.all('/addAppleRegistration*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, appleRegistrationService);
 };
 
