@@ -58,3 +58,12 @@ jobs:
           docker tag $IMAGE_NAME $IMAGE_NAME:$GIT_HASH
           docker tag $IMAGE_NAME $IMAGE_NAME:$VERSION
           docker push -a $IMAGE_NAME
+      - name: Create and push tag
+        # skip this step if the push is a tag
+        if: startsWith(github.ref, 'refs/heads/') && github.event_name == 'push'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="build-${{ github.run_number }}-${GIT_HASH}"
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
