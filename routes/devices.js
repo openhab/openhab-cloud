@@ -71,7 +71,7 @@ exports.devicessendmessage = function (req, res) {
                     if (!error && sendMessageDevice) {
                         if (sendMessageDevice.fcmRegistration) {
                             firebase.sendNotification(sendMessageDevice.fcmRegistration, newNotification);
-                        } else if (sendMessageDevice.deviceType == 'ios') {
+                        } else if (sendMessageDevice.iosDeviceToken) {
                             appleSender.sendAppleNotification(sendMessageDevice.iosDeviceToken, message);
                         }
                         req.flash('info', 'Your message was sent');

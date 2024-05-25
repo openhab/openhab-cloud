@@ -434,7 +434,7 @@ function SocketIO(server, system) {
             for (var i = 0; i < userDevices.length; i++) {
                 if (userDevices[i].fcmRegistration) {
                     fcmRegistrations.push(userDevices[i].fcmRegistration);
-                } else if (userDevices[i].deviceType === 'ios') {
+                } else if (userDevices[i].iosDeviceToken) {
                     iosDeviceTokens.push(userDevices[i].iosDeviceToken);
                 }
             }
