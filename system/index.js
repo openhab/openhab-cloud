@@ -238,12 +238,16 @@ System.prototype.isIFTTTEnabled = function() {
  * @return {string}
  */
 System.prototype.getAppleLink = function() {
+    return 'https://itunes.apple.com/app/id' + this.getAppleId();
+};
+
+System.prototype.getAppleId = function() {
     let appleId = '492054521';
     try {
         appleId = this.getConfig(['apps', 'appleId']);
     } catch (err) {}
 
-    return 'https://itunes.apple.com/app/id' + appleId;
+    return  appleId;
 };
 
 /**
@@ -252,12 +256,16 @@ System.prototype.getAppleLink = function() {
  * @return {string}
  */
 System.prototype.getAndroidLink = function () {
+    return 'https://play.google.com/store/apps/details?id=' + this.getAndroidId();
+};
+
+System.prototype.getAndroidId = function () {
     let playStoreId = 'org.openhab.habdroid';
     try {
         playStoreId = this.getConfig(['apps', 'playStoreId']);
     } catch (err) {}
 
-    return 'https://play.google.com/store/apps/details?id=' + playStoreId;
+    return playStoreId;
 };
 
 /**

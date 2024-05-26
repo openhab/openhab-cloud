@@ -59,9 +59,16 @@ exports.hidenotification = function (req, res) {
         return res.status(200).json({});
     });
 }
-
+ 
 exports.proxyurlget = function (req, res) {
     res.status(200).json({
         'url': system.getProxyURL()
     });
 };
+
+exports.appids = function (req, res) {
+    res.status(200).json({
+        'ios': system.getAppleId(),
+        'android': system.getAndroidId()
+    });
+}; 
