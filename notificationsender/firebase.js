@@ -16,8 +16,20 @@ function sendMessage(registrationIds, data) {
         tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
         android: {
             priority: 'high',
+        },
+        //for IOS we need to set an actual notification payload so they show up when the app is not running
+        //right now the IOS app does not render background notifications, when it does, we can remove this
+        apns: {
+            payload: {
+                aps: {
+                    badge: 0,
+                    sound: { name: 'default' },
+                    alert: { body: data.message },
+                }
+            }
         }
     };
+    
     firebase.messaging().sendMulticast(message)
         .then((response) => {
             logger.info("Response: " + JSON.stringify(response));
