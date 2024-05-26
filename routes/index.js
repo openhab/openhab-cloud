@@ -225,7 +225,8 @@ Routes.prototype.setupAppRoutes = function (app) {
     app.get('/api/v1/hidenotification/:id', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.hidenotification);
     app.get('/api/v1/settings/notifications', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.notificationssettingsget);
     app.get('/api/v1/proxyurl', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.proxyurlget);
-    app.get('/api/v1/appids', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, api_routes.appids);
+    // Do not require authentication for this route
+    app.get('/api/v1/appids', api_routes.appids);
 
     // Android app registration (FCM)
     app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, fcmRegistrationService.registerAndroid);
