@@ -11,7 +11,10 @@
         "morganOption" : null
       },
       "subDomainCookies": false,
-      "muteNotifications": false
+      "muteNotifications": false,
+      "healthEndpoint" : {
+        "enabled" : false
+      }
     },
     "express":{
       "key" : "some express key"

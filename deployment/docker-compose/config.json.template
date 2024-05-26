@@ -6,7 +6,10 @@
       "logger" : {
         "type": "console"
       },
-      "subDomainCookies": false
+      "subDomainCookies": false,
+      "healthEndpoint" : {
+          "enabled" : false
+        }
     },
     "express":{
       "key" : "${EXPRESS_KEY}"

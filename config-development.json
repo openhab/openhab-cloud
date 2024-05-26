@@ -9,7 +9,10 @@
             "maxFiles" : "7d",
             "level" : "debug",
             "morganOption" : "dev"
-          }
+          },
+        "healthEndpoint" : {
+          "enabled" : true
+        }
     },
     "express":{
       "key" : "some express key"
