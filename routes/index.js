@@ -394,7 +394,7 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
         requestPath = requestPath.replace('/remote', '');
         // TODO: this is too dirty :-(
         delete requestHeaders['host'];
-        requestHeaders['host'] = system.getProxyURL();
+        requestHeaders['host'] = system.getProxyHost() + ':' + system.getProxyPort();
     }
 
     // Send a message with request to openhab agent module
