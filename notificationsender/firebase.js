@@ -2,6 +2,7 @@ const system = require('../system');
 const firebase = require('firebase-admin');
 const logger = require('../logger.js');
 const redis = require('../redis-helper');
+const uuid = require('uuid')
 
 if (system.isGcmConfigured()) {
     const serviceAccount = require(system.getFirebaseServiceFile());
@@ -9,27 +10,8 @@ if (system.isGcmConfigured()) {
         credential: firebase.credential.cert(serviceAccount)
     });
 }
-
-function sendMessage(registrationIds, data) {
-    const message = {
-        data: data,
-        tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
-        android: {
-            priority: 'high',
-        },
-        //for IOS we need to set an actual notification payload so they show up when the app is not running
-        //right now the IOS app does not render background notifications, when it does, we can remove this
-        apns: {
-            payload: {
-                aps: {
-                    badge: 0,
-                    sound: { name: 'default' },
-                    alert: { body: data.message },
-                }
-            }
-        }
-    };
     
+function sendMessage(message) {
     firebase.messaging().sendMulticast(message)
         .then((response) => {
             logger.info("Response: " + JSON.stringify(response));
@@ -39,12 +21,29 @@ function sendMessage(registrationIds, data) {
         });
 };
 
-exports.sendNotification = function (registrationIds, notification) {
+exports.sendNotification = function (registrationIds, notification, data) {
+    // We can safely remove androidNotificationId, our android client  has removed the need for this, but i need to double check
     redis.incr("androidNotificationId", function (error, androidNotificationId) {
         if (error) {
             return;
         }
-        const data = {
+        //for IOS we need to set an actual notification payload so they show up when the app is not running
+        //we can remove badge/sound/alert after our IOS app dynamically adds these 
+        const apns = {
+            payload: {
+                aps: {
+                    'mutable-content': 1, // Enables mutable content for iOS
+                    badge: 0,
+                    sound: { name: 'default' },
+                    alert: { body: data.message },
+                }
+            }
+        }
+        const android = {
+            priority: 'high',
+        }
+
+        const messageData = {
             message: notification.message,
             type: 'notification',
             severity: notification.severity || '',
@@ -53,7 +52,26 @@ exports.sendNotification = function (registrationIds, notification) {
             timestamp: notification.created.getTime().toString(),
             notificationId: androidNotificationId.toString()
         };
-        sendMessage(registrationIds, data);
+
+        if (data) {
+            Object.assign(messageData, data);
+            if (data.actions instanceof Array) {
+                notification.click_action = uuid.v1();
+                //apns.payload.aps.category = uuid.v1();
+            }
+        }
+
+        const message = {
+            // notification: {
+            //     body: notification.message,
+            //     sound: "default",
+            // },
+            android: android,
+            apns: apns,
+            data: messageData,
+            tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
+        };
+        sendMessage(message, messageData);
     });
 };
 
@@ -62,5 +80,13 @@ exports.hideNotification = function (registrationIds, notificationId) {
         type: 'hideNotification',
         notificationId: notificationId.toString()
     };
-    sendMessage(registrationIds, data);
+
+    const message = {
+        data: data,
+        tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
+        android: {
+            priority: 'high',
+        }
+    };
+    sendMessage(message, data);
 };

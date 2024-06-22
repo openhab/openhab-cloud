@@ -280,7 +280,7 @@ function SocketIO(server, system) {
                     if (!error && openhab) {
                         if (openhab.uuid === self.handshake.uuid) {
                             logger.info('Notification from %s to %s', self.handshake.uuid, user.username);
-                            sendNotificationToUser(user, data.message, data.icon, data.severity);
+                            sendNotificationToUser(user, data);
                         } else {
                             logger.warn('openHAB %s requested notification for user (%s) which it does not belong to', self.handshake.uuid, user.username);
                         }
@@ -319,7 +319,7 @@ function SocketIO(server, system) {
                     }
 
                     for (var i = 0; i < users.length; i++) {
-                        sendNotificationToUser(users[i], data.message, data.icon, data.severity);
+                        sendNotificationToUser(users[i], data);
                     }
                 });
             });
@@ -405,14 +405,14 @@ function SocketIO(server, system) {
             });
     }
 
-    function sendNotificationToUser(user, message, icon, severity) {
+    function sendNotificationToUser(user, data) {
         var fcmRegistrations = [];
         var iosDeviceTokens = [];
         var newNotification = new Notification({
             user: user.id,
-            message: message,
-            icon: icon,
-            severity: severity
+            message: data.message,
+            icon: data.icon,
+            severity: data.severity
         });
         newNotification.save(function (error) {
             if (error) {
@@ -440,7 +440,7 @@ function SocketIO(server, system) {
             }
             // If we found any FCM devices, send notification
             if (fcmRegistrations.length > 0) {
-                firebase.sendNotification(fcmRegistrations, newNotification);
+                firebase.sendNotification(fcmRegistrations, newNotification, data);
             }
             // If we found any ios devices, send notification
             if (iosDeviceTokens.length > 0) {
