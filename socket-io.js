@@ -440,7 +440,7 @@ function SocketIO(server, system) {
             }
             // If we found any FCM devices, send notification
             if (fcmRegistrations.length > 0) {
-                firebase.sendNotification(fcmRegistrations, newNotification, data);
+                firebase.sendNotification(fcmRegistrations, newNotification._id, data);
             }
             // If we found any ios devices, send notification
             if (iosDeviceTokens.length > 0) {

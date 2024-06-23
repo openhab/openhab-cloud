@@ -59,7 +59,6 @@ exports.hidenotification = function (req, res) {
         return res.status(200).json({});
     });
 }
-<<<<<<< HEAD
  
 exports.proxyurlget = function (req, res) {
     res.status(200).json({
@@ -73,19 +72,16 @@ exports.appids = function (req, res) {
         'android': system.getAndroidId()
     });
 }; 
-=======
-
-exports.sendnotification = function (req, res) {
-    const data = req.body
-    sendNotificationToUser(req.user, data)
-}
 
 //TODO this is copied from socket-io.js, so either consolidate this , or remove when finished testing
-function sendNotificationToUser(user, data) {
+exports.sendnotification = function (req, res) {
+    const data = req.body
+    logger.debug(`sendNotificationToUser ${JSON.stringify(data)}`);
+
     var fcmRegistrations = [];
     var iosDeviceTokens = [];
     var newNotification = new Notification({
-        user: user.id,
+        user: req.user.id,
         message: data.message,
         icon: data.icon,
         severity: data.severity
@@ -93,18 +89,31 @@ function sendNotificationToUser(user, data) {
     newNotification.save(function (error) {
         if (error) {
             logger.error('Error saving notification: %s', error);
+            return res.status(400).json({
+                errors: [{
+                    message: "Error saving notification"
+                }]
+            });
         }
     });
     UserDevice.find({
-        owner: user.id
+        owner: req.user.id
     }, function (error, userDevices) {
         if (error) {
             logger.warn('Error fetching devices for user: %s', error);
-            return;
+            return res.status(400).json({
+                errors: [{
+                    message: "Error fetching devices for user"
+                }]
+            });
         }
         if (!userDevices) {
             // User don't have any registered devices, so we will skip it.
-            return;
+            return res.status(400).json({
+                errors: [{
+                    message: "No registered devices"
+                }]
+            });
         }
 
         for (var i = 0; i < userDevices.length; i++) {
@@ -116,12 +125,8 @@ function sendNotificationToUser(user, data) {
         }
         // If we found any FCM devices, send notification
         if (fcmRegistrations.length > 0) {
-            firebase.sendNotification(fcmRegistrations, newNotification, data);
+            firebase.sendNotification(fcmRegistrations, newNotification._id, data);
         }
-        // If we found any ios devices, send notification
-        if (iosDeviceTokens.length > 0) {
-            sendIosNotifications(iosDeviceTokens, newNotification);
-        }
+        return res.status(200).json({});
     });
 }
->>>>>>> af273aa (working)

@@ -2,7 +2,7 @@ const system = require('../system');
 const firebase = require('firebase-admin');
 const logger = require('../logger.js');
 const redis = require('../redis-helper');
-const uuid = require('uuid')
+const crypto = require('crypto');
 
 if (system.isGcmConfigured()) {
     const serviceAccount = require(system.getFirebaseServiceFile());
@@ -21,7 +21,7 @@ function sendMessage(message) {
         });
 };
 
-exports.sendNotification = function (registrationIds, notification, data) {
+exports.sendNotification = function (registrationIds, notificationId, data) {
     // We can safely remove androidNotificationId, our android client  has removed the need for this, but i need to double check
     redis.incr("androidNotificationId", function (error, androidNotificationId) {
         if (error) {
@@ -43,35 +43,31 @@ exports.sendNotification = function (registrationIds, notification, data) {
             priority: 'high',
         }
 
-        const messageData = {
-            message: notification.message,
+        const updatedData = {
             type: 'notification',
-            severity: notification.severity || '',
-            icon: notification.icon || '',
-            persistedId: notification._id.toString(),
-            timestamp: notification.created.getTime().toString(),
+            severity: data.severity || '',
+            icon: data.icon || '',
+            persistedId: notificationId.toString(),
+            timestamp: Date.now().toString(),
             notificationId: androidNotificationId.toString()
         };
 
-        if (data) {
-            Object.assign(messageData, data);
-            if (data.actions instanceof Array) {
-                notification.click_action = uuid.v1();
-                //apns.payload.aps.category = uuid.v1();
+        Object.assign(data,updatedData)
+            if (data.actions){
+                if (data.actions instanceof Array) {
+                    data.actions = JSON.stringify(data.actions)
+                }
+                // for apple, create a unique hash for the category, secret sauce for dynamic actions
+                apns.payload.aps.category = crypto.createHash('sha256').update(data.actions).digest('hex');
             }
-        }
 
         const message = {
-            // notification: {
-            //     body: notification.message,
-            //     sound: "default",
-            // },
             android: android,
             apns: apns,
-            data: messageData,
+            data: data,
             tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
         };
-        sendMessage(message, messageData);
+        sendMessage(message);
     });
 };
 

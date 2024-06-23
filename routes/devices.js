@@ -70,7 +70,7 @@ exports.devicessendmessage = function (req, res) {
                 UserDevice.findOne({ owner: req.user.id, _id: sendMessageDeviceId }, function (error, sendMessageDevice) {
                     if (!error && sendMessageDevice) {
                         if (sendMessageDevice.fcmRegistration) {
-                            firebase.sendNotification(sendMessageDevice.fcmRegistration, newNotification);
+                            firebase.sendNotification(sendMessageDevice.fcmRegistration, newNotification._id, { message: message });
                         } else if (sendMessageDevice.iosDeviceToken) {
                             appleSender.sendAppleNotification(sendMessageDevice.iosDeviceToken, message);
                         }
