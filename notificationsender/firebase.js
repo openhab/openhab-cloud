@@ -2,7 +2,6 @@ const system = require('../system');
 const firebase = require('firebase-admin');
 const logger = require('../logger.js');
 const redis = require('../redis-helper');
-const crypto = require('crypto');
 
 if (system.isGcmConfigured()) {
     const serviceAccount = require(system.getFirebaseServiceFile());
