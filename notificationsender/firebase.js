@@ -9,7 +9,7 @@ if (system.isGcmConfigured()) {
         credential: firebase.credential.cert(serviceAccount)
     });
 }
-    
+
 function sendMessage(message) {
     firebase.messaging().sendMulticast(message)
         .then((response) => {
@@ -38,6 +38,7 @@ exports.sendNotification = function (registrationIds, notificationId, data) {
                 }
             }
         }
+
         const android = {
             priority: 'high',
         }
@@ -51,14 +52,15 @@ exports.sendNotification = function (registrationIds, notificationId, data) {
             notificationId: androidNotificationId.toString()
         };
 
-        Object.assign(data,updatedData)
-            if (data.actions){
-                if (data.actions instanceof Array) {
-                    data.actions = JSON.stringify(data.actions)
-                }
-                // for apple, create a unique hash for the category, secret sauce for dynamic actions
-                apns.payload.aps.category = crypto.createHash('sha256').update(data.actions).digest('hex');
+        Object.assign(data, updatedData)
+
+        if (data.actions) {
+            if (data.actions instanceof Array) {
+                data.actions = JSON.stringify(data.actions)
             }
+            // for apple, create a unique hash for the category, secret sauce for dynamic actions
+            apns.payload.aps.category = crypto.createHash('sha256').update(data.actions).digest('hex');
+        }
 
         const message = {
             android: android,
@@ -66,6 +68,7 @@ exports.sendNotification = function (registrationIds, notificationId, data) {
             data: data,
             tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
         };
+
         sendMessage(message);
     });
 };
@@ -83,5 +86,6 @@ exports.hideNotification = function (registrationIds, notificationId) {
             priority: 'high',
         }
     };
+    
     sendMessage(message, data);
 };
