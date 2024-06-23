@@ -1,5 +1,6 @@
 const system = require('../system'),
     homepage = require('./homepage'),
+    health_routes = require('./health'),
     passport = require('passport'),
     account_routes = require('./account'),
     devices_routes = require('./devices'),
@@ -56,6 +57,9 @@ Routes.prototype.setupRoutes = function (app) {
 Routes.prototype.setupGeneralRoutes = function (app) {
     // General homepage
     app.get('/', this.setOpenhab, homepage.index);
+
+    // Health page
+    app.get('/health', this.setOpenhab, health_routes.gethealth);
 
     // Events
     app.get('/events', this.ensureAuthenticated, this.setOpenhab, events_routes.eventsget);

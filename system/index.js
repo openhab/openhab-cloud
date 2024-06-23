@@ -426,4 +426,16 @@ System.prototype.getLoggerType = function() {
     }
 };
 
+/**
+ * Returns true, if health endpoint is enabled.
+ * @return {boolean}
+ */
+System.prototype.isHealthEndpointEnabled = function() {
+    try {
+        return this.getConfig(['system', 'healthEndpoint', 'enabled']);
+    } catch(e) {
+        return false;
+    }
+};
+
 module.exports = new System();
