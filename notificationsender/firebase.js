@@ -2,6 +2,7 @@ const system = require('../system');
 const firebase = require('firebase-admin');
 const logger = require('../logger.js');
 const redis = require('../redis-helper');
+const crypto = require("crypto")
 
 if (system.isGcmConfigured()) {
     const serviceAccount = require(system.getFirebaseServiceFile());
@@ -13,14 +14,14 @@ if (system.isGcmConfigured()) {
 function sendMessage(message) {
     firebase.messaging().sendMulticast(message)
         .then((response) => {
-            logger.info("Response: " + JSON.stringify(response));
+            logger.info("FCM Response: " + JSON.stringify(response));
         })
         .catch(error => {
-            logger.error("GCM send error: ", error);
+            logger.error("FCM send error: ", error);
         });
 };
 
-exports.sendNotification = function (registrationIds, notificationId, data) {
+exports.sendFCMNotification = function (registrationIds, notificationId, data) {
     // We can safely remove androidNotificationId, our android client  has removed the need for this, but i need to double check
     redis.incr("androidNotificationId", function (error, androidNotificationId) {
         if (error) {

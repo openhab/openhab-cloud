@@ -3,6 +3,7 @@ var UserDevice = require('../models/userdevice');
 var logger = require('../logger');
 var system = require('../system');
 var firebase = require('../notificationsender/firebase');
+const notificationSender = require("../notificationsender");
 
 exports.notificationsget = function (req, res) {
     var limit = req.query.limit > 0 ? parseInt(req.query.limit) : 10,
@@ -73,60 +74,12 @@ exports.appids = function (req, res) {
     });
 }; 
 
-//TODO this is copied from socket-io.js, so either consolidate this , or remove when finished testing
 exports.sendnotification = function (req, res) {
     const data = req.body
     logger.debug(`sendNotificationToUser ${JSON.stringify(data)}`);
-
-    var fcmRegistrations = [];
-    var iosDeviceTokens = [];
-    var newNotification = new Notification({
-        user: req.user.id,
-        message: data.message,
-        icon: data.icon,
-        severity: data.severity
-    });
-    newNotification.save(function (error) {
-        if (error) {
-            logger.error('Error saving notification: %s', error);
-            return res.status(400).json({
-                errors: [{
-                    message: "Error saving notification"
-                }]
-            });
-        }
-    });
-    UserDevice.find({
-        owner: req.user.id
-    }, function (error, userDevices) {
-        if (error) {
-            logger.warn('Error fetching devices for user: %s', error);
-            return res.status(400).json({
-                errors: [{
-                    message: "Error fetching devices for user"
-                }]
-            });
-        }
-        if (!userDevices) {
-            // User don't have any registered devices, so we will skip it.
-            return res.status(400).json({
-                errors: [{
-                    message: "No registered devices"
-                }]
-            });
-        }
-
-        for (var i = 0; i < userDevices.length; i++) {
-            if (userDevices[i].fcmRegistration) {
-                fcmRegistrations.push(userDevices[i].fcmRegistration);
-            } else if (userDevices[i].deviceType === 'ios') {
-                iosDeviceTokens.push(userDevices[i].iosDeviceToken);
-            }
-        }
-        // If we found any FCM devices, send notification
-        if (fcmRegistrations.length > 0) {
-            firebase.sendNotification(fcmRegistrations, newNotification._id, data);
-        }
-        return res.status(200).json({});
+    notificationSender.sendNotification(req.user._id, data).then(()=>{
+        res.status(200).json("OK")
+    }).catch(message => {
+        res.status(500).json(message)
     });
 }
