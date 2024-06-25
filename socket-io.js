@@ -275,7 +275,6 @@ function SocketIO(server, system) {
                 user.openhab(function (error, openhab) {
                     if (!error && openhab) {
                         if (openhab.uuid === self.handshake.uuid) {
-                            logger.info('Notification from %s to %s', self.handshake.uuid, user.username);
                             notificationSender.sendNotification(user._id, data).catch(message => {
                                 logger.warn('Could not send message from %s to %s : %s', self.handshake.uuid, user.username, message);
                             });
