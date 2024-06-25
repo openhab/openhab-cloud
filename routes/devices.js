@@ -51,7 +51,7 @@ exports.devicessendmessage = function (req, res) {
         logger.info("sending message to device " + req.params.id);
         const sendMessageDeviceId = mongoose.Types.ObjectId(req.params.id);
         const message = req.form.messagetext;
-        var newNotification = new Notification({
+        const newNotification = new Notification({
             user: req.user.id,
             message: message
         });
