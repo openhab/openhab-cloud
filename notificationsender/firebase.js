@@ -63,6 +63,10 @@ exports.sendFCMNotification = function (registrationIds, notificationId, data) {
             apns.payload.aps.category = crypto.createHash('sha256').update(data.actions).digest('hex');
         }
 
+        if(data.title){
+            apns.payload.aps.alert.title = data.title
+        }
+
         const message = {
             android: android,
             apns: apns,
