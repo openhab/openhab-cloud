@@ -1,18 +1,10 @@
-const User = require('../models/user');
-const Openhab = require('../models/openhab');
 const UserDevice = require('../models/userdevice');
 const logger = require('../logger');
-const mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
-const ObjectId = mongoose.SchemaTypes.ObjectId;
-const appleSender = require('../notificationsender/aps-helper');
-const firebase = require('../notificationsender/firebase');
+const mongoose = require('mongoose');
+const notificationSender = require('../notificationsender');
 const Notification = require('../models/notification');
-
-const form = require('express-form'),
-    field = form.field,
-    system = require('../system');
-
+const system = require('../system');
+const form = require('express-form');
 
 exports.devicesget = function (req, res) {
     UserDevice.find({ owner: req.user.id }, function (error, userDevices) {
@@ -47,7 +39,7 @@ exports.devicesget = function (req, res) {
 }
 
 exports.devicessendmessagevalidate = form(
-    field("messagetext", "Message text").trim().required()
+    form.field("messagetext", "Message text").trim().required()
 );
 
 exports.devicessendmessage = function (req, res) {
@@ -59,7 +51,7 @@ exports.devicessendmessage = function (req, res) {
         logger.info("sending message to device " + req.params.id);
         const sendMessageDeviceId = mongoose.Types.ObjectId(req.params.id);
         const message = req.form.messagetext;
-        var newNotification = new Notification({
+        const newNotification = new Notification({
             user: req.user.id,
             message: message
         });
@@ -70,9 +62,9 @@ exports.devicessendmessage = function (req, res) {
                 UserDevice.findOne({ owner: req.user.id, _id: sendMessageDeviceId }, function (error, sendMessageDevice) {
                     if (!error && sendMessageDevice) {
                         if (sendMessageDevice.fcmRegistration) {
-                            firebase.sendNotification(sendMessageDevice.fcmRegistration, newNotification);
+                            notificationSender.sendFCMNotification(sendMessageDevice.fcmRegistration, newNotification._id, { message: message });
                         } else if (sendMessageDevice.iosDeviceToken) {
-                            appleSender.sendAppleNotification(sendMessageDevice.iosDeviceToken, message);
+                            notificationSender.sendAppleNotification(sendMessageDevice.iosDeviceToken, message);
                         }
                         req.flash('info', 'Your message was sent');
                         res.redirect('/devices/' + sendMessageDevice._id);

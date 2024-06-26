@@ -1,17 +1,13 @@
-var logger = require('./logger.js'),
+const logger = require('./logger.js'),
     redis = require('./redis-helper'),
     uuid = require('uuid'),
     requesttracker = require('./requesttracker'),
-    appleSender = require('./notificationsender/aps-helper'),
-    firebase = require('./notificationsender/firebase'),
-    config = require('./config.json'),
     User = require('./models/user'),
     Openhab = require('./models/openhab'),
     Event = require('./models/event'),
-    UserDevice = require('./models/userdevice'),
-    Notification = require('./models/notification');
-
-
+    Notification = require('./models/notification'),
+    notificationSender = require('./notificationsender');
+    
 /**
  * Socket.IO Logic for incoming openHAB servers
  * @param {*} server 
@@ -279,8 +275,9 @@ function SocketIO(server, system) {
                 user.openhab(function (error, openhab) {
                     if (!error && openhab) {
                         if (openhab.uuid === self.handshake.uuid) {
-                            logger.info('Notification from %s to %s', self.handshake.uuid, user.username);
-                            sendNotificationToUser(user, data.message, data.icon, data.severity);
+                            notificationSender.sendNotification(user._id, data).catch(message => {
+                                logger.warn('Could not send message from %s to %s : %s', self.handshake.uuid, user.username, message);
+                            });
                         } else {
                             logger.warn('openHAB %s requested notification for user (%s) which it does not belong to', self.handshake.uuid, user.username);
                         }
@@ -319,7 +316,9 @@ function SocketIO(server, system) {
                     }
 
                     for (var i = 0; i < users.length; i++) {
-                        sendNotificationToUser(users[i], data.message, data.icon, data.severity);
+                        notificationSender.sendNotification(users[i]._id, data).catch(message => {
+                            logger.warn('Could not send message from %s to %s : %s', self.handshake.uuid, users[i].username, message);
+                        });
                     }
                 });
             });
@@ -403,65 +402,6 @@ function SocketIO(server, system) {
                     logger.error('Could not modify events: %s', error)
                 }
             });
-    }
-
-    function sendNotificationToUser(user, message, icon, severity) {
-        var fcmRegistrations = [];
-        var iosDeviceTokens = [];
-        var newNotification = new Notification({
-            user: user.id,
-            message: message,
-            icon: icon,
-            severity: severity
-        });
-        newNotification.save(function (error) {
-            if (error) {
-                logger.error('Error saving notification: %s', error);
-            }
-        });
-        UserDevice.find({
-            owner: user.id
-        }, function (error, userDevices) {
-            if (error) {
-                logger.warn('Error fetching devices for user: %s', error);
-                return;
-            }
-            if (!userDevices) {
-                // User don't have any registered devices, so we will skip it.
-                return;
-            }
-
-            for (var i = 0; i < userDevices.length; i++) {
-                if (userDevices[i].fcmRegistration) {
-                    fcmRegistrations.push(userDevices[i].fcmRegistration);
-                } else if (userDevices[i].iosDeviceToken) {
-                    iosDeviceTokens.push(userDevices[i].iosDeviceToken);
-                }
-            }
-            // If we found any FCM devices, send notification
-            if (fcmRegistrations.length > 0) {
-                firebase.sendNotification(fcmRegistrations, newNotification);
-            }
-            // If we found any ios devices, send notification
-            if (iosDeviceTokens.length > 0) {
-                sendIosNotifications(iosDeviceTokens, newNotification);
-            }
-        });
-    }
-
-    function sendIosNotifications(iosDeviceTokens, notification) {
-        if (!config.apn) {
-            return;
-        }
-        var payload = {
-            severity: notification.severity,
-            icon: notification.icon,
-            persistedId: notification._id,
-            timestamp: notification.created.getTime()
-        };
-        for (var i = 0; i < iosDeviceTokens.length; i++) {
-            appleSender.sendAppleNotification(iosDeviceTokens[i], notification.message, payload);
-        }
     }
 
     //cancel restRequests that have become orphaned.  For some reason neither close

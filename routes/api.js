@@ -1,12 +1,13 @@
-var Notification = require('../models/notification');
-var UserDevice = require('../models/userdevice');
-var logger = require('../logger');
-var system = require('../system');
-var firebase = require('../notificationsender/firebase');
+const Notification = require('../models/notification');
+const UserDevice = require('../models/userdevice');
+const logger = require('../logger');
+const system = require('../system');
+const firebase = require('../notificationsender/firebase');
+const notificationSender = require("../notificationsender");
 
 exports.notificationsget = function (req, res) {
-    var limit = req.query.limit > 0 ? parseInt(req.query.limit) : 10,
-        skip = req.query.skip > 0 ? parseInt(req.query.skip) : 0;
+    const limit = req.query.limit > 0 ? parseInt(req.query.limit) : 10;
+    const skip = req.query.skip > 0 ? parseInt(req.query.skip) : 0;
     Notification.find({ user: req.user.id }, '-user')
         .limit(limit)
         .skip(skip)
@@ -25,7 +26,7 @@ exports.notificationsget = function (req, res) {
 };
 
 exports.notificationssettingsget = function (req, res) {
-    var config = {};
+    const config = {};
     if (system.isGcmConfigured()) {
         config.gcm = {
             "senderId": system.getGcmSenderId()
@@ -59,7 +60,7 @@ exports.hidenotification = function (req, res) {
         return res.status(200).json({});
     });
 }
- 
+
 exports.proxyurlget = function (req, res) {
     res.status(200).json({
         'url': system.getProxyURL()
@@ -71,4 +72,14 @@ exports.appids = function (req, res) {
         'ios': system.getAppleId(),
         'android': system.getAndroidId()
     });
-}; 
+};
+
+exports.sendnotification = function (req, res) {
+    const data = req.body
+    logger.debug(`sendNotificationToUser ${JSON.stringify(data)}`);
+    notificationSender.sendNotification(req.user._id, data).then(() => {
+        res.status(200).json("OK")
+    }).catch(message => {
+        res.status(500).json(message)
+    });
+}
