@@ -62,7 +62,7 @@ exports.devicessendmessage = function (req, res) {
                 UserDevice.findOne({ owner: req.user.id, _id: sendMessageDeviceId }, function (error, sendMessageDevice) {
                     if (!error && sendMessageDevice) {
                         if (sendMessageDevice.fcmRegistration) {
-                            notificationSender.sendFCMNotification(sendMessageDevice.fcmRegistration, newNotification._id, { message: message });
+                            notificationSender.sendFCMNotification(sendMessageDevice.fcmRegistration, newNotification);
                         } else if (sendMessageDevice.iosDeviceToken) {
                             notificationSender.sendAppleNotification(sendMessageDevice.iosDeviceToken, message);
                         }

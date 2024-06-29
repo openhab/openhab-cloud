@@ -3,16 +3,27 @@ const UserDevice = require('../models/userdevice');
 const logger = require('../logger');
 const firebase = require('./firebase');
 const aps = require("./aps-helper")
+const maxSizeInBytes = 1048576; //1MB
 
 function sendNotification(userId, data) {
     return new Promise((resolve, reject) => {
+
+        const jsonString = JSON.stringify(data);
+        const jsonSizeInBytes = Buffer.byteLength(jsonString, 'utf8');
+    
+        // Check if the JSON size exceeds the limit
+        if (jsonSizeInBytes > maxSizeInBytes) {
+            reject(`JSON data exceeds the maximum allowed size of ${maxSizeInBytes} bytes.`)
+        }
+
         var fcmRegistrations = [];
         var iosDeviceTokens = [];
         var newNotification = new Notification({
             user: userId,
             message: data.message,
             icon: data.icon,
-            severity: data.severity
+            severity: data.severity,
+            payload: data
         });
         newNotification.save(function (error) {
             if (error) {
@@ -35,10 +46,10 @@ function sendNotification(userId, data) {
                         iosDeviceTokens.push(device.iosDeviceToken);
                     }
                 });
-                
+
                 // If we found any FCM devices, send notification
                 if (fcmRegistrations.length > 0) {
-                    firebase.sendFCMNotification(fcmRegistrations, newNotification._id, data);
+                    firebase.sendFCMNotification(fcmRegistrations, newNotification);
                 }
 
                 // If we found any ios devices, send notification
