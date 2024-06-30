@@ -7,7 +7,7 @@ const logger = require('./logger.js'),
     Event = require('./models/event'),
     Notification = require('./models/notification'),
     notificationSender = require('./notificationsender');
-    
+
 /**
  * Socket.IO Logic for incoming openHAB servers
  * @param {*} server 
@@ -15,8 +15,9 @@ const logger = require('./logger.js'),
  */
 function SocketIO(server, system) {
     const internalAddress = system.getInternalAddress();
-    var requestTracker = new requesttracker();
-    var io = require('socket.io')(server, {
+    let isShuttingDown = false;
+    const requestTracker = new requesttracker();
+    const io = require('socket.io')(server, {
         maxHttpBufferSize: 1e8, //100mb, this was a previous default in engine.io before the upgrade to 3.6.0 which sets it to 1mb.  May want to revisit.
         logger: logger
     });
@@ -24,10 +25,34 @@ function SocketIO(server, system) {
     this.io = io;
     this.requestTracker = requestTracker;
 
+    this.shutDown = function () {
+        isShuttingDown = true;
+        return new Promise((resolve) => {
+            io.sockets.clients((error, clients) => {
+                if (error) {
+                    console.error('Error retrieving clients:', error);
+                    process.exit(1);
+                }
+                clients.forEach(clientId => {
+                    const socket = io.sockets.connected[clientId];
+                    if (socket) {
+                        socket.disconnect(true);
+                    }
+                });
+                console.log('All socket.io connections closed.');
+                resolve();
+            });
+        });
+    }
+
     /** Socket.io Routes **/
 
     //Check if we have blocked this connection
     io.use(function (socket, next) {
+        if (isShuttingDown) {
+            next(new Error('Shutting down'));
+            return;
+        }
         const uuid = socket.handshake.query['uuid'] || socket.handshake.headers['uuid'];
         if (uuid) {
             redis.ttl('blocked:' + uuid, (err, result) => {
