@@ -8,6 +8,10 @@ var NotificationSchema = new Schema({
     icon: String,
     severity: String,
     acknowledged: Boolean,
+    payload: {
+        type: Schema.Types.Mixed,
+        default: {}
+      },
     created: { type: Date, default: Date.now, expires: '30d' }
 });
 

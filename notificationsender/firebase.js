@@ -21,12 +21,14 @@ function sendMessage(message) {
         });
 };
 
-exports.sendFCMNotification = function (registrationIds, notificationId, data) {
+exports.sendFCMNotification = function (registrationIds, notification) {
     // We can safely remove androidNotificationId, our android client  has removed the need for this, but i need to double check
     redis.incr("androidNotificationId", function (error, androidNotificationId) {
         if (error) {
             return;
         }
+        const data = notification.payload;
+
         //for IOS we need to set an actual notification payload so they show up when the app is not running
         //we can remove badge/sound/alert after our IOS app dynamically adds these 
         const apns = {
@@ -46,10 +48,10 @@ exports.sendFCMNotification = function (registrationIds, notificationId, data) {
 
         const updatedData = {
             type: 'notification',
-            severity: data.severity || '',
-            icon: data.icon || '',
-            persistedId: notificationId.toString(),
-            timestamp: Date.now().toString(),
+            severity: notification.severity || '',
+            icon: notification.icon || '',
+            persistedId:  notification._id.toString(),
+            timestamp: notification.created.toString(),
             notificationId: androidNotificationId.toString()
         };
 
