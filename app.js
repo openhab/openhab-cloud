@@ -105,7 +105,7 @@ if (config.system.subDomainCookies) {
 if (app.get('env') === 'development') {
     app.use(errorHandler());
 }
-if (system.getLoggerMorganOption()){
+if (system.getLoggerMorganOption()) {
     app.use(system.getLoggerMorganOption());
 }
 // App configuration for all environments
@@ -201,12 +201,23 @@ rt.setSocketIO(socketIO);
 rt.setupRoutes(app);
 
 function shutdown() {
-    // TODO: save current request id?
+    // Stop accepting new requests
+    socketIO.shutDown().then(() => {
+        server.close((err) => {
+            if (err) {
+                console.error('Error while shutting down:', err);
+                process.exit(1);
+            }
+            process.exit(0);
+        });
+        logger.info('will wait up to 5 seconds to shut down');
+        setTimeout(() => {
+            process.exit(0);
+        }, 5000);
+
+    });
     logger.info('Stopping every5min statistics job');
     every5MinStatJob.stop();
-
-    logger.info('Safe shutdown complete');
-    process.exit();
 }
 
 process.on('SIGINT', function () {
