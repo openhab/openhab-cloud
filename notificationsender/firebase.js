@@ -51,7 +51,7 @@ exports.sendFCMNotification = function (registrationIds, notification) {
             severity: notification.severity || '',
             icon: notification.icon || '',
             persistedId:  notification._id.toString(),
-            timestamp: notification.created.toString(),
+            timestamp: notification.created.getTime().toString(),
             notificationId: androidNotificationId.toString()
         };
 
