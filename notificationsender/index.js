@@ -18,11 +18,12 @@ function sendNotification(userId, data) {
 
         var fcmRegistrations = [];
         var iosDeviceTokens = [];
+
         var newNotification = new Notification({
             user: userId,
             message: data.message,
             icon: data.icon,
-            severity: data.severity,
+            severity: data.tag || data.severity, // tag is replacing severity
             payload: data
         });
         newNotification.save(function (error) {
