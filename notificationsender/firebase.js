@@ -1,8 +1,7 @@
 const system = require('../system');
 const firebase = require('firebase-admin');
 const logger = require('../logger.js');
-const redis = require('../redis-helper');
-const crypto = require("crypto")
+const crypto = require("crypto");
 
 if (system.isGcmConfigured()) {
     const serviceAccount = require(system.getFirebaseServiceFile());
@@ -22,62 +21,73 @@ function sendMessage(message) {
 };
 
 exports.sendFCMNotification = function (registrationIds, notification) {
-    // We can safely remove androidNotificationId, our android client  has removed the need for this, but i need to double check
-    redis.incr("androidNotificationId", function (error, androidNotificationId) {
-        if (error) {
-            return;
+    let data = notification.payload;
+
+    const apns = {
+        payload: {
+            aps: {}
+        },
+        headers: {}
+    }
+
+    const android = {
+        priority: 'high',
+    }
+
+    // make sure all our values are strings per FCM requirements
+    Object.keys(data).forEach(key => {
+        const value = data[key];
+        if(value === undefined){
+            delete data[key]
+        } else if (typeof value !== 'string') {
+            data[key] = JSON.stringify(value)
         }
-        const data = notification.payload;
+    })
 
-        //for IOS we need to set an actual notification payload so they show up when the app is not running
-        //we can remove badge/sound/alert after our IOS app dynamically adds these 
-        const apns = {
-            payload: {
-                aps: {
-                    'mutable-content': 1, // Enables mutable content for iOS
-                    badge: 0,
-                    sound: { name: 'default' },
-                    alert: { body: data.message },
-                }
-            }
+    data.type = data.type || 'notification' // default to sending notifications
+
+    // this a silent/background notification
+    if (data.type === "hideNotification") {
+        // required for silent notifications on IOS
+        apns.payload.aps["content-available"] = 1
+        apns.headers["apns-priority"] = "5"
+    } else {
+        // Normal notification
+        data.persistedId = notification._id.toString()
+        data.timestamp = notification.created.getTime().toString()
+
+        // Setting title and body is really only necessary for the legacy IOS app (V1)
+        // The non-legacy app will set these from the payload data before surfacing the notification
+        apns.payload.aps = {
+            'mutable-content': 1, // allows for background processing - required
+            title: data.title,
+            badge: 0,
+            alert: { body: data.message },
+            sound: { name: 'default' }
         }
 
-        const android = {
-            priority: 'high',
+        //set the user supplied id for the collapse header so notifications can be replaced with new ones
+        const refId = data["reference-id"]
+        if (refId) {
+            apns.headers["apns-collapse-id"] = refId;
+            android.collapseKey = refId;
         }
-
-        const updatedData = {
-            type: 'notification',
-            severity: notification.severity || '',
-            icon: notification.icon || '',
-            persistedId:  notification._id.toString(),
-            timestamp: notification.created.getTime().toString(),
-            notificationId: androidNotificationId.toString()
-        };
-
-        Object.assign(data, updatedData)
 
         if (data.actions) {
-            if (data.actions instanceof Array) {
-                data.actions = JSON.stringify(data.actions)
-            }
             // for apple, create a unique hash for the category, secret sauce for dynamic actions
             apns.payload.aps.category = crypto.createHash('sha256').update(data.actions).digest('hex');
         }
+    }
 
-        if(data.title){
-            apns.payload.aps.alert.title = data.title
-        }
-
-        const message = {
-            android: android,
-            apns: apns,
-            data: data,
-            tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds],
-        };
-
-        sendMessage(message);
-    });
+    const message = {
+        android: android,
+        apns: apns,
+        data: data,
+        tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds]
+    };
+    console.info("sending message", message)
+    //console.info("sending message", JSON.stringify(message, null, 2))
+    sendMessage(message);
 };
 
 exports.hideNotification = function (registrationIds, notificationId) {
@@ -93,6 +103,5 @@ exports.hideNotification = function (registrationIds, notificationId) {
             priority: 'high',
         }
     };
-    
     sendMessage(message, data);
 };
