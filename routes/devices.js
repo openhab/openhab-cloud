@@ -53,7 +53,8 @@ exports.devicessendmessage = function (req, res) {
         const message = req.form.messagetext;
         const newNotification = new Notification({
             user: req.user.id,
-            message: message
+            message: message,
+            payload: {message : message}
         });
         newNotification.save(function (error) {
             if (error) {
