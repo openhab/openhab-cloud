@@ -36,8 +36,11 @@ exports.sendFCMNotification = function (registrationIds, notification) {
 
     // make sure all our values are strings per FCM requirements
     Object.keys(data).forEach(key => {
-        if (typeof data[key] !== 'string') {
-            data[key] = JSON.stringify(data[key])
+        const value = data[key];
+        if(value === undefined){
+            delete data[key]
+        } else if (typeof value !== 'string') {
+            data[key] = JSON.stringify(value)
         }
     })
 
@@ -82,7 +85,8 @@ exports.sendFCMNotification = function (registrationIds, notification) {
         data: data,
         tokens: Array.isArray(registrationIds) ? registrationIds : [registrationIds]
     };
-    console.info("sending message", JSON.stringify(message, null, 2))
+    console.info("sending message", message)
+    //console.info("sending message", JSON.stringify(message, null, 2))
     sendMessage(message);
 };
 
