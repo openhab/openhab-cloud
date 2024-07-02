@@ -18,12 +18,12 @@ function sendNotification(userId, data) {
 
         var fcmRegistrations = [];
         var iosDeviceTokens = [];
-
+        data.tag = data.tag || data.severity // tag is replacing severity in OH 4.2
         var newNotification = new Notification({
             user: userId,
             message: data.message,
             icon: data.icon,
-            severity: data.tag || data.severity, // tag is replacing severity
+            severity: data.tag, //legacy field
             payload: data
         });
         newNotification.save(function (error) {
