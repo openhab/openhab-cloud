@@ -36,7 +36,7 @@
                         <tr><th class="col-sm-2">When</th><th class="col-sm-10">What</th></tr>
                         </thead>
                         <% for (var i=0; i<notifications.length; i++) { %>
-                            <% const title = notifications[i].payload && notifications[i].payload.type === 'notification' ? notifications[i].message : '(Hide Notification)'%>
+                            <% const title = notifications[i].payload && notifications[i].payload.type === 'hideNotification' ? '(Hide Notification)' : notifications[i].message %>
                         <tr><td class="col-sm-2"><%= date_util(notifications[i].created, timeZone).toRelativeCalendar() %></td>
                             <td class="col-sm-10"><%= title %></td>
                         </tr>
