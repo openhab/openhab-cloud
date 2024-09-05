@@ -11,7 +11,7 @@ if (system.isGcmConfigured()) {
 }
 
 function sendMessage(message) {
-    firebase.messaging().sendMulticast(message)
+    firebase.messaging().sendEachForMulticast(message)
         .then((response) => {
             logger.info("FCM Response: " + JSON.stringify(response));
         })
