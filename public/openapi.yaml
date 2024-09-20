@@ -1,0 +1,179 @@
+openapi: 3.1.0
+info:
+  title: myopenHAB API
+  description: API for managing notifications, user devices, and app registrations.
+  version: 1.0.0
+servers:
+  - url: https://api.example.com/api/v1
+paths:
+  /notifications:
+    get:
+      summary: Get user notifications
+      description: Retrieve notifications for the authenticated user.
+      parameters:
+        - name: limit
+          in: query
+          description: The number of notifications to retrieve.
+          required: false
+          schema:
+            type: integer
+        - name: skip
+          in: query
+          description: The number of notifications to skip.
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A list of notifications.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '500':
+          description: Internal server error.
+
+  /sendnotification:
+    post:
+      summary: Send a notification
+      description: Send a notification to a user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendNotificationRequest'
+      responses:
+        '200':
+          description: Notification sent successfully.
+        '500':
+          description: Error sending notification.
+
+  /hidenotification/{id}:
+    get:
+      summary: Hide a notification
+      description: Hide a specific notification by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: deviceId
+          in: query
+          description: Optional device ID.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification hidden successfully.
+        '400':
+          description: Invalid request.
+        '500':
+          description: Internal server error.
+
+  /settings/notifications:
+    get:
+      summary: Get notification settings
+      description: Retrieve notification settings for the user.
+      responses:
+        '200':
+          description: Notification settings retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSettings'
+        '500':
+          description: Internal server error.
+
+  /proxyurl:
+    get:
+      summary: Get proxy URL
+      description: Retrieve the proxy URL.
+      responses:
+        '200':
+          description: Proxy URL retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+        '500':
+          description: Internal server error.
+
+  /appids:
+    get:
+      summary: Get app IDs
+      description: Retrieve the iOS and Android app IDs.
+      responses:
+        '200':
+          description: App IDs retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ios:
+                    type: string
+                  android:
+                    type: string
+        '500':
+          description: Internal server error.
+
+components:
+  schemas:
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the notification.
+        user:
+          type: string
+          description: The ID of the user the notification is for.
+        message:
+          type: string
+          description: The content of the notification message.
+        icon:
+          type: string
+          description: An icon representing the notification.
+        severity:
+          type: string
+          description: The severity level of the notification.
+        acknowledged:
+          type: boolean
+          description: Whether the notification has been acknowledged.
+        payload:
+          type: object
+          description: Additional payload data related to the notification.
+        created:
+          type: string
+          format: date-time
+          description: The date and time when the notification was created. The notification will expire after 30 days.
+    SendNotificationRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        deviceId:
+          type: string
+    NotificationSettings:
+      type: object
+      properties:
+        gcm:
+          type: object
+          properties:
+            senderId:
+              type: string
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+security:
+  - basicAuth: []
