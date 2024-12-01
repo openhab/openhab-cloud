@@ -13,6 +13,7 @@ const system = require('../system'),
     staff_routes = require('./staff'),
     api_routes = require('./api'),
     oauth2 = require('./oauth2'),
+    oauth2proxy = require('./oauth2proxy'),
     setSessionTimezone = require('./setTimezone'),
     fcmRegistrationService = require('./fcmRegistrationService'),
     appleRegistrationService = require('./appleRegistrationService'),
@@ -47,6 +48,7 @@ Routes.prototype.setupRoutes = function (app) {
     this.setupInvitationRoutes(app);
     this.setupUserManagementRoutes(app);
     this.setupOAuthRoutes(app);
+    this.setupOAuthProxyRoutes(app);
     this.setupIFTTTRoutes(app);
     this.setupTimezoneRoutes(app);
     this.setupStaffRoutes(app);
@@ -164,6 +166,12 @@ Routes.prototype.setupOAuthRoutes = function (app) {
     app.get('/oauth2/authorize', this.ensureAuthenticated, oauth2.authorization);
     app.post('/oauth2/authorize/decision', this.ensureAuthenticated, oauth2.decision);
     app.post('/oauth2/token', oauth2.token);
+};
+
+
+Routes.prototype.setupOAuthProxyRoutes = function (app) {
+    app.get('/oauth2proxy/authorize', this.ensureAuthenticated, oauth2proxy.authorization);
+    app.post('/oauth2proxy/token', oauth2proxy.token);
 };
 
 Routes.prototype.setupStaffRoutes = function (app) {
