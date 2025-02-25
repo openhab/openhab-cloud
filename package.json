@@ -67,7 +67,7 @@
     "grunt-mocha-test": "^0.13.3",
     "grunt-qunit-node": "^0.1.0",
     "istanbul": "^0.4.5",
-    "mocha": "^10.1.0",
+    "mocha": "^10.8.2",
     "node-gyp": "^7.1.2",
     "nyc": "^15.1.0",
     "qunit": "^2.14.0",
