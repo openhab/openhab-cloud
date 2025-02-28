@@ -4,7 +4,7 @@ info:
   description: API for managing notifications, user devices, and app registrations.
   version: 1.0.0
 servers:
-  - url: https://api.example.com/api/v1
+  - url: https://myopenhab.org/api/v1
 paths:
   /notifications:
     get:
