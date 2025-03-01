@@ -21,7 +21,6 @@ MongoConnect.prototype.connect = function (mongoose, callback) {
     if (typeof callback !== 'function') {
         callback = this.defaultCallback;
     }
-    mongoose.set('useCreateIndex', true); 
     logger.info('Trying to connect to mongodb at: ' + this.system.getDbHostsString());
     mongoose.connect(this.getMongoUri(), callback);
 };
