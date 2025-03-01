@@ -1,19 +1,30 @@
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
-     bcrypt = require('bcrypt'),
-     Openhab = require('./openhab'),
-     Email = mongoose.SchemaTypes.Email,
-     UserAccount = require('./useraccount'),
+    bcrypt = require('bcrypt'),
+    Openhab = require('./openhab'),
+    Email = mongoose.SchemaTypes.Email,
+    UserAccount = require('./useraccount'),
     ObjectId = mongoose.SchemaTypes.ObjectId,
-    { BcryptCache, MemoryCache } = require('bcrypt-cache');
+    crypto = require('crypto');
 
+// Simple password verification cache
+const passwordCache = new Map();
+const CACHE_TTL = 60 * 1000; // 60 seconds in milliseconds
 
-var memCache = new MemoryCache({
-    ttl: 60,
-    pruneTimer: 60
-});
-const bcryptCache = new BcryptCache(memCache);
+// Helper function to create SHA1 hash
+function sha1Hash(str) {
+    return crypto.createHash('sha1').update(str).digest('hex');
+}
 
+// Clean expired cache entries periodically
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, value] of passwordCache.entries()) {
+        if (now > value.expires) {
+            passwordCache.delete(key);
+        }
+    }
+}, 60000); // Clean every minute
 
 var UserSchema = new Schema({
     username: {type: String, unique: true},
@@ -34,8 +45,26 @@ var UserSchema = new Schema({
 /*userSchema.plugin(passportLocalMongoose);*/
 
 UserSchema.method('checkPassword', function (password, callback) {
-    bcryptCache.compare(password, this.hash).then(function (result) {
-      callback(null,result);
+    const cacheKey = `${this._id}:${sha1Hash(password)}`;
+    const now = Date.now();
+    
+    // Check cache first
+    const cached = passwordCache.get(cacheKey);
+    if (cached && now < cached.expires) {
+        return callback(null, cached.result);
+    }
+
+    // If not in cache, do full bcrypt comparison
+    bcrypt.compare(password, this.hash, (err, result) => {
+        if (err) return callback(err);
+        
+        // Cache the result
+        passwordCache.set(cacheKey, {
+            result,
+            expires: now + CACHE_TTL
+        });
+        
+        callback(null, result);
     });
 });
 
