@@ -21,9 +21,6 @@ MongoConnect.prototype.connect = function (mongoose, callback) {
     if (typeof callback !== 'function') {
         callback = this.defaultCallback;
     }
-    mongoose.set('useNewUrlParser', true);
-    mongoose.set('useFindAndModify', false);
-    mongoose.set('useCreateIndex', true); 
     logger.info('Trying to connect to mongodb at: ' + this.system.getDbHostsString());
     mongoose.connect(this.getMongoUri(), callback);
 };
@@ -58,7 +55,7 @@ MongoConnect.prototype.getMongoUri = function () {
 
     mongoUri += this.system.getDbHostsString();
 
-    return mongoUri + '/' + this.system.getDbName() + '?poolSize=50';
+    return mongoUri + '/' + this.system.getDbName();
 };
 
 module.exports = MongoConnect;
