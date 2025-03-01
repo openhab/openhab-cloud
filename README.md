@@ -82,7 +82,7 @@ node --version
 ```
 
 
-If you see the node version, you are fine to continue (Note: openHAB Cloud is based on Node.js version 14).
+If you see the node version, you are fine to continue (Note: openHAB Cloud is based on Node.js version 18).
 
 To run openHAB Cloud you need to install the required software bundles/stacks:
 
