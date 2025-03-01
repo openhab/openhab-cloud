@@ -36,8 +36,6 @@ loadConfig();
 
 module.exports.config = config;
 
-//require('heapdump');
-
 logger.info('Backend service is starting up...');
 
 process.on('uncaughtException', function (err) {

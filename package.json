@@ -28,7 +28,6 @@
     "express-form": "0.12.6",
     "express-session": "^1.17.1",
     "firebase-admin": "^12.1.0",
-    "heapdump": "0.3.15",
     "ioredis": "^4.28.5",
     "less-middleware": "3.1.0",
     "luxon": "^1.28.1",
