@@ -10,6 +10,7 @@ var OAuth2RelaySchema = new Schema({
     clientId: String,                           // Client oauth2 id
     clientSecret: String,                       // Client oauth2 secret
     targetAuthorizeUrl: String,
+    targetHost: String,
     targetTokenUrl: String,
     active: { type: Boolean, default: true},    // If this client is active?
     created: { type: Date, default: Date.now }, // When client was created
