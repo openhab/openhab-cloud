@@ -1,0 +1,62 @@
+{
+    "system": {
+      "host": "${DOMAIN_NAME}",
+      "port": "443",
+      "protocol": "https",
+      "logger" : {
+        "dir": "./logs",
+        "maxFiles" : "7d",
+        "level" : "debug",
+        "morganOption" : null
+      },
+      "subDomainCookies": false,
+      "muteNotifications": false
+    },
+    "express":{
+      "key" : "${EXPRESS_KEY}"
+    },
+    "apn" : {
+      "gateway": "gateway.push.apple.com",
+      "cert": "certs/aps/aps_production_cert.pem",
+      "key": "certs/aps/aps_production_key.pem",
+      "passphrase": "passphrase"
+    },
+    "gcm" : {
+      "jid": "something@gcm.googleapis.com",
+      "password": "password"
+    },
+    "ifttt" : {
+      "iftttChannelKey" : "key",
+      "iftttTestToken" : "token"
+    },
+    "mail": {
+      "host" : "smtp",
+      "port" : 465,
+      "user" : "${SMTP_USER}",
+      "pass" : "${SMTP_PASSWORD}"
+    },
+    "mongodb": {
+        "hosts": ["mongodb"],
+        "db": "openhab",
+        "user": "${MONGO_USER}",
+        "password": "${MONGO_PASSWORD}"    
+    },
+    "redis": {
+        "host": "redis",
+        "port": "6379",
+        "password": "123_openHAB"
+    },
+    "mailer": {
+        "host" : "smtp",
+        "port": 465,
+        "secureConnection": true,
+        "user": "${SMTP_USER}",
+        "password": "${SMTP_PASSWORD}",
+        "from": "openHAB Cloud <your@email.address>"
+    },
+    "legal": {
+    	"terms" : "",
+        "policy": ""
+    },
+    "registration_enabled": false
+}
