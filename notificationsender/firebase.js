@@ -20,7 +20,7 @@ function sendMessage(message) {
         });
 };
 
-exports.sendFCMNotification = function (registrationIds, notification) {
+exports.sendFCMNotification = function (ownerId, registrationIds, notification) {
     let data = notification.payload;
 
     const apns = {
@@ -43,6 +43,8 @@ exports.sendFCMNotification = function (registrationIds, notification) {
             data[key] = JSON.stringify(value)
         }
     })
+
+    data.userId = ownerId.toString();
 
     data.type = data.type || 'notification' // default to sending notifications
 

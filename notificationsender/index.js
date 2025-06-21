@@ -50,7 +50,7 @@ function sendNotification(userId, data) {
 
                 // If we found any FCM devices, send notification
                 if (fcmRegistrations.length > 0) {
-                    firebase.sendFCMNotification(fcmRegistrations, newNotification);
+                    firebase.sendFCMNotification(userId, fcmRegistrations, newNotification);
                 }
 
                 // If we found any ios devices, send notification

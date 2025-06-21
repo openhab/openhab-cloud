@@ -65,7 +65,11 @@ module.exports = new cronJob('00 */5 * * * *', function () {
     redis.set("jobs:every5minstat", "", 'NX', 'EX', 10, (error, result) => {
         if (result) {
             logger.info('every5min statistics collection job obtained lock');
-            promises.push(Openhab.count({}, countCallback.bind('openhabCount')).exec());
+            // OpenHAB instances (total)
+            promises.push(
+                Openhab.countDocuments({})
+                    .then(count => countCallback.call('openhabCount', null, count))
+            );
             promises.push(new Promise(resolve => {
                 redis.eval("return #redis.pcall('keys', 'connection:*')", 0, (err, res) => {
                     const f = countCallback.bind('openhabOnlineCount');
@@ -73,11 +77,26 @@ module.exports = new cronJob('00 */5 * * * *', function () {
                     resolve(res);
                 });
             }));
-            //promises.push(Openhab.count({status: 'online'}, countCallback.bind('openhabOnlineCount')).exec());
-            promises.push(User.count({}, countCallback.bind('userCount')).exec());
-            promises.push(Invitation.count({ used: true }, countCallback.bind('invitationUsedCount')).exec());
-            promises.push(Invitation.count({ used: false }, countCallback.bind('invitationUnusedCount')).exec());
-            promises.push(UserDevice.count({}, countCallback.bind('userDeviceCount')).exec());
+            // Users (total)
+            promises.push(
+                User.countDocuments({})
+                    .then(count => countCallback.call('userCount', null, count))
+            );
+            // Invitations (used)
+            promises.push(
+                Invitation.countDocuments({ used: true })
+                    .then(count => countCallback.call('invitationUsedCount', null, count))
+            );
+            // Invitations (unused)
+            promises.push(
+                Invitation.countDocuments({ used: false })
+                    .then(count => countCallback.call('invitationUnusedCount', null, count))
+            );
+            // User devices (total)
+            promises.push(
+                UserDevice.countDocuments({})
+                    .then(count => countCallback.call('userDeviceCount', null, count))
+            );
 
             Promise.all(promises).then(saveStats);
         }

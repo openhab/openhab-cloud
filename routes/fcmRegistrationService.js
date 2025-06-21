@@ -52,12 +52,12 @@ function register(req, res, deviceType) {
                 registered: new Date()
             });
         }
-        userDevice.save(function (error) {
+        userDevice.save(function (error, userDevice) {
             if (error) {
                 logger.error('Error saving user device: ' + error);
                 res.send(500, 'Error Saving Registration');
             } else {
-                res.send(200, 'Updated');
+                res.send(200, { userId: userDevice.owner.toString() });
             }
         });
     });
