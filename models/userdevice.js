@@ -6,24 +6,24 @@ var mongoose = require('mongoose'),
     ObjectId = mongoose.SchemaTypes.ObjectId;
 
 var UserDeviceSchema = new Schema({
-    owner: {type: ObjectId, required: true},
-    androidRegistration: {type: String}, // Deprecated in favor of fcmRegistration
-    iosDeviceToken: {type: String}, // will migrate to fcmRegistration in the future
-    fcmRegistration : {type: String}, //Firebase Cloud Messaging registration token
-    deviceType: {type: String},
-    deviceModel: {type: String},
-    deviceId: {type: String},
-    lastUpdate: { type: Date },
+    owner: { type: ObjectId, required: true },
+    androidRegistration: { type: String }, // Deprecated in favor of fcmRegistration
+    iosDeviceToken: { type: String }, // will migrate to fcmRegistration in the future
+    fcmRegistration: { type: String }, //Firebase Cloud Messaging registration token
+    deviceType: { type: String },
+    deviceModel: { type: String },
+    deviceId: { type: String },
+    lastUpdate: { type: Date, default: Date.now, expires: '360d' },
     registered: { type: Date }
 });
 
 // Index for lookups by owner, type and uniq id
-UserDeviceSchema.index({owner:1, deviceType:1, deviceId:1});
+UserDeviceSchema.index({ owner: 1, deviceType: 1, deviceId: 1 });
 // Index for lookups by android registration
-UserDeviceSchema.index({androidRegistration:1});
+UserDeviceSchema.index({ androidRegistration: 1 });
 // Index for lookups by ios device token
-UserDeviceSchema.index({iosDeviceToken:1});
+UserDeviceSchema.index({ iosDeviceToken: 1 });
 // Index for lookups by FCM device token
-UserDeviceSchema.index({fcmRegistration:1});
+UserDeviceSchema.index({ fcmRegistration: 1 });
 
 module.exports = mongoose.model('UserDevice', UserDeviceSchema);
