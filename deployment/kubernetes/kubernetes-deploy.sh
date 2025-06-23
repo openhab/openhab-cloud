@@ -32,6 +32,11 @@ kubectl create namespace $KUBERNETES_NAMESPACE
 
 kubectl create serviceaccount $KUBERNETES_ACCOUNT --namespace $KUBERNETES_NAMESPACE
 
+# Creating configMap volumes
+
+kubectl create configmap openhab-config --from-file=./config.json.template --namespace $KUBERNETES_NAMESPACE
+kubectl create -f openhabcloud_env_k8.yml --namespace $KUBERNETES_NAMESPACE
+kubectl create -f openhabcloud_secrets_k8.yml --namespace $KUBERNETES_NAMESPACE
 
 ### Create openHAB-cloud from template
 
