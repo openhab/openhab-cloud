@@ -410,7 +410,8 @@ Routes.prototype.proxyRouteOpenhab = function (req, res) {
         headers: requestHeaders,
         path: requestPath,
         query: req.query,
-        body: req.rawBody
+        body: req.rawBody,
+        userId: req.user.username
     });
     res.openhab = req.openhab;
     this.requestTracker.add(res, requestId);
