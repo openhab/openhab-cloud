@@ -233,13 +233,16 @@ Routes.prototype.setupAppRoutes = function (app) {
     // Do not require authentication for this route
     app.get('/api/v1/appids', api_routes.appids);
 
-    // Android app registration (FCM)
-    app.all('/addAndroidRegistration*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, fcmRegistrationService.registerAndroid);
-    // Apple app registration (FCM)
-    app.all('/addIosRegistration*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, fcmRegistrationService.registerIos);
-    // Apple app registration (legacy)
-    app.all('/addAppleRegistration*', this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, appleRegistrationService);
-    
+    // legacy workaround so that / and /api/v1 work for old and new clients
+    const prefixes = ['/', '/api/v1'];
+    prefixes.forEach((prefix) => {
+        // Android app registration (FCM)
+        app.all(`${prefix}addAndroidRegistration*`, this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, fcmRegistrationService.registerAndroid);
+        // Apple app registration (FCM)
+        app.all(`${prefix}addIosRegistration*`, this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, fcmRegistrationService.registerIos);
+        // Apple app registration (legacy)
+        app.all(`${prefix}addAppleRegistration*`, this.ensureRestAuthenticated, this.setOpenhab, this.preassembleBody, appleRegistrationService);
+    });
 };
 
 // Ensure user is authenticated for web requests
