@@ -157,6 +157,8 @@ Routes.prototype.setupUserManagementRoutes = function (app) {
     app.get('/users/add', this.ensureAuthenticated, this.setOpenhab, this.ensureMaster, users_routes.usersaddget);
     app.post('/users/add', this.ensureAuthenticated, this.setOpenhab, this.ensureMaster, users_routes.usersaddpostvalidate, users_routes.usersaddpost);
     app.get('/users/delete/:id', this.ensureAuthenticated, this.setOpenhab, this.ensureMaster, users_routes.usersdeleteget);
+    app.get('/users/disable/:id', this.ensureAuthenticated, this.setOpenhab, this.ensureMaster, users_routes.usersdisableget);
+    app.get('/users/enable/:id', this.ensureAuthenticated, this.setOpenhab, this.ensureMaster, users_routes.usersenableget);
     app.get('/users/:id', this.ensureAuthenticated, this.setOpenhab, this.ensureMaster, users_routes.usersget);
 };
 

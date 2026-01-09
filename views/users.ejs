@@ -25,7 +25,7 @@
                         <ul>
                             <li><a href="/users/add"><i class="icon-plus"></i>Add new user</a></li>
                             <% for (var i=0; i<users.length; i++) { %>
-                            <li><a <% if (users[i]._id == selectedUserId) { %>class="active"<%}%> href="/users/<%=users[i]._id%>"><i class="icon-user"></i><%=users[i].username%></a></li>
+                            <li><a <% if (users[i]._id == selectedUserId) { %>class="active"<%}%> href="/users/<%=users[i]._id%>"><i class="<%=users[i].active ? 'icon-user' : 'icon-lock' %>"></i><%=users[i].username%></a></li>
                             <% } %>
                         </ul>
                         <div class="littleShadow"></div>
@@ -51,6 +51,11 @@
                                 </tr>
                                 <tr>
                                     <td><a href="/users/delete/<%=users[selectedUserArrayId].id%>" class="btn btn-default btn-danger">Delete user</a></td>
+                                    <% if (users[selectedUserArrayId].active) { %>
+                                        <td><a href="/users/disable/<%=users[selectedUserArrayId].id%>" class="btn btn-default">Disable user</a></td>
+                                    <% } else { %>
+                                        <td><a href="/users/enable/<%=users[selectedUserArrayId].id%>" class="btn btn-default">Enable user</a></td>
+                                    <% } %>
                                 </tr>
                             </table>
                         <% } %>

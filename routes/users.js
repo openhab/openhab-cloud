@@ -118,3 +118,63 @@ exports.usersdeleteget = function(req, res) {
         res.redirect('/users');
     }
 }
+
+exports.usersdisableget = function (req, res) {
+    if (req.params.hasOwnProperty('id')) {
+        let disableUserId = req.params.id;
+        if (disableUserId == req.user.id) {
+            req.flash('error', "You can't disable yourself");
+            res.redirect('/users/' + disableUserId);
+        } else {
+            User.findOne({ _id: mongoose.Types.ObjectId(disableUserId), account: req.user.account }, function (error, disableUser) {
+                if (disableUser != null && !error) {
+                    if (!disableUser.active) {
+                        req.flash('error', 'User is already disabled!');
+                        res.redirect('/users/' + disableUserId);
+                        return;
+                    }
+                    logger.info(disableUser.account + " " + req.user.account);
+                    disableUser.active = false;
+                    disableUser.save();
+                    req.flash('info', "User disabled");
+                    res.redirect('/users/' + disableUserId);
+                } else {
+                    req.flash('error', "There was an error processing your request");
+                    res.redirect('/users/' + disableUserId);
+                }
+            });
+        }
+    } else {
+        res.redirect('/users');
+    }
+}
+
+exports.usersenableget = function (req, res) {
+    if (req.params.hasOwnProperty('id')) {
+        var enableUserId = req.params.id;
+        if (enableUserId == req.user.id) {
+            req.flash('error', "You can't enable yourself");
+            res.redirect('/users');
+        } else {
+            User.findOne({ _id: mongoose.Types.ObjectId(enableUserId), account: req.user.account }, function (error, enableUser) {
+                if (enableUser != null && !error) {
+                    if (enableUser.active) {
+                        req.flash('error', 'User is already enabled!');
+                        res.redirect('/users/' + enableUserId);
+                        return;
+                    }
+                    logger.info(enableUser.account + " " + req.user.account);
+                    enableUser.active = true;
+                    enableUser.save();
+                    req.flash('info', "User enabled");
+                    res.redirect('/users/' + enableUserId);
+                } else {
+                    req.flash('error', "There was an error processing your request");
+                    res.redirect('/users/' + enableUserId);
+                }
+            });
+        }
+    } else {
+        res.redirect('/users');
+    }
+}
