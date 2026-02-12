@@ -1,0 +1,61 @@
+{
+  "system": {
+    "host": "${DOMAIN_NAME}",
+    "listenIp": "0.0.0.0",
+    "port": 3000,
+    "protocol": "https",
+    "subDomainCookies": false,
+    "muteNotifications": ${MUTE_NOTIFICATIONS:-false},
+    "offlineNotificationTime": ${OFFLINE_NOTIFICATION_TIME:-300000},
+    "connectionLockTimeSeconds": ${CONNECTION_LOCK_TIME:-70},
+    "logger": {
+      "dir": "./logs/",
+      "maxFiles": "7d",
+      "level": "${LOG_LEVEL:-info}",
+      "type": "console",
+      "morgan": "combined"
+    },
+    "healthEndpoint": {
+      "enabled": true
+    }
+  },
+  "express": {
+    "key": "${EXPRESS_KEY}"
+  },
+  "mongodb": {
+    "hosts": ["${MONGO_HOST:-mongodb}:${MONGO_PORT:-27017}"],
+    "db": "${MONGO_DB:-openhab}",
+    "user": "${MONGO_USER}",
+    "password": "${MONGO_PASSWORD}"
+  },
+  "redis": {
+    "host": "${REDIS_HOST:-redis}",
+    "port": ${REDIS_PORT:-6379},
+    "password": "${REDIS_PASSWORD}"
+  },
+  "mailer": {
+    "host": "${SMTP_HOST}",
+    "port": ${SMTP_PORT:-587},
+    "secureConnection": ${SMTP_SECURE:-false},
+    "user": "${SMTP_USER}",
+    "password": "${SMTP_PASSWORD}",
+    "from": "${SMTP_FROM}"
+  },
+  "gcm": {
+    "senderId": "${FCM_SENDER_ID}",
+    "serviceFile": "${FCM_SERVICE_FILE}"
+  },
+  "ifttt": {
+    "iftttChannelKey": "${IFTTT_CHANNEL_KEY}",
+    "iftttTestToken": "${IFTTT_TEST_TOKEN}"
+  },
+  "legal": {
+    "terms": "${LEGAL_TERMS:-}",
+    "policy": "${LEGAL_POLICY:-}"
+  },
+  "apps": {
+    "appleId": "${APP_APPLE_ID:-492054521}",
+    "playStoreId": "${APP_PLAY_STORE_ID:-org.openhab.habdroid}"
+  },
+  "registration_enabled": ${REGISTRATION_ENABLED:-true}
+}

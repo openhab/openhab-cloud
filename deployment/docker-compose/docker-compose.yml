@@ -1,53 +1,70 @@
-version: '3'
-
 services:
   app:
-    image: openhab/openhab-cloud:latest
+    image: openhab/openhab-cloud:${IMAGE_TAG:-latest}
     build:
       context: ../..
       # Uncomment to customize timezone
-      #args:
-      #  TZ: America/Los_Angeles
+      # args:
+      #   TZ: America/Los_Angeles
     volumes:
-    - ./config.json.template:/opt/openhabcloud/config.json.template
+      - ./config.json.template:/opt/openhabcloud/config.json.template:ro
     depends_on:
-    - mongodb
-    - redis
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: always
     environment:
-    - DOMAIN_NAME
-    - EXPRESS_KEY
+      - DOMAIN_NAME
+      - EXPRESS_KEY
     labels:
-    - "traefik.enable=true"
-    - "traefik.frontend.rule=Host:${DOMAIN_NAME}"
-    - "traefik.port=3000"
-    - "traefik.protocol=http"
+      - "traefik.enable=true"
+      - "traefik.http.routers.openhab-cloud.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.openhab-cloud.entrypoints=websecure"
+      - "traefik.http.routers.openhab-cloud.tls.certresolver=letsencrypt"
+      - "traefik.http.services.openhab-cloud.loadbalancer.server.port=3000"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   mongodb:
-    image: mongo:4
+    image: mongo:6
     volumes:
-    - mongo-data:/data/db
+      - mongo-data:/data/db
     restart: always
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ping:1})"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
-    image: bitnami/redis:latest
-    environment:
-    - REDIS_PASSWORD=123_openHAB
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
     restart: always
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   traefik:
-    image: traefik:1.7
+    image: traefik:3
     ports:
-    - "443:443"
-    - "80:80"
-    - "8080:8080"
+      - "80:80"
+      - "443:443"
     volumes:
-    - ./traefik.toml:/etc/traefik/traefik.toml:ro
-    - /var/run/docker.sock:/var/run/docker.sock
-    - traefik-data:/data
-    command:
-    - "--acme.email=${EMAIL}"
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-data:/data
+    restart: always
 
 volumes:
   mongo-data:
+  redis-data:
   traefik-data:

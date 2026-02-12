@@ -12,16 +12,21 @@ RUN ln -s /usr/share/zoneinfo/${TZ} /etc/localtime && \
 
 WORKDIR /opt/openhabcloud
 
-# Install node modules
+# Install dependencies (including dev dependencies for build)
 COPY package.json package-lock.json ./
 RUN apk add --no-cache --virtual .build-deps build-base python3 && \
-    npm install && npm rebuild bcrypt --build-from-source && \
+    npm ci && \
+    npm rebuild bcrypt --build-from-source
+
+# Copy source and build TypeScript
+COPY . .
+RUN npm run build && \
+    npm prune --production && \
     apk del .build-deps
 
-# Prepare source tree
-RUN chown openhabcloud:openhabcloud .
-RUN mkdir logs && chown openhabcloud:openhabcloud logs
-COPY --chown=openhabcloud:openhabcloud . .
+# Set up directories and permissions
+RUN mkdir -p logs && \
+    chown -R openhabcloud:openhabcloud .
 
 USER openhabcloud
 EXPOSE 3000

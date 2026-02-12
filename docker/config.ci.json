@@ -1,0 +1,39 @@
+{
+  "system": {
+    "host": "localhost",
+    "proxyHost": "localhost",
+    "listenIp": "0.0.0.0",
+    "port": 3000,
+    "protocol": "http",
+    "subDomainCookies": false,
+    "muteNotifications": true,
+    "offlineNotificationTime": 300000,
+    "connectionLockTimeSeconds": 70,
+    "logger": {
+      "dir": "./logs/",
+      "maxFiles": "7d",
+      "level": "warn",
+      "type": "console",
+      "morgan": "dev"
+    },
+    "healthEndpoint": {
+      "enabled": true
+    }
+  },
+  "express": {
+    "key": "ci-session-secret-key-for-github-actions"
+  },
+  "mongodb": {
+    "hosts": ["localhost:27017"],
+    "db": "openhab_test"
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 6379
+  },
+  "legal": {
+    "terms": "https://example.com/terms",
+    "policy": "https://example.com/policy"
+  },
+  "registration_enabled": true
+}

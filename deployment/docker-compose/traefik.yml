@@ -1,0 +1,34 @@
+# Traefik v3 Configuration
+# https://doc.traefik.io/traefik/
+
+api:
+  dashboard: false
+
+log:
+  level: INFO
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: ${EMAIL}
+      storage: /data/acme.json
+      httpChallenge:
+        entryPoint: web
+      # Uncomment for testing with staging server
+      # caServer: https://acme-staging-v02.api.letsencrypt.org/directory

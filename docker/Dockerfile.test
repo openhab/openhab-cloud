@@ -1,0 +1,26 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies for native modules and health check
+RUN apk add --no-cache python3 make g++ wget
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Build TypeScript (for type checking, though we run with tsx)
+RUN npm run build
+
+# Create logs directory
+RUN mkdir -p logs
+
+EXPOSE 3000
+
+# Use tsx for TypeScript execution
+CMD ["npm", "start"]
