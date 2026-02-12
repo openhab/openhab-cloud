@@ -93,15 +93,33 @@ jobs:
           MONGO_DB: openhab_test
 
       - name: Start application
-        run: npm start &
+        run: |
+          npm start > app.log 2>&1 &
+          echo $! > app.pid
+          sleep 5
+          echo "=== App startup log ==="
+          cat app.log || true
         env:
           NODE_ENV: test
           CONFIG_PATH: ./docker/config.ci.json
 
       - name: Wait for application to be ready
-        run: npx wait-on http://localhost:3000/health -t 30000
+        run: |
+          npx wait-on http://localhost:3000/health -t 60000 || {
+            echo "=== Health check failed, showing logs ==="
+            cat app.log || true
+            echo "=== Checking if process is running ==="
+            cat app.pid | xargs ps -p || true
+            exit 1
+          }
 
       - name: Run integration tests
         run: npm run test:integration
         env:
           SERVER_URL: http://localhost:3000
+
+      - name: Show app logs on failure
+        if: failure()
+        run: |
+          echo "=== Application logs ==="
+          cat app.log || true
