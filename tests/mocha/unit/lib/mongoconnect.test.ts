@@ -106,7 +106,7 @@ describe('MongoConnect', function () {
       expect(uri).to.equal('mongodb://localhost:27017/testdb');
     });
 
-    it('should embed credentials directly in URI (original behavior)', async function () {
+    it('should embed credentials with URL encoding in URI', async function () {
       const config = createMockConfig({
         hasCredentials: true,
         user: 'testuser',
@@ -121,11 +121,11 @@ describe('MongoConnect', function () {
       expect(mockMongoose.connect.calledOnce).to.be.true;
       const [uri] = mockMongoose.connect.firstCall.args;
 
-      // Credentials should be embedded in URI
+      // Simple credentials without special chars remain unchanged after encoding
       expect(uri).to.equal('mongodb://testuser:testpass@localhost:27017/testdb');
     });
 
-    it('should handle passwords with special characters without encoding', async function () {
+    it('should URL-encode passwords with special characters', async function () {
       const config = createMockConfig({
         hasCredentials: true,
         user: 'openhab',
@@ -139,12 +139,11 @@ describe('MongoConnect', function () {
 
       const [uri] = mockMongoose.connect.firstCall.args;
 
-      // Password should be embedded as-is, not URL encoded
-      expect(uri).to.equal('mongodb://openhab:pass%word@localhost/openhab');
-      expect(uri).to.not.include('pass%25word');
+      // % should be encoded as %25
+      expect(uri).to.equal('mongodb://openhab:pass%25word@localhost/openhab');
     });
 
-    it('should handle passwords with @ symbol', async function () {
+    it('should URL-encode passwords with @ symbol', async function () {
       const config = createMockConfig({
         hasCredentials: true,
         user: 'user',
@@ -157,14 +156,15 @@ describe('MongoConnect', function () {
       await mongoConnect.connect(mockMongoose as unknown as Mongoose);
 
       const [uri] = mockMongoose.connect.firstCall.args;
-      expect(uri).to.include('p@ssword');
+      // @ should be encoded as %40
+      expect(uri).to.equal('mongodb://user:p%40ssword@localhost/testdb');
     });
 
-    it('should handle passwords with multiple special characters', async function () {
+    it('should URL-encode passwords with multiple special characters', async function () {
       const config = createMockConfig({
         hasCredentials: true,
         user: 'admin',
-        password: 'p@ss%w0rd#123!',
+        password: 'p@ss:w0rd/123?',
         hosts: 'localhost',
         db: 'testdb',
       });
@@ -173,7 +173,61 @@ describe('MongoConnect', function () {
       await mongoConnect.connect(mockMongoose as unknown as Mongoose);
 
       const [uri] = mockMongoose.connect.firstCall.args;
-      expect(uri).to.equal('mongodb://admin:p@ss%w0rd#123!@localhost/testdb');
+      // @ -> %40, : -> %3A, / -> %2F, ? -> %3F
+      expect(uri).to.equal('mongodb://admin:p%40ss%3Aw0rd%2F123%3F@localhost/testdb');
+    });
+
+    it('should append authSource when configured', async function () {
+      const config = createMockConfig({
+        hasCredentials: true,
+        user: 'testuser',
+        password: 'testpass',
+        hosts: 'localhost:27017',
+        db: 'testdb',
+        authSource: 'admin',
+      });
+      const mongoConnect = new MongoConnect(config, logger as AppLogger);
+
+      await mongoConnect.connect(mockMongoose as unknown as Mongoose);
+
+      const [uri] = mockMongoose.connect.firstCall.args;
+      expect(uri).to.equal('mongodb://testuser:testpass@localhost:27017/testdb?authSource=admin');
+    });
+
+    it('should not append authSource when not configured', async function () {
+      const config = createMockConfig({
+        hasCredentials: true,
+        user: 'testuser',
+        password: 'testpass',
+        hosts: 'localhost:27017',
+        db: 'testdb',
+        authSource: undefined,
+      });
+      const mongoConnect = new MongoConnect(config, logger as AppLogger);
+
+      await mongoConnect.connect(mockMongoose as unknown as Mongoose);
+
+      const [uri] = mockMongoose.connect.firstCall.args;
+      expect(uri).to.not.include('authSource');
+    });
+
+    it('should include authSource in masked URI for logging', async function () {
+      const config = createMockConfig({
+        hasCredentials: true,
+        user: 'testuser',
+        password: 'secretpass',
+        hosts: 'localhost',
+        db: 'testdb',
+        authSource: 'admin',
+      });
+      const mongoConnect = new MongoConnect(config, logger as AppLogger);
+
+      await mongoConnect.connect(mockMongoose as unknown as Mongoose);
+
+      const infoLogs = logger.logs.filter(l => l.level === 'info');
+      const connectLog = infoLogs.find(l => l.message.includes('Trying to connect'));
+      expect(connectLog).to.exist;
+      expect(connectLog!.message).to.include('?authSource=admin');
     });
 
     it('should handle multiple hosts', async function () {

@@ -65,18 +65,26 @@ export class MongoConnect {
 
   /**
    * Build the MongoDB connection URI from configuration.
-   * Credentials are embedded directly in the URI (matching original behavior).
+   * Credentials are URL-encoded to handle special characters safely.
    */
   private getMongoUri(): string {
     let uri = 'mongodb://';
 
-    // Embed credentials directly in URI (no URL encoding - matches original)
+    // Embed credentials with URL encoding to handle special characters (@, :, /, ?, etc.)
     if (this.config.hasDbCredentials()) {
-      uri += this.config.getDbUser() + ':' + this.config.getDbPass() + '@';
+      const user = encodeURIComponent(this.config.getDbUser() || '');
+      const pass = encodeURIComponent(this.config.getDbPass() || '');
+      uri += user + ':' + pass + '@';
     }
 
     uri += this.config.getDbHostsString();
     uri += '/' + this.config.getDbName();
+
+    // Append authSource if configured (common in replica set deployments)
+    const authSource = this.config.getDbAuthSource();
+    if (authSource) {
+      uri += '?authSource=' + encodeURIComponent(authSource);
+    }
 
     return uri;
   }
@@ -93,6 +101,11 @@ export class MongoConnect {
 
     uri += this.config.getDbHostsString();
     uri += '/' + this.config.getDbName();
+
+    const authSource = this.config.getDbAuthSource();
+    if (authSource) {
+      uri += '?authSource=' + authSource;
+    }
 
     return uri;
   }
