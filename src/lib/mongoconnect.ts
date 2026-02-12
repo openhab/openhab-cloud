@@ -65,16 +65,16 @@ export class MongoConnect {
 
   /**
    * Build the MongoDB connection URI from configuration.
-   * Credentials are URL-encoded to handle special characters safely.
+   *
+   * Note: We do NOT URL-encode credentials here because the MongoDB Node.js driver
+   * handles special characters internally. Pre-encoding would cause double-encoding
+   * and authentication failures.
    */
   private getMongoUri(): string {
     let uri = 'mongodb://';
 
-    // Embed credentials with URL encoding to handle special characters (@, :, /, ?, etc.)
     if (this.config.hasDbCredentials()) {
-      const user = encodeURIComponent(this.config.getDbUser() || '');
-      const pass = encodeURIComponent(this.config.getDbPass() || '');
-      uri += user + ':' + pass + '@';
+      uri += this.config.getDbUser() + ':' + this.config.getDbPass() + '@';
     }
 
     uri += this.config.getDbHostsString();
@@ -83,7 +83,7 @@ export class MongoConnect {
     // Append authSource if configured (common in replica set deployments)
     const authSource = this.config.getDbAuthSource();
     if (authSource) {
-      uri += '?authSource=' + encodeURIComponent(authSource);
+      uri += '?authSource=' + authSource;
     }
 
     return uri;
