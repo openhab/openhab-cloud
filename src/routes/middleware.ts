@@ -176,14 +176,12 @@ export function createMiddleware(deps: MiddlewareDependencies) {
     // Check cache first
     const cached = connectionCache.get(openhabId);
     if (cached && Date.now() < cached.expiresAt) {
-      logger.debug(`Connection cache hit for ${openhabId}`);
       applyConnectionInfo(cached.connectionInfo, req, res);
       next();
       return;
     }
 
     const connectionKey = 'connection:' + openhabId;
-    logger.debug(`Connection cache miss, looking up Redis key: ${connectionKey}`);
     redis
       .get(connectionKey)
       .then((result) => {

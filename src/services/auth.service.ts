@@ -104,10 +104,6 @@ export class AuthService {
         return { user: null, message: result.message };
       }
 
-      if (result.user) {
-        this.logger.debug(`User ${username} authenticated successfully`);
-      }
-
       return { user: result.user ?? null, message: result.message };
     } catch (error) {
       this.logger.error('Authentication exception:', error);
