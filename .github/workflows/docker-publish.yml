@@ -108,8 +108,15 @@ jobs:
 
       - name: Run integration tests
         run: npm run test:integration
+        timeout-minutes: 5
         env:
           SERVER_URL: http://localhost:3000
+
+      - name: Show app logs
+        if: always()
+        run: |
+          echo "=== Application logs ==="
+          cat app.log || true
 
   build-and-push:
     name: Build and Push Docker Image

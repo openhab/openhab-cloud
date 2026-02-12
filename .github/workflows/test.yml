@@ -138,11 +138,15 @@ jobs:
 
       - name: Run integration tests
         run: npm run test:integration
+        timeout-minutes: 5
         env:
           SERVER_URL: http://localhost:3000
 
-      - name: Show app logs on failure
-        if: failure()
+      - name: Show app logs
+        if: always()
         run: |
           echo "=== Application logs ==="
           cat app.log || true
+          echo ""
+          echo "=== Process status ==="
+          ps -p $(cat app.pid) || echo "App process not running"

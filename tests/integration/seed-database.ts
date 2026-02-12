@@ -58,6 +58,11 @@ export const TEST_FIXTURES = {
     },
   },
   openhabs: {
+    // Primary openHAB instance (same as testUser's openhab)
+    primary: {
+      uuid: 'test-uuid-001',
+      secret: 'test-secret-001',
+    },
     // Additional openHAB instances for multi-instance testing
     secondary: {
       uuid: 'test-uuid-002',
@@ -174,10 +179,17 @@ async function createTestOpenhabs(
   }
 
   // Create additional openHAB instances (for multi-instance testing)
+  // Note: 'primary' is just a reference to testUser's openhab, so skip it
   const testUserData = users.get('testUser');
   if (testUserData) {
     const accountId = (testUserData.account as { _id: unknown })._id;
     for (const [key, openhabData] of Object.entries(TEST_FIXTURES.openhabs)) {
+      // Skip 'primary' as it's already created for testUser
+      if (key === 'primary') {
+        openhabs.set('primary', openhabs.get('testUser'));
+        continue;
+      }
+
       const openhab = new Openhab({
         uuid: openhabData.uuid,
         secret: openhabData.secret,
