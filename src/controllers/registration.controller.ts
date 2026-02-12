@@ -30,25 +30,18 @@ export interface IUserDeviceRepositoryForRegistration {
     deviceType: DeviceType;
     deviceId: string;
     fcmRegistration?: string;
-    iosDeviceToken?: string;
     deviceModel?: string;
   }): Promise<IUserDevice>;
   updateFcmRegistration(
     id: string | Types.ObjectId,
     fcmRegistration: string
   ): Promise<void>;
-  updateIosDeviceToken(
-    id: string | Types.ObjectId,
-    iosDeviceToken: string
-  ): Promise<void>;
 }
 
 /**
  * Registration Controller
  *
- * Handles device registration for push notifications:
- * - FCM registration (Android and iOS via Firebase)
- * - Apple APNs registration (legacy iOS)
+ * Handles device registration for FCM push notifications (Android and iOS).
  */
 export class RegistrationController {
   constructor(
@@ -133,59 +126,4 @@ export class RegistrationController {
     }
   }
 
-  /**
-   * GET /api/v1/settings/notifications/apple
-   *
-   * Register an iOS device using Apple Push Notification service.
-   * Query params: regId (APNs device token), deviceId, deviceModel (optional)
-   *
-   * @deprecated Use iOS FCM registration instead
-   */
-  registerApple: RequestHandler = async (req, res) => {
-    this.logger.info(`registerApple called, user: ${req.user?.username}, query: ${JSON.stringify(req.query)}`);
-    try {
-      const regIdParam = req.query['regId'];
-      const deviceIdParam = req.query['deviceId'];
-      const deviceModelParam = req.query['deviceModel'];
-
-      // Validate required parameters (match original response format)
-      if (!regIdParam || typeof regIdParam !== 'string' || !deviceIdParam || typeof deviceIdParam !== 'string') {
-        this.logger.warn(`Missing parameters: regId=${!!regIdParam}, deviceId=${!!deviceIdParam}`);
-        res.status(404).send('Parameters missing');
-        return;
-      }
-
-      const regId = regIdParam;
-      const deviceId = deviceIdParam;
-      const deviceModel = typeof deviceModelParam === 'string' ? deviceModelParam : undefined;
-
-      // Try to find existing device
-      const existingDevice = await this.userDeviceRepository.findByOwnerAndDeviceId(
-        req.user!._id,
-        'ios',
-        deviceId
-      );
-
-      if (existingDevice) {
-        // Update the existing device's token
-        this.logger.info(`Found iOS device for user ${req.user!.username}, updating`);
-        await this.userDeviceRepository.updateIosDeviceToken(existingDevice._id, regId);
-        res.status(200).json({ userId: req.user!._id.toString() });
-      } else {
-        // Create new device registration
-        this.logger.info(`Registering new iOS device for user ${req.user!.username}`);
-        const newDevice = await this.userDeviceRepository.create({
-          owner: req.user!._id,
-          deviceType: 'ios',
-          deviceId,
-          iosDeviceToken: regId,
-          deviceModel,
-        });
-        res.status(200).json({ userId: newDevice.owner.toString() });
-      }
-    } catch (error) {
-      this.logger.error('Error registering Apple device:', error);
-      res.status(500).send('Internal server error');
-    }
-  };
 }

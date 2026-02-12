@@ -46,7 +46,6 @@ class MockUserDeviceRepository implements IUserDeviceRepositoryForRegistration {
   devices: IUserDevice[] = [];
   createdDevices: Partial<IUserDevice>[] = [];
   updatedFcmRegistrations: { id: string | Types.ObjectId; fcmRegistration: string }[] = [];
-  updatedIosTokens: { id: string | Types.ObjectId; iosDeviceToken: string }[] = [];
   shouldThrow = false;
 
   async findByOwnerAndDeviceId(
@@ -67,7 +66,6 @@ class MockUserDeviceRepository implements IUserDeviceRepositoryForRegistration {
     deviceType: DeviceType;
     deviceId: string;
     fcmRegistration?: string;
-    iosDeviceToken?: string;
     deviceModel?: string;
   }): Promise<IUserDevice> {
     if (this.shouldThrow) {
@@ -80,7 +78,6 @@ class MockUserDeviceRepository implements IUserDeviceRepositoryForRegistration {
       deviceType: data.deviceType,
       deviceId: data.deviceId,
       fcmRegistration: data.fcmRegistration,
-      iosDeviceToken: data.iosDeviceToken,
       deviceModel: data.deviceModel,
       lastUpdate: new Date(),
     } as IUserDevice;
@@ -91,13 +88,6 @@ class MockUserDeviceRepository implements IUserDeviceRepositoryForRegistration {
       throw new Error('Database error');
     }
     this.updatedFcmRegistrations.push({ id, fcmRegistration });
-  }
-
-  async updateIosDeviceToken(id: string | Types.ObjectId, iosDeviceToken: string): Promise<void> {
-    if (this.shouldThrow) {
-      throw new Error('Database error');
-    }
-    this.updatedIosTokens.push({ id, iosDeviceToken });
   }
 
   addDevice(device: Partial<IUserDevice>): IUserDevice {
@@ -117,7 +107,6 @@ class MockUserDeviceRepository implements IUserDeviceRepositoryForRegistration {
     this.devices = [];
     this.createdDevices = [];
     this.updatedFcmRegistrations = [];
-    this.updatedIosTokens = [];
     this.shouldThrow = false;
   }
 }
@@ -259,62 +248,4 @@ describe('RegistrationController', () => {
     });
   });
 
-  describe('registerApple', () => {
-    it('should register new Apple device with APNs token', async () => {
-      mockReq.query = { regId: 'apns-token', deviceId: 'device-apple' };
-
-      await controller.registerApple(mockReq as Request, mockRes as Response, () => {});
-
-      expect(statusStub.calledWith(200)).to.be.true;
-      expect(jsonStub.calledOnce).to.be.true;
-      expect(jsonStub.firstCall.args[0]).to.have.property('userId');
-      expect(userDeviceRepository.createdDevices).to.have.lengthOf(1);
-      expect(userDeviceRepository.createdDevices[0]!.deviceType).to.equal('ios');
-      expect(userDeviceRepository.createdDevices[0]!.iosDeviceToken).to.equal('apns-token');
-    });
-
-    it('should update existing Apple device token', async () => {
-      const existingDevice = userDeviceRepository.addDevice({
-        deviceType: 'ios',
-        deviceId: 'device-apple',
-      });
-      mockReq.query = { regId: 'new-apns-token', deviceId: 'device-apple' };
-
-      await controller.registerApple(mockReq as Request, mockRes as Response, () => {});
-
-      expect(statusStub.calledWith(200)).to.be.true;
-      expect(jsonStub.calledOnce).to.be.true;
-      expect(jsonStub.firstCall.args[0]).to.have.property('userId');
-      expect(userDeviceRepository.updatedIosTokens).to.have.lengthOf(1);
-      expect(userDeviceRepository.updatedIosTokens[0]!.id).to.deep.equal(existingDevice._id);
-    });
-
-    it('should return 404 when regId is missing', async () => {
-      mockReq.query = { deviceId: 'device-apple' };
-
-      await controller.registerApple(mockReq as Request, mockRes as Response, () => {});
-
-      expect(statusStub.calledWith(404)).to.be.true;
-      expect(sendStub.calledWith('Parameters missing')).to.be.true;
-    });
-
-    it('should return 404 when deviceId is missing', async () => {
-      mockReq.query = { regId: 'apns-token' };
-
-      await controller.registerApple(mockReq as Request, mockRes as Response, () => {});
-
-      expect(statusStub.calledWith(404)).to.be.true;
-      expect(sendStub.calledWith('Parameters missing')).to.be.true;
-    });
-
-    it('should handle repository errors', async () => {
-      userDeviceRepository.shouldThrow = true;
-      mockReq.query = { regId: 'apns-token', deviceId: 'device-apple' };
-
-      await controller.registerApple(mockReq as Request, mockRes as Response, () => {});
-
-      expect(statusStub.calledWith(500)).to.be.true;
-      expect(logger.logs.some(l => l.level === 'error')).to.be.true;
-    });
-  });
 });

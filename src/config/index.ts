@@ -23,7 +23,6 @@ export type {
   RedisConfig,
   MailerConfig,
   GCMConfig,
-  APNConfig,
   IFTTTConfig,
   LoggerConfig,
 } from './schema';
@@ -399,13 +398,6 @@ export class SystemConfigManager {
    */
   getGCMConfig() {
     return this.config.gcm;
-  }
-
-  /**
-   * Get APNs configuration (if configured)
-   */
-  getAPNConfig() {
-    return this.config.apn;
   }
 
   /**

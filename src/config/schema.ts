@@ -94,17 +94,6 @@ const GCMSchema = z.object({
 }).optional();
 
 /**
- * APNs configuration schema
- */
-const APNSchema = z.object({
-  team: z.string().min(1),
-  keyId: z.string().min(1),
-  host: z.string().default('api.push.apple.com'),
-  defaultTopic: z.string().min(1),
-  signingKey: z.string().min(1),
-}).optional();
-
-/**
  * IFTTT configuration schema
  */
 const IFTTTSchema = z.object({
@@ -138,7 +127,6 @@ export const ConfigSchema = z.object({
   redis: RedisSchema,
   mailer: MailerSchema,
   gcm: GCMSchema,
-  apn: APNSchema,
   ifttt: IFTTTSchema,
   legal: LegalSchema,
   apps: AppsSchema,
@@ -174,11 +162,6 @@ export type MailerConfig = NonNullable<z.infer<typeof MailerSchema>>;
  * Inferred GCM configuration type
  */
 export type GCMConfig = NonNullable<z.infer<typeof GCMSchema>>;
-
-/**
- * Inferred APNs configuration type
- */
-export type APNConfig = NonNullable<z.infer<typeof APNSchema>>;
 
 /**
  * Inferred IFTTT configuration type

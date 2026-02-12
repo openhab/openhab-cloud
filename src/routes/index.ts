@@ -306,12 +306,6 @@ export function createRoutes(deps: RoutesDependencies): Router {
           lastUpdate: new Date(),
         });
       },
-      updateIosDeviceToken: async (id, iosDeviceToken) => {
-        await UserDevice.findByIdAndUpdate(id, {
-          iosDeviceToken,
-          lastUpdate: new Date(),
-        });
-      },
     },
     logger
   );
@@ -663,7 +657,6 @@ export function createRoutes(deps: RoutesDependencies): Router {
 
   router.all('/addAndroidRegistration*', ensureRestAuthenticated, setOpenhab, preassembleBody, registrationController.registerAndroid);
   router.all('/addIosRegistration*', ensureRestAuthenticated, setOpenhab, preassembleBody, registrationController.registerIos);
-  router.all('/addAppleRegistration*', ensureRestAuthenticated, setOpenhab, preassembleBody, registrationController.registerApple);
 
   // ============================================
   // Proxy Routes

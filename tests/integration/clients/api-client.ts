@@ -189,35 +189,27 @@ export class APITestClient {
   // ============================================
 
   /**
-   * Register Android device
+   * Register Android device (FCM)
    */
   async registerAndroidDevice(
-    token: string,
+    fcmToken: string,
     deviceInfo: DeviceInfo
   ): Promise<supertest.Response> {
-    return this.post('/addAndroidRegistration', {
-      regId: token,
-      deviceId: deviceInfo.deviceId,
-      deviceModel: deviceInfo.deviceModel,
-      app_version: deviceInfo.appVersion,
-      os_version: deviceInfo.osVersion,
-    });
+    return this.get(
+      `/addAndroidRegistration?regId=${encodeURIComponent(fcmToken)}&deviceId=${encodeURIComponent(deviceInfo.deviceId)}&deviceModel=${encodeURIComponent(deviceInfo.deviceModel || '')}`
+    );
   }
 
   /**
-   * Register iOS device
+   * Register iOS device (FCM)
    */
   async registerIOSDevice(
-    token: string,
+    fcmToken: string,
     deviceInfo: DeviceInfo
   ): Promise<supertest.Response> {
-    return this.post('/addAppleRegistration', {
-      deviceToken: token,
-      deviceId: deviceInfo.deviceId,
-      deviceModel: deviceInfo.deviceModel,
-      app_version: deviceInfo.appVersion,
-      os_version: deviceInfo.osVersion,
-    });
+    return this.get(
+      `/addIosRegistration?regId=${encodeURIComponent(fcmToken)}&deviceId=${encodeURIComponent(deviceInfo.deviceId)}&deviceModel=${encodeURIComponent(deviceInfo.deviceModel || '')}`
+    );
   }
 
   // ============================================
