@@ -24,6 +24,56 @@ import type { AppLogger } from '../lib/logger';
 import type { ConnectionInfo } from '../types/connection';
 import type { IOpenhab } from '../types/models';
 
+/**
+ * Cache entry for connection info
+ */
+interface ConnectionCacheEntry {
+  connectionInfo: ConnectionInfo | null;
+  expiresAt: number;
+}
+
+/**
+ * In-memory cache for connection info lookups
+ * Reduces Redis calls for frequently accessed connection status
+ */
+const connectionCache = new Map<string, ConnectionCacheEntry>();
+
+// Default cache TTL: 30 seconds
+const CONNECTION_CACHE_TTL_MS = 30 * 1000;
+
+// Cleanup interval: run every 60 seconds
+const CACHE_CLEANUP_INTERVAL_MS = 60 * 1000;
+
+// Periodic cleanup of expired cache entries
+// Use unref() to allow Node.js to exit even while timer is active
+const cleanupTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of connectionCache) {
+    if (now > entry.expiresAt) {
+      connectionCache.delete(key);
+    }
+  }
+}, CACHE_CLEANUP_INTERVAL_MS);
+cleanupTimer.unref();
+
+/**
+ * Invalidate connection cache for an openHAB instance
+ * Call this when connection status changes (connect/disconnect)
+ */
+export function invalidateConnectionCache(openhabId: string): void {
+  connectionCache.delete(openhabId);
+}
+
+/**
+ * Get connection cache stats (for debugging/monitoring)
+ */
+export function getConnectionCacheStats(): { size: number; ttlMs: number } {
+  return {
+    size: connectionCache.size,
+    ttlMs: CONNECTION_CACHE_TTL_MS,
+  };
+}
+
 export interface MiddlewareDependencies {
   redis: PromisifiedRedisClient;
   logger: AppLogger;
@@ -84,7 +134,32 @@ export function createMiddleware(deps: MiddlewareDependencies) {
   };
 
   /**
-   * Helper to lookup connection info from Redis and set locals
+   * Apply connection info to request and response locals
+   */
+  const applyConnectionInfo = (
+    connInfo: ConnectionInfo | null,
+    req: Request,
+    res: Response
+  ): void => {
+    if (!connInfo) {
+      req.connectionInfo = {};
+      res.locals['openhabstatus'] = 'offline';
+      res.locals['openhabMajorVersion'] = 0;
+    } else {
+      req.connectionInfo = connInfo;
+      res.locals['openhabstatus'] = 'online';
+      const version = connInfo.openhabVersion;
+      if (version) {
+        const majorVersion = version.split('.')[0] || '0';
+        res.locals['openhabMajorVersion'] = parseInt(majorVersion, 10);
+      } else {
+        res.locals['openhabMajorVersion'] = 0;
+      }
+    }
+  };
+
+  /**
+   * Helper to lookup connection info from Redis (with caching) and set locals
    */
   const lookupConnectionInfo = (
     openhab: IOpenhab,
@@ -97,45 +172,44 @@ export function createMiddleware(deps: MiddlewareDependencies) {
     res.locals['openhablastonline'] = openhab.last_online;
 
     const openhabId = openhab._id?.toString() || '';
+
+    // Check cache first
+    const cached = connectionCache.get(openhabId);
+    if (cached && Date.now() < cached.expiresAt) {
+      logger.debug(`Connection cache hit for ${openhabId}`);
+      applyConnectionInfo(cached.connectionInfo, req, res);
+      next();
+      return;
+    }
+
     const connectionKey = 'connection:' + openhabId;
-    logger.debug(`Looking up connection status for key: ${connectionKey}`);
+    logger.debug(`Connection cache miss, looking up Redis key: ${connectionKey}`);
     redis
       .get(connectionKey)
       .then((result) => {
-        logger.debug(`Connection lookup result for ${connectionKey}: ${result ? 'found' : 'not found'}`);
-        if (!result) {
-          req.connectionInfo = {};
-          res.locals['openhabstatus'] = 'offline';
-          res.locals['openhabMajorVersion'] = 0;
-        } else {
-          let connInfo: ConnectionInfo;
+        let connInfo: ConnectionInfo | null = null;
+
+        if (result) {
           try {
             connInfo = JSON.parse(result) as ConnectionInfo;
           } catch (parseError) {
             logger.error('Failed to parse Redis connection info: ' + parseError);
-            req.connectionInfo = {};
-            res.locals['openhabstatus'] = 'offline';
-            res.locals['openhabMajorVersion'] = 0;
-            next();
-            return;
-          }
-          req.connectionInfo = connInfo;
-          res.locals['openhabstatus'] = 'online';
-          const version = connInfo.openhabVersion;
-          if (version) {
-            const majorVersion = version.split('.')[0] || '0';
-            res.locals['openhabMajorVersion'] = parseInt(majorVersion, 10);
-          } else {
-            res.locals['openhabMajorVersion'] = 0;
           }
         }
+
+        // Cache the result (including null for offline)
+        connectionCache.set(openhabId, {
+          connectionInfo: connInfo,
+          expiresAt: Date.now() + CONNECTION_CACHE_TTL_MS,
+        });
+
+        applyConnectionInfo(connInfo, req, res);
         next();
       })
       .catch((redisError) => {
         logger.error('openHAB redis lookup error: ' + redisError);
-        req.connectionInfo = {};
-        res.locals['openhabstatus'] = 'offline';
-        res.locals['openhabMajorVersion'] = 0;
+        // Don't cache errors - let the next request try again
+        applyConnectionInfo(null, req, res);
         next();
       });
   };

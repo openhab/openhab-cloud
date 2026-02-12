@@ -29,6 +29,7 @@ import type {
 import { ConnectionManager } from './connection-manager';
 import { ProxyHandler } from './proxy-handler';
 import { RequestTracker } from './request-tracker';
+import { invalidateConnectionCache } from '../routes/middleware';
 
 /**
  * Repository interface for User operations
@@ -216,6 +217,9 @@ export class SocketServer {
       // Join room for this openHAB UUID
       socket.join(openhabSocket.handshake.uuid!);
 
+      // Invalidate connection cache so middleware sees updated status
+      invalidateConnectionCache(openhabSocket.openhabId!);
+
       // Save connection event
       this.saveConnectionEvent(openhabSocket.openhab!, 'online', 'good');
 
@@ -300,6 +304,9 @@ export class SocketServer {
         socket.openhab._id.toString()
       );
       this.logger.info(`Lock released for ${socket.handshake.uuid}`);
+
+      // Invalidate connection cache so middleware sees updated status
+      invalidateConnectionCache(socket.openhabId!);
 
       // Save offline event
       this.saveConnectionEvent(socket.openhab, 'offline', 'bad');
