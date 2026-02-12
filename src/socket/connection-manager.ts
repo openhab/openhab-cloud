@@ -262,12 +262,15 @@ export class ConnectionManager {
       }
 
       // Delete the lock
+      this.logger.info(`Deleting lock key: ${lockKey}`);
       const multi = this.redis.multi();
       multi.del(lockKey);
       const results = await multi.exec();
 
       if (!results) {
         this.logger.info(`Lock was mutated before delete for ${lockKey}`);
+      } else {
+        this.logger.info(`Lock key deleted successfully: ${lockKey}`);
       }
 
       // Update last_online timestamp

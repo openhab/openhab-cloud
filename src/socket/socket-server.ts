@@ -291,14 +291,22 @@ export class SocketServer {
     );
 
     if (socket.redisLockKey && socket.connectionId && socket.openhab) {
+      this.logger.info(
+        `Releasing lock ${socket.redisLockKey} for connectionId ${socket.connectionId}`
+      );
       await this.connectionManager.releaseLock(
         socket.redisLockKey,
         socket.connectionId,
         socket.openhab._id.toString()
       );
+      this.logger.info(`Lock released for ${socket.handshake.uuid}`);
 
       // Save offline event
       this.saveConnectionEvent(socket.openhab, 'offline', 'bad');
+    } else {
+      this.logger.warn(
+        `Cannot release lock - missing data: redisLockKey=${socket.redisLockKey}, connectionId=${socket.connectionId}, openhab=${!!socket.openhab}`
+      );
     }
   }
 

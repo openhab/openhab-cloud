@@ -97,9 +97,12 @@ export function createMiddleware(deps: MiddlewareDependencies) {
     res.locals['openhablastonline'] = openhab.last_online;
 
     const openhabId = openhab._id?.toString() || '';
+    const connectionKey = 'connection:' + openhabId;
+    logger.debug(`Looking up connection status for key: ${connectionKey}`);
     redis
-      .get('connection:' + openhabId)
+      .get(connectionKey)
       .then((result) => {
+        logger.debug(`Connection lookup result for ${connectionKey}: ${result ? 'found' : 'not found'}`);
         if (!result) {
           req.connectionInfo = {};
           res.locals['openhabstatus'] = 'offline';
@@ -182,10 +185,12 @@ export function createMiddleware(deps: MiddlewareDependencies) {
     }
 
     if (req.connectionInfo.serverAddress !== systemConfig.getInternalAddress()) {
-      // Redirect to correct cloud server, preserving the original protocol and query string
-      const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
-      const queryString = req.originalUrl.includes('?') ? req.originalUrl.substring(req.originalUrl.indexOf('?')) : '';
-      res.redirect(307, protocol + '://' + req.connectionInfo.serverAddress + req.path + queryString);
+      // Redirect to correct cloud server using http:// for internal nginx routing
+      // nginx intercepts these internal redirects and proxies them, not the client
+      logger.debug(
+        `Redirecting to correct server: ${req.connectionInfo.serverAddress} (current: ${systemConfig.getInternalAddress()})`
+      );
+      res.redirect(307, 'http://' + req.connectionInfo.serverAddress + req.path);
       return;
     }
 
