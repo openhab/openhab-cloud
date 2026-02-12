@@ -96,22 +96,45 @@ jobs:
         run: |
           npm start > app.log 2>&1 &
           echo $! > app.pid
-          sleep 5
-          echo "=== App startup log ==="
-          cat app.log || true
+          echo "App started with PID $(cat app.pid)"
         env:
           NODE_ENV: test
           CONFIG_PATH: ./docker/config.ci.json
 
       - name: Wait for application to be ready
         run: |
-          npx wait-on http://localhost:3000/health -t 60000 || {
-            echo "=== Health check failed, showing logs ==="
-            cat app.log || true
-            echo "=== Checking if process is running ==="
-            cat app.pid | xargs ps -p || true
-            exit 1
-          }
+          echo "Waiting for app to start..."
+          for i in {1..60}; do
+            sleep 1
+
+            # Check if process is still running
+            if ! ps -p $(cat app.pid) > /dev/null 2>&1; then
+              echo "=== Process died! Showing logs ==="
+              cat app.log || true
+              exit 1
+            fi
+
+            # Try health check
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health 2>/dev/null || echo "000")
+            echo "Attempt $i: HTTP $RESPONSE"
+
+            if [ "$RESPONSE" = "200" ]; then
+              echo "Health check passed!"
+              echo "=== Startup logs ==="
+              cat app.log || true
+              exit 0
+            fi
+
+            # Show more detail if we get a response but not 200
+            if [ "$RESPONSE" != "000" ]; then
+              echo "Got response, checking body:"
+              curl -s http://localhost:3000/health || true
+            fi
+          done
+
+          echo "=== Timeout - showing full logs ==="
+          cat app.log || true
+          exit 1
 
       - name: Run integration tests
         run: npm run test:integration
