@@ -77,6 +77,11 @@ export interface INotificationService {
   sendToUser(userId: string, payload: NotificationPayload): Promise<void>;
 
   /**
+   * Save a notification without sending push (for log notifications)
+   */
+  saveOnly(userId: string, payload: NotificationPayload): Promise<void>;
+
+  /**
    * Hide/dismiss a notification on user devices
    */
   hideNotification(userId: string, notificationId: string): Promise<void>;

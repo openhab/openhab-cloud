@@ -113,7 +113,7 @@ export class RegistrationController {
         this.logger.info(`Found ${deviceType} device for user ${req.user!.username}, updating fcmReg`);
         await this.userDeviceRepository.updateFcmRegistration(existingDevice._id, regId);
         this.logger.info(`Updated device ${existingDevice._id}`);
-        res.status(200).send('Updated');
+        res.status(200).json({ userId: req.user!._id.toString() });
       } else {
         // Create new device registration
         this.logger.info(`Registering new ${deviceType} device for user ${req.user!.username}, owner: ${req.user!._id}`);
@@ -125,7 +125,7 @@ export class RegistrationController {
           deviceModel,
         });
         this.logger.info(`Created device ${newDevice._id} for owner ${newDevice.owner}`);
-        res.status(200).send('Added');
+        res.status(200).json({ userId: newDevice.owner.toString() });
       }
     } catch (error) {
       this.logger.error('Error registering device:', error);
@@ -170,18 +170,18 @@ export class RegistrationController {
         // Update the existing device's token
         this.logger.info(`Found iOS device for user ${req.user!.username}, updating`);
         await this.userDeviceRepository.updateIosDeviceToken(existingDevice._id, regId);
-        res.status(200).send('Updated');
+        res.status(200).json({ userId: req.user!._id.toString() });
       } else {
         // Create new device registration
         this.logger.info(`Registering new iOS device for user ${req.user!.username}`);
-        await this.userDeviceRepository.create({
+        const newDevice = await this.userDeviceRepository.create({
           owner: req.user!._id,
           deviceType: 'ios',
           deviceId,
           iosDeviceToken: regId,
           deviceModel,
         });
-        res.status(200).send('Added');
+        res.status(200).json({ userId: newDevice.owner.toString() });
       }
     } catch (error) {
       this.logger.error('Error registering Apple device:', error);

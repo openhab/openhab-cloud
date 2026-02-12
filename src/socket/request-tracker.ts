@@ -139,15 +139,18 @@ export class RequestTracker {
   /**
    * Clean up orphaned requests (finished but not removed)
    *
-   * @returns Array of removed request IDs
+   * @returns Array of removed requests with their IDs and openHAB UUIDs
    */
-  cleanupOrphaned(): number[] {
-    const removed: number[] = [];
+  cleanupOrphaned(): Array<{ requestId: number; openhabUuid: string }> {
+    const removed: Array<{ requestId: number; openhabUuid: string }> = [];
 
     for (const [requestId, request] of this.requests) {
       if (request.finished) {
         this.requests.delete(requestId);
-        removed.push(requestId);
+        removed.push({
+          requestId,
+          openhabUuid: request.openhab.uuid,
+        });
       }
     }
 

@@ -196,22 +196,22 @@ describe('RegistrationController', () => {
       expect(userDeviceRepository.createdDevices[0]!.deviceModel).to.equal('Pixel 5');
     });
 
-    it('should return 400 when regId is missing', async () => {
+    it('should return 404 when regId is missing', async () => {
       mockReq.query = { deviceId: 'device-abc' };
 
       await controller.registerAndroid(mockReq as Request, mockRes as Response, () => {});
 
-      expect(statusStub.calledWith(400)).to.be.true;
-      expect(jsonStub.firstCall.args[0].error).to.include('Registration ID');
+      expect(statusStub.calledWith(404)).to.be.true;
+      expect(sendStub.calledWith('Parameters missing')).to.be.true;
     });
 
-    it('should return 400 when deviceId is missing', async () => {
+    it('should return 404 when deviceId is missing', async () => {
       mockReq.query = { regId: 'fcm-token' };
 
       await controller.registerAndroid(mockReq as Request, mockRes as Response, () => {});
 
-      expect(statusStub.calledWith(400)).to.be.true;
-      expect(jsonStub.firstCall.args[0].error).to.include('Device ID');
+      expect(statusStub.calledWith(404)).to.be.true;
+      expect(sendStub.calledWith('Parameters missing')).to.be.true;
     });
 
     it('should handle repository errors', async () => {
@@ -249,12 +249,13 @@ describe('RegistrationController', () => {
       expect(userDeviceRepository.updatedFcmRegistrations[0]!.id).to.deep.equal(existingDevice._id);
     });
 
-    it('should return 400 when regId is missing', async () => {
+    it('should return 404 when regId is missing', async () => {
       mockReq.query = { deviceId: 'device-ios' };
 
       await controller.registerIos(mockReq as Request, mockRes as Response, () => {});
 
-      expect(statusStub.calledWith(400)).to.be.true;
+      expect(statusStub.calledWith(404)).to.be.true;
+      expect(sendStub.calledWith('Parameters missing')).to.be.true;
     });
   });
 
@@ -265,7 +266,8 @@ describe('RegistrationController', () => {
       await controller.registerApple(mockReq as Request, mockRes as Response, () => {});
 
       expect(statusStub.calledWith(200)).to.be.true;
-      expect(sendStub.calledWith('Added')).to.be.true;
+      expect(jsonStub.calledOnce).to.be.true;
+      expect(jsonStub.firstCall.args[0]).to.have.property('userId');
       expect(userDeviceRepository.createdDevices).to.have.lengthOf(1);
       expect(userDeviceRepository.createdDevices[0]!.deviceType).to.equal('ios');
       expect(userDeviceRepository.createdDevices[0]!.iosDeviceToken).to.equal('apns-token');
@@ -281,25 +283,28 @@ describe('RegistrationController', () => {
       await controller.registerApple(mockReq as Request, mockRes as Response, () => {});
 
       expect(statusStub.calledWith(200)).to.be.true;
-      expect(sendStub.calledWith('Updated')).to.be.true;
+      expect(jsonStub.calledOnce).to.be.true;
+      expect(jsonStub.firstCall.args[0]).to.have.property('userId');
       expect(userDeviceRepository.updatedIosTokens).to.have.lengthOf(1);
       expect(userDeviceRepository.updatedIosTokens[0]!.id).to.deep.equal(existingDevice._id);
     });
 
-    it('should return 400 when regId is missing', async () => {
+    it('should return 404 when regId is missing', async () => {
       mockReq.query = { deviceId: 'device-apple' };
 
       await controller.registerApple(mockReq as Request, mockRes as Response, () => {});
 
-      expect(statusStub.calledWith(400)).to.be.true;
+      expect(statusStub.calledWith(404)).to.be.true;
+      expect(sendStub.calledWith('Parameters missing')).to.be.true;
     });
 
-    it('should return 400 when deviceId is missing', async () => {
+    it('should return 404 when deviceId is missing', async () => {
       mockReq.query = { regId: 'apns-token' };
 
       await controller.registerApple(mockReq as Request, mockRes as Response, () => {});
 
-      expect(statusStub.calledWith(400)).to.be.true;
+      expect(statusStub.calledWith(404)).to.be.true;
+      expect(sendStub.calledWith('Parameters missing')).to.be.true;
     });
 
     it('should handle repository errors', async () => {

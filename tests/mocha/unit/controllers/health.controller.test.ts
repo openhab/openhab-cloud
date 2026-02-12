@@ -23,10 +23,19 @@ describe('HealthController', () => {
   let config: HealthControllerConfig;
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
-  let connectionStub: sinon.SinonStub;
   let statusStub: sinon.SinonStub;
   let jsonStub: sinon.SinonStub;
   let sendStub: sinon.SinonStub;
+  let originalReadyState: PropertyDescriptor | undefined;
+
+  // Helper to mock mongoose readyState
+  function setMongooseReadyState(state: number): void {
+    Object.defineProperty(mongoose.connection, 'readyState', {
+      value: state,
+      writable: true,
+      configurable: true,
+    });
+  }
 
   beforeEach(() => {
     config = {
@@ -44,12 +53,16 @@ describe('HealthController', () => {
       send: sendStub,
     };
 
-    // Stub mongoose connection readyState
-    connectionStub = sinon.stub(mongoose.connection, 'readyState');
+    // Save original readyState descriptor
+    originalReadyState = Object.getOwnPropertyDescriptor(mongoose.connection, 'readyState');
   });
 
   afterEach(() => {
     sinon.restore();
+    // Restore original readyState
+    if (originalReadyState) {
+      Object.defineProperty(mongoose.connection, 'readyState', originalReadyState);
+    }
   });
 
   describe('getHealth', () => {
@@ -64,7 +77,7 @@ describe('HealthController', () => {
     });
 
     it('should return 200 with OK status when mongoose is connected', () => {
-      connectionStub.value(1); // 1 = connected
+      setMongooseReadyState(1); // 1 = connected
 
       controller.getHealth(mockReq as Request, mockRes as Response, () => {});
 
@@ -78,7 +91,7 @@ describe('HealthController', () => {
     });
 
     it('should return 500 with error when mongoose is disconnected', () => {
-      connectionStub.value(0); // 0 = disconnected
+      setMongooseReadyState(0); // 0 = disconnected
 
       controller.getHealth(mockReq as Request, mockRes as Response, () => {});
 
@@ -94,7 +107,7 @@ describe('HealthController', () => {
     });
 
     it('should return 500 with error when mongoose is connecting', () => {
-      connectionStub.value(2); // 2 = connecting
+      setMongooseReadyState(2); // 2 = connecting
 
       controller.getHealth(mockReq as Request, mockRes as Response, () => {});
 
@@ -106,7 +119,7 @@ describe('HealthController', () => {
     });
 
     it('should return 500 with error when mongoose is disconnecting', () => {
-      connectionStub.value(3); // 3 = disconnecting
+      setMongooseReadyState(3); // 3 = disconnecting
 
       controller.getHealth(mockReq as Request, mockRes as Response, () => {});
 

@@ -404,9 +404,22 @@ export class SocketServer {
         return;
       }
 
-      // Log notification just saves to database, doesn't send push
-      // This is handled by the notification service's save method
-      this.logger.info(`Log notification for ${users.length} users: ${data.message}`);
+      // Pass entire data object to preserve all custom properties (like media-attachment-url)
+      const payload: NotificationPayload = {
+        ...data,
+        message: data.message, // ensure required field is present
+        type: data.type as 'notification' | 'hideNotification' | undefined,
+      };
+
+      // Save notification for each user (no push)
+      this.logger.info(`Saving log notification for ${users.length} users: ${data.message}`);
+      for (const user of users) {
+        try {
+          await this.notificationService.saveOnly(user._id.toString(), payload);
+        } catch (error) {
+          this.logger.warn(`Could not save log notification for ${user.username}:`, error);
+        }
+      }
     } catch (error) {
       this.logger.error(`Error handling log notification:`, error);
     }

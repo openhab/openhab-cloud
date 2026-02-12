@@ -112,6 +112,42 @@ export class NotificationService implements INotificationService {
   }
 
   /**
+   * Save a notification without sending push
+   *
+   * Used for "log notifications" that should be persisted but not trigger push.
+   *
+   * @param userId - The user ID to save notification for
+   * @param payload - The notification payload
+   * @throws PayloadTooLargeError if payload exceeds size limit
+   */
+  async saveOnly(userId: string, payload: NotificationPayload): Promise<void> {
+    // Validate payload size
+    const payloadJson = JSON.stringify(payload);
+    const payloadSize = Buffer.byteLength(payloadJson, 'utf8');
+
+    if (payloadSize > MAX_PAYLOAD_SIZE_BYTES) {
+      throw new PayloadTooLargeError(payloadSize, MAX_PAYLOAD_SIZE_BYTES);
+    }
+
+    // Normalize tag/severity (tag is replacing severity in OH 4.2)
+    const normalizedPayload: NotificationPayload = {
+      ...payload,
+      tag: payload.tag ?? payload.severity,
+    };
+
+    // Persist notification (no push)
+    const notification = await this.notificationRepository.create({
+      user: userId as unknown as Types.ObjectId,
+      message: normalizedPayload.message,
+      icon: normalizedPayload.icon,
+      severity: normalizedPayload.tag, // legacy field
+      payload: normalizedPayload,
+    });
+
+    this.logger.info(`Log notification ${notification._id} saved for user ${userId} (no push)`);
+  }
+
+  /**
    * Hide/dismiss a notification on user devices
    *
    * Sends a "hideNotification" command to all user devices via FCM.

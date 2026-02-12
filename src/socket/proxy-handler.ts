@@ -191,17 +191,16 @@ export class ProxyHandler {
    * weren't properly cleaned up, and notify openHAB to cancel them.
    */
   cleanupOrphanedRequests(): void {
-    const orphanedIds = this.requestTracker.cleanupOrphaned();
+    const orphaned = this.requestTracker.cleanupOrphaned();
 
-    for (const requestId of orphanedIds) {
+    for (const { requestId, openhabUuid } of orphaned) {
       this.logger.debug(`Expiring orphaned response ${requestId}`);
-      // Note: We can't easily notify openHAB here because we don't have
-      // the UUID. In a future refactor, we could store the UUID in the
-      // tracked request.
+      // Notify openHAB to cancel processing this request
+      this.io.sockets.in(openhabUuid).emit('cancel', { id: requestId });
     }
 
-    if (orphanedIds.length > 0) {
-      this.logger.info(`Cleaned up ${orphanedIds.length} orphaned requests`);
+    if (orphaned.length > 0) {
+      this.logger.info(`Cleaned up ${orphaned.length} orphaned requests`);
     }
   }
 

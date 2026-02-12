@@ -191,7 +191,7 @@ describe('RequestTracker', () => {
   });
 
   describe('cleanupOrphaned', () => {
-    it('should remove finished requests', () => {
+    it('should remove finished requests and return their IDs and UUIDs', () => {
       const id1 = requestTracker.add(mockOpenhab, mockResponse as Response);
       const id2 = requestTracker.add(mockOpenhab, mockResponse as Response);
       const id3 = requestTracker.add(mockOpenhab, mockResponse as Response);
@@ -201,12 +201,16 @@ describe('RequestTracker', () => {
 
       const removed = requestTracker.cleanupOrphaned();
 
-      expect(removed).to.include(id1);
-      expect(removed).to.include(id3);
-      expect(removed).to.not.include(id2);
+      const removedIds = removed.map(r => r.requestId);
+      expect(removedIds).to.include(id1);
+      expect(removedIds).to.include(id3);
+      expect(removedIds).to.not.include(id2);
       expect(requestTracker.has(id1)).to.be.false;
       expect(requestTracker.has(id2)).to.be.true;
       expect(requestTracker.has(id3)).to.be.false;
+
+      // Verify UUID is included
+      expect(removed[0]!.openhabUuid).to.equal('test-uuid');
     });
 
     it('should return empty array when no orphaned requests', () => {

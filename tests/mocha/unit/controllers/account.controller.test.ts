@@ -110,6 +110,7 @@ class MockUserService {
 
 class MockOpenhabService {
   updateCredentialsResult = { success: true };
+  createResult: { success: boolean; error?: string } = { success: true };
 
   async updateCredentials(
     _openhabId: Types.ObjectId,
@@ -119,8 +120,17 @@ class MockOpenhabService {
     return this.updateCredentialsResult;
   }
 
+  async create(_data: {
+    account: Types.ObjectId;
+    uuid: string;
+    secret: string;
+  }): Promise<{ success: boolean; error?: string }> {
+    return this.createResult;
+  }
+
   clear(): void {
     this.updateCredentialsResult = { success: true };
+    this.createResult = { success: true };
   }
 }
 
@@ -362,12 +372,22 @@ describe('AccountController', () => {
       expect(redirectStub.calledWith('/account')).to.be.true;
     });
 
-    it('should show error when openhab not found', async () => {
+    it('should create new openhab when none exists', async () => {
       mockReq.openhab = undefined;
 
       await controller.postAccount(mockReq as Request, mockRes as Response, () => {});
 
-      expect(flashStub.calledWith('error', 'No openHAB instance found')).to.be.true;
+      expect(flashStub.calledWith('info', 'openHAB successfully registered')).to.be.true;
+      expect(redirectStub.calledWith('/account')).to.be.true;
+    });
+
+    it('should show error when openhab creation fails', async () => {
+      mockReq.openhab = undefined;
+      openhabService.createResult = { success: false, error: 'UUID already exists' };
+
+      await controller.postAccount(mockReq as Request, mockRes as Response, () => {});
+
+      expect(flashStub.calledWith('error', 'UUID already exists')).to.be.true;
       expect(redirectStub.calledWith('/account')).to.be.true;
     });
 

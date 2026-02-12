@@ -195,15 +195,11 @@ export class ApiController {
         return;
       }
 
+      // Pass entire body to preserve all custom properties (like media-attachment-url)
       const data: NotificationPayload = {
-        message: body.message,
-        title: typeof body.title === 'string' ? body.title : undefined,
-        icon: typeof body.icon === 'string' ? body.icon : undefined,
-        severity: typeof body.severity === 'string' ? body.severity : undefined,
-        tag: typeof body.tag === 'string' ? body.tag : undefined,
-        type: body.type === 'hideNotification' ? 'hideNotification' : 'notification',
-        'reference-id': typeof body['reference-id'] === 'string' ? body['reference-id'] : undefined,
-        actions: typeof body.actions === 'string' ? body.actions : undefined,
+        ...body,
+        message: body.message, // ensure required field is present
+        type: (body.type === 'hideNotification' ? 'hideNotification' : 'notification') as 'notification' | 'hideNotification',
       };
 
       this.logger.debug('sendNotificationToUser ' + JSON.stringify(data));

@@ -282,6 +282,60 @@ describe('NotificationService', () => {
     });
   });
 
+  describe('saveOnly', () => {
+    const userId = new Types.ObjectId().toString();
+    const payload: NotificationPayload = {
+      message: 'Log notification',
+      icon: 'info',
+      severity: 'low',
+    };
+
+    it('should save notification to database without sending push', async () => {
+      userDeviceRepo.addDevice({ fcmRegistration: 'fcm-token' });
+
+      await service.saveOnly(userId, payload);
+
+      // Notification should be saved
+      expect(notificationRepo.notifications).to.have.lengthOf(1);
+      expect(notificationRepo.notifications[0]!.message).to.equal('Log notification');
+
+      // FCM should NOT be called
+      expect(fcmProvider.sendCalls).to.have.lengthOf(0);
+    });
+
+    it('should normalize tag from severity', async () => {
+      await service.saveOnly(userId, { message: 'Test', severity: 'warning' });
+
+      expect(notificationRepo.notifications[0]!.payload.tag).to.equal('warning');
+    });
+
+    it('should throw PayloadTooLargeError when payload exceeds 1MB', async () => {
+      const largePayload: NotificationPayload = {
+        message: 'x'.repeat(1048577),
+      };
+
+      try {
+        await service.saveOnly(userId, largePayload);
+        expect.fail('Should have thrown PayloadTooLargeError');
+      } catch (error) {
+        expect(error).to.be.instanceOf(PayloadTooLargeError);
+      }
+    });
+
+    it('should preserve custom properties like media-attachment-url', async () => {
+      const payloadWithMedia: NotificationPayload = {
+        message: 'Photo alert',
+        'media-attachment-url': 'https://example.com/image.jpg',
+      };
+
+      await service.saveOnly(userId, payloadWithMedia);
+
+      expect(notificationRepo.notifications[0]!.payload['media-attachment-url']).to.equal(
+        'https://example.com/image.jpg'
+      );
+    });
+  });
+
   describe('hideNotification', () => {
     const userId = new Types.ObjectId().toString();
     const notificationId = new Types.ObjectId().toString();
