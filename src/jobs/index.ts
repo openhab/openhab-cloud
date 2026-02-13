@@ -14,4 +14,7 @@
 export { BaseJob } from './base-job';
 export type { JobResult } from './base-job';
 
+export { StatsJob } from './stats-job';
+export type { StatsData, StatsJobDependencies } from './stats-job';
+
 export { JobScheduler } from './job-scheduler';

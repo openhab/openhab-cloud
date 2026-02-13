@@ -54,10 +54,10 @@ import { createMongoConnect } from './lib/mongoconnect';
 import dateUtil from './lib/date-util';
 
 // Import TypeScript models
-import { User, Openhab, Event } from './models';
+import { User, Openhab, Event, UserDevice, Invitation } from './models';
 
 // Import jobs
-import { JobScheduler } from './jobs';
+import { JobScheduler, StatsJob } from './jobs';
 
 // Extend Express Request type
 declare global {
@@ -135,8 +135,17 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   // Create Express app
   const app = express();
 
-  // Create job scheduler
+  // Create job scheduler and register jobs
   const jobScheduler = new JobScheduler(logger);
+  const statsJob = new StatsJob({
+    redis,
+    logger,
+    userModel: User,
+    openhabModel: Openhab,
+    userDeviceModel: UserDevice,
+    invitationModel: Invitation,
+  });
+  jobScheduler.register(statsJob);
 
   // Trust proxy for correct client IP and protocol detection behind reverse proxy
   app.set('trust proxy', 1);
