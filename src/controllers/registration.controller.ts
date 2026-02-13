@@ -77,7 +77,7 @@ export class RegistrationController {
     res: Parameters<RequestHandler>[1],
     deviceType: DeviceType
   ): Promise<void> {
-    this.logger.info(`registerDevice called for ${deviceType}, user: ${req.user?.username}, query: ${JSON.stringify(req.query)}`);
+    this.logger.info(`registerDevice called for ${deviceType}, user: ${req.user?.username}, deviceId: ${req.query['deviceId']}, deviceModel: ${req.query['deviceModel']}`);
     try {
       const regIdParam = req.query['regId'];
       const deviceIdParam = req.query['deviceId'];

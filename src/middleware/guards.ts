@@ -108,6 +108,11 @@ function ensureGroup(group: UserGroup): RequestHandler {
 export const ensureStaff: RequestHandler = ensureGroup('staff');
 
 /**
+ * Maximum body size for proxied requests (5 MB).
+ */
+const MAX_PROXY_BODY_SIZE = 5 * 1024 * 1024;
+
+/**
  * Middleware to pre-assemble request body for proxying
  *
  * Collects the raw request body for forwarding to openHAB.
@@ -121,13 +126,30 @@ export const preassembleBody: RequestHandler = (req, res, next) => {
 
   // Collect data chunks
   let data = '';
+  let size = 0;
+  let aborted = false;
 
   req.on('data', (chunk: Buffer | string) => {
+    size += Buffer.byteLength(chunk);
+    if (size > MAX_PROXY_BODY_SIZE) {
+      aborted = true;
+      req.removeAllListeners('data');
+      req.resume();
+      res.status(413).send('Request body too large');
+      return;
+    }
     data += typeof chunk === 'string' ? chunk : chunk.toString();
   });
 
   req.on('end', () => {
+    if (aborted) return;
     req.rawBody = data;
     next();
+  });
+
+  req.on('error', (err) => {
+    if (aborted) return;
+    aborted = true;
+    next(err);
   });
 };

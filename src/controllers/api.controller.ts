@@ -140,7 +140,7 @@ export class ApiController {
 
       if (registrationIds.length > 0) {
         this.logger.debug(
-          `Hiding notification ${persistedId} on device ${deviceId} to ${JSON.stringify(registrationIds)}`
+          `Hiding notification ${persistedId} from device ${deviceId}, sending to ${registrationIds.length} device(s)`
         );
         await this.pushProvider.sendHideNotification(registrationIds, persistedId);
       }

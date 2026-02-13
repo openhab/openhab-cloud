@@ -17,6 +17,7 @@ services:
     environment:
       - DOMAIN_NAME
       - EXPRESS_KEY
+      - REDIS_PASSWORD
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.openhab-cloud.rule=Host(`${DOMAIN_NAME}`)"
@@ -46,15 +47,19 @@ services:
     volumes:
       - redis-data:/data
     restart: always
-    command: redis-server --appendonly yes
+    command: >-
+      redis-server --appendonly yes
+      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "sh", "-c", "redis-cli ${REDIS_PASSWORD:+-a $REDIS_PASSWORD --no-auth-warning} ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   traefik:
     image: traefik:3
+    command:
+      - "--certificatesresolvers.letsencrypt.acme.email=${EMAIL}"
     ports:
       - "80:80"
       - "443:443"

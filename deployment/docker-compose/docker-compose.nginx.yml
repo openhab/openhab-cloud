@@ -17,6 +17,7 @@ services:
     environment:
       - DOMAIN_NAME
       - EXPRESS_KEY
+      - REDIS_PASSWORD
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -40,9 +41,11 @@ services:
     volumes:
       - redis-data:/data
     restart: always
-    command: redis-server --appendonly yes
+    command: >-
+      redis-server --appendonly yes
+      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "sh", "-c", "redis-cli ${REDIS_PASSWORD:+-a $REDIS_PASSWORD --no-auth-warning} ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -53,10 +56,13 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
       - certbot-etc:/etc/letsencrypt:ro
       - certbot-var:/var/lib/letsencrypt
       - certbot-www:/var/www/certbot:ro
+    environment:
+      - DOMAIN_NAME
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
     depends_on:
       - app
     restart: always
