@@ -349,13 +349,6 @@ describe('StaffController', () => {
       expect(flashStub.calledWith('error', sinon.match(/error/))).to.be.true;
     });
 
-    it('should reject invalid ObjectId', async () => {
-      mockReq.params = { id: 'invalid' };
-
-      await controller.processEnrollment(mockReq as Request, mockRes as Response, () => {});
-
-      expect(flashStub.calledWith('error', 'Invalid enrollment ID')).to.be.true;
-    });
   });
 
   describe('getInvitations', () => {
@@ -405,13 +398,6 @@ describe('StaffController', () => {
       expect(flashStub.calledWith('error', 'Invitation not found')).to.be.true;
     });
 
-    it('should reject invalid ObjectId', async () => {
-      mockReq.params = { id: 'invalid' };
-
-      await controller.resendInvitation(mockReq as Request, mockRes as Response, () => {});
-
-      expect(flashStub.calledWith('error', 'Invalid invitation ID')).to.be.true;
-    });
   });
 
   describe('deleteInvitation', () => {
@@ -433,13 +419,6 @@ describe('StaffController', () => {
       expect(flashStub.calledWith('error', 'Invitation not found')).to.be.true;
     });
 
-    it('should reject invalid ObjectId', async () => {
-      mockReq.params = { id: 'invalid' };
-
-      await controller.deleteInvitation(mockReq as Request, mockRes as Response, () => {});
-
-      expect(flashStub.calledWith('error', 'Invalid invitation ID')).to.be.true;
-    });
   });
 
   describe('getOAuthClients', () => {

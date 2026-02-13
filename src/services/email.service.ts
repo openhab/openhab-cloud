@@ -55,15 +55,6 @@ export interface EmailVerificationLocals {
 }
 
 /**
- * Email template locals for invitation
- */
-export interface InvitationLocals {
-  email: string;
-  inviteUrl: string;
-  inviterName?: string;
-}
-
-/**
  * Email Service
  *
  * Handles sending emails using nodemailer and email-templates.
@@ -185,19 +176,6 @@ export class EmailService {
     };
 
     await this.sendEmail(email, 'Email Verification', 'verify-email', locals);
-  }
-
-  /**
-   * Send invitation email
-   */
-  async sendInvitation(email: string, inviteUrl: string, inviterName?: string): Promise<void> {
-    const locals = {
-      email,
-      inviteUrl,
-      inviterName,
-    };
-
-    await this.sendEmail(email, 'Invitation to openHAB Cloud', 'invitation-email', locals);
   }
 
   /**

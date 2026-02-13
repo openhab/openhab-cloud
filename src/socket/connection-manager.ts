@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
+import crypto from 'crypto';
 import type { Types } from 'mongoose';
 import type { IOpenhab } from '../types/models';
 import type { ILogger } from '../types/notification';
@@ -43,7 +44,7 @@ export interface IRedisClientForConnection {
  * Repository interface for OpenHAB operations
  */
 export interface IOpenhabRepositoryForConnection {
-  findByUuidAndSecret(uuid: string, secret: string): Promise<IOpenhab | null>;
+  findByUuid(uuid: string): Promise<IOpenhab | null>;
   updateLastOnline(id: string | Types.ObjectId): Promise<void>;
 }
 
@@ -126,13 +127,27 @@ export class ConnectionManager {
   /**
    * Authenticate an openHAB connection
    *
+   * Uses timing-safe comparison to prevent timing attacks on secrets.
+   *
    * @param uuid - The openHAB UUID
    * @param secret - The openHAB secret
    * @returns The openHAB instance if authenticated, null otherwise
    */
   async authenticate(uuid: string, secret: string): Promise<IOpenhab | null> {
     try {
-      const openhab = await this.openhabRepository.findByUuidAndSecret(uuid, secret);
+      const openhab = await this.openhabRepository.findByUuid(uuid);
+      if (!openhab) {
+        return null;
+      }
+
+      // Use timing-safe comparison to prevent timing attacks
+      const secretBuffer = Buffer.from(secret);
+      const storedBuffer = Buffer.from(openhab.secret);
+      if (secretBuffer.length !== storedBuffer.length ||
+          !crypto.timingSafeEqual(secretBuffer, storedBuffer)) {
+        return null;
+      }
+
       return openhab;
     } catch (error) {
       this.logger.error(`Authentication error for ${uuid}:`, error);

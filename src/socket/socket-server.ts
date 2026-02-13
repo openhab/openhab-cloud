@@ -44,7 +44,6 @@ export interface IUserRepositoryForSocket {
  */
 export interface IOpenhabRepositoryForSocket {
   findById(id: string | Types.ObjectId): Promise<IOpenhab | null>;
-  findByUuidAndSecret(uuid: string, secret: string): Promise<IOpenhab | null>;
   updateLastOnline(id: string | Types.ObjectId): Promise<void>;
 }
 

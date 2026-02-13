@@ -359,14 +359,6 @@ describe('UsersController', () => {
       expect(redirectStub.calledWith('/users')).to.be.true;
     });
 
-    it('should reject invalid ObjectId format', async () => {
-      mockReq.params = { id: 'invalid-id' };
-
-      await controller.deleteUser(mockReq as Request, mockRes as Response, () => {});
-
-      expect(flashStub.calledWith('error', 'Invalid user ID')).to.be.true;
-    });
-
     it('should handle repository errors gracefully', async () => {
       userRepository.shouldThrow = true;
 

@@ -91,17 +91,27 @@ export function validateBody<T extends ZodSchema>(
 }
 
 /**
- * Create a validation middleware for query parameters
+ * Create a validation middleware for URL parameters
+ *
+ * @param schema - Zod schema to validate against
+ * @param options - Configuration options
  */
-export function validateQuery<T extends ZodSchema>(
+export function validateParams<T extends ZodSchema>(
   schema: T,
   options: {
+    /**
+     * Where to redirect on validation failure (for web forms).
+     * If not set, returns JSON error response.
+     */
     redirectOnError?: string | ((req: Request) => string);
+    /**
+     * Flash message type for errors (default: 'error')
+     */
     flashType?: string;
   } = {}
 ): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req.query);
+    const result = schema.safeParse(req.params);
 
     if (!result.success) {
       const errors = formatZodErrors(result.error.issues);
@@ -119,29 +129,6 @@ export function validateQuery<T extends ZodSchema>(
         return;
       }
 
-      res.status(400).json({
-        error: 'Validation failed',
-        details: errors,
-      });
-      return;
-    }
-
-    (req as ValidatedRequest<z.infer<T>>).validatedBody = result.data;
-    next();
-  };
-}
-
-/**
- * Create a validation middleware for URL parameters
- */
-export function validateParams<T extends ZodSchema>(
-  schema: T
-): RequestHandler {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req.params);
-
-    if (!result.success) {
-      const errors = formatZodErrors(result.error.issues);
       res.status(400).json({
         error: 'Invalid URL parameters',
         details: errors,

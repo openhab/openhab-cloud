@@ -39,12 +39,10 @@ export type {
 } from './user.service';
 export type {
   IOpenhabRepositoryFull,
-  OpenhabAuthResult,
 } from './openhab.service';
 export type {
   SmtpConfig,
   EmailServiceConfig,
   PasswordResetLocals,
   EmailVerificationLocals,
-  InvitationLocals,
 } from './email.service';

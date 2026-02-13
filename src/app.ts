@@ -57,7 +57,7 @@ import dateUtil from './lib/date-util';
 import { User, Openhab, Event } from './models';
 
 // Import jobs
-import { JobScheduler, StatsJob } from './jobs';
+import { JobScheduler } from './jobs';
 
 // Extend Express Request type
 declare global {
@@ -135,10 +135,8 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   // Create Express app
   const app = express();
 
-  // Create job scheduler and start stats job
+  // Create job scheduler
   const jobScheduler = new JobScheduler(logger);
-  // Note: StatsJob requires Mongoose models which are loaded via legacy system
-  // Will be fully wired once models are migrated
 
   // Trust proxy for correct client IP and protocol detection behind reverse proxy
   app.set('trust proxy', 1);
@@ -322,8 +320,8 @@ export async function createApp(configPath: string): Promise<AppContainer> {
       },
     },
     {
-      findByUuidAndSecret: async (uuid: string, secret: string) =>
-        Openhab.findOne({ uuid, secret }),
+      findByUuid: async (uuid: string) =>
+        Openhab.findOne({ uuid }),
       updateLastOnline: async (id: string) => {
         await Openhab.findByIdAndUpdate(id, { $set: { last_online: new Date() } });
       },
@@ -340,8 +338,6 @@ export async function createApp(configPath: string): Promise<AppContainer> {
     },
     {
       findById: async (id: string) => Openhab.findById(id),
-      findByUuidAndSecret: async (uuid: string, secret: string) =>
-        Openhab.findOne({ uuid, secret }),
       updateLastOnline: async (id: string) => {
         await Openhab.findByIdAndUpdate(id, { $set: { last_online: new Date() } });
       },

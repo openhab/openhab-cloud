@@ -15,18 +15,12 @@ export { configurePassport } from './auth.middleware';
 export {
   ensureAuthenticated,
   ensureRestAuthenticated,
-  ensureRole,
   ensureMaster,
-  ensureGroup,
   ensureStaff,
-  createSetOpenhabMiddleware,
-  createEnsureServerMiddleware,
   preassembleBody,
 } from './guards';
-export type { IRedisClient, OpenhabMiddlewareConfig } from './guards';
 export {
   validateBody,
-  validateQuery,
   validateParams,
   ObjectIdSchema,
   IdParamSchema,

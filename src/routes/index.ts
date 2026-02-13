@@ -35,7 +35,7 @@ import type { NotificationPayload } from '../types/notification';
 import type { ServiceContainer } from '../factories';
 
 // Validation
-import { validateBody } from '../middleware/validation.middleware';
+import { validateBody, validateParams, IdParamSchema } from '../middleware/validation.middleware';
 import {
   LoginSchema,
   RegisterSchema,
@@ -592,7 +592,9 @@ export function createRoutes(deps: RoutesDependencies): Router {
   router.post('/users/add', ensureAuthenticated, setOpenhab, ensureMaster,
     validateBody(AddUserSchema, { redirectOnError: '/users/add' }),
     usersController.addUser);
-  router.get('/users/delete/:id', ensureAuthenticated, setOpenhab, ensureMaster, usersController.deleteUser);
+  router.get('/users/delete/:id', ensureAuthenticated, setOpenhab, ensureMaster,
+    validateParams(IdParamSchema, { redirectOnError: '/users' }),
+    usersController.deleteUser);
   router.get('/users/:id', ensureAuthenticated, setOpenhab, ensureMaster, usersController.getUsers);
 
   // ============================================
@@ -608,11 +610,17 @@ export function createRoutes(deps: RoutesDependencies): Router {
   // ============================================
 
   router.get('/staff', ensureAuthenticated, setOpenhab, ensureStaff, staffController.getEnrollments);
-  router.get('/staff/processenroll/:id', ensureAuthenticated, setOpenhab, ensureStaff, staffController.processEnrollment);
+  router.get('/staff/processenroll/:id', ensureAuthenticated, setOpenhab, ensureStaff,
+    validateParams(IdParamSchema, { redirectOnError: '/staff' }),
+    staffController.processEnrollment);
   router.get('/staff/stats', ensureAuthenticated, setOpenhab, ensureStaff, staffController.getStats);
   router.get('/staff/invitations', ensureAuthenticated, setOpenhab, ensureStaff, staffController.getInvitations);
-  router.get('/staff/resendinvitation/:id', ensureAuthenticated, setOpenhab, ensureStaff, staffController.resendInvitation);
-  router.get('/staff/deleteinvitation/:id', ensureAuthenticated, setOpenhab, ensureStaff, staffController.deleteInvitation);
+  router.get('/staff/resendinvitation/:id', ensureAuthenticated, setOpenhab, ensureStaff,
+    validateParams(IdParamSchema, { redirectOnError: '/staff/invitations' }),
+    staffController.resendInvitation);
+  router.get('/staff/deleteinvitation/:id', ensureAuthenticated, setOpenhab, ensureStaff,
+    validateParams(IdParamSchema, { redirectOnError: '/staff/invitations' }),
+    staffController.deleteInvitation);
   router.get('/staff/oauthclients', ensureAuthenticated, setOpenhab, ensureStaff, staffController.getOAuthClients);
 
   // ============================================

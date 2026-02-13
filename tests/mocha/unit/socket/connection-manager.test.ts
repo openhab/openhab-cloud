@@ -149,9 +149,9 @@ class MockOpenhabRepository implements IOpenhabRepositoryForConnection {
   updatedIds: string[] = [];
   shouldThrow = false;
 
-  async findByUuidAndSecret(uuid: string, secret: string): Promise<IOpenhab | null> {
+  async findByUuid(uuid: string): Promise<IOpenhab | null> {
     if (this.shouldThrow) throw new Error('Database error');
-    return this.openhabs.find(o => o.uuid === uuid && o.secret === secret) || null;
+    return this.openhabs.find(o => o.uuid === uuid) || null;
   }
 
   async updateLastOnline(id: string): Promise<void> {

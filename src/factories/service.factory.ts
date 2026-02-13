@@ -160,21 +160,13 @@ function createOpenhabRepositoryForService(): IOpenhabRepositoryForService {
  */
 function createOpenhabRepositoryFull(): IOpenhabRepositoryFull {
   return {
-    findById: async (id) => Openhab.findById(id),
     findByUuid: async (uuid) => Openhab.findOne({ uuid }),
-    findByAccount: async (accountId) => Openhab.findOne({ account: accountId }),
     create: async (data) => {
       const openhab = new Openhab(data);
       return openhab.save();
     },
     updateUuidAndSecret: async (id, uuid, secret) => {
       await Openhab.findByIdAndUpdate(id, { uuid, secret });
-    },
-    updateLastOnline: async (id) => {
-      await Openhab.findByIdAndUpdate(id, { last_online: new Date() });
-    },
-    deleteByAccount: async (accountId) => {
-      await Openhab.deleteMany({ account: accountId });
     },
   };
 }

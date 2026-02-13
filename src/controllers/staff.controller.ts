@@ -169,18 +169,7 @@ export class StaffController {
    * Process an enrollment by sending an invitation.
    */
   processEnrollment: RequestHandler = async (req, res) => {
-    const enrollIdParam = req.params['id'];
-
-    if (!enrollIdParam || typeof enrollIdParam !== 'string') {
-      req.flash('error', 'Invalid enrollment ID');
-      return res.redirect('/staff');
-    }
-
-    // Validate ObjectId format
-    if (!/^[0-9a-fA-F]{24}$/.test(enrollIdParam)) {
-      req.flash('error', 'Invalid enrollment ID');
-      return res.redirect('/staff');
-    }
+    const enrollIdParam = req.params['id'] as string;
 
     try {
       const enrollment = await this.enrollmentRepository.findById(enrollIdParam);
@@ -250,18 +239,7 @@ export class StaffController {
    * Resend an invitation.
    */
   resendInvitation: RequestHandler = async (req, res) => {
-    const invitationIdParam = req.params['id'];
-
-    if (!invitationIdParam || typeof invitationIdParam !== 'string') {
-      req.flash('error', 'Invalid invitation ID');
-      return res.redirect('/staff/invitations');
-    }
-
-    // Validate ObjectId format
-    if (!/^[0-9a-fA-F]{24}$/.test(invitationIdParam)) {
-      req.flash('error', 'Invalid invitation ID');
-      return res.redirect('/staff/invitations');
-    }
+    const invitationIdParam = req.params['id'] as string;
 
     try {
       const invitation = await this.invitationRepository.findById(invitationIdParam);
@@ -287,18 +265,7 @@ export class StaffController {
    * Delete an invitation.
    */
   deleteInvitation: RequestHandler = async (req, res) => {
-    const invitationIdParam = req.params['id'];
-
-    if (!invitationIdParam || typeof invitationIdParam !== 'string') {
-      req.flash('error', 'Invalid invitation ID');
-      return res.redirect('/staff/invitations');
-    }
-
-    // Validate ObjectId format
-    if (!/^[0-9a-fA-F]{24}$/.test(invitationIdParam)) {
-      req.flash('error', 'Invalid invitation ID');
-      return res.redirect('/staff/invitations');
-    }
+    const invitationIdParam = req.params['id'] as string;
 
     try {
       const invitation = await this.invitationRepository.findById(invitationIdParam);

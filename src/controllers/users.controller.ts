@@ -173,19 +173,7 @@ export class UsersController {
    * Delete a user from the account.
    */
   deleteUser: RequestHandler = async (req, res) => {
-    const userIdParam = req.params['id'];
-
-    if (!userIdParam || typeof userIdParam !== 'string') {
-      return res.redirect('/users');
-    }
-
-    // Validate ObjectId format
-    if (!/^[0-9a-fA-F]{24}$/.test(userIdParam)) {
-      req.flash('error', 'Invalid user ID');
-      return res.redirect('/users');
-    }
-
-    const userId = userIdParam;
+    const userId = req.params['id'] as string;
 
     try {
       // Prevent self-deletion
