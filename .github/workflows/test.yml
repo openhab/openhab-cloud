@@ -120,8 +120,20 @@ jobs:
 
             if [ "$RESPONSE" = "200" ]; then
               echo "Health check passed!"
-              echo "=== Startup logs ==="
-              cat app.log || true
+
+              # Verify a few more endpoints work
+              echo "Testing login page..."
+              LOGIN_RESP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/login 2>/dev/null || echo "000")
+              echo "Login page: HTTP $LOGIN_RESP"
+
+              # Check process is still alive after requests
+              if ! ps -p $(cat app.pid) > /dev/null 2>&1; then
+                echo "=== Process crashed after health check! ==="
+                cat app.log || true
+                exit 1
+              fi
+
+              echo "Server is ready!"
               exit 0
             fi
 
@@ -136,17 +148,52 @@ jobs:
           cat app.log || true
           exit 1
 
+      - name: Verify server before tests
+        run: |
+          echo "=== Pre-test verification ==="
+
+          # Test multiple endpoints to ensure server is fully working
+          for endpoint in /health /login; do
+            echo "Testing $endpoint..."
+            RESP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000$endpoint)
+            echo "  $endpoint: HTTP $RESP"
+            if [ "$RESP" = "000" ]; then
+              echo "FAILED: Server not responding to $endpoint"
+              cat app.log || true
+              exit 1
+            fi
+          done
+
+          # Check process is still alive
+          if ! ps -p $(cat app.pid) > /dev/null 2>&1; then
+            echo "SERVER CRASHED after endpoint tests!"
+            cat app.log || true
+            exit 1
+          fi
+
+          echo "Server verified and ready for tests"
+
       - name: Run integration tests
-        run: npm run test:integration
+        run: |
+          # Run tests and capture exit code
+          npm run test:integration || TEST_EXIT=$?
+
+          # Check if server is still running after tests
+          echo ""
+          echo "=== Checking server status after tests ==="
+          if ps -p $(cat app.pid) > /dev/null 2>&1; then
+            echo "Server still running (PID $(cat app.pid))"
+          else
+            echo "SERVER CRASHED during tests!"
+          fi
+
+          # Show app logs
+          echo ""
+          echo "=== Application logs ==="
+          cat app.log || true
+
+          # Exit with test result
+          exit ${TEST_EXIT:-0}
         timeout-minutes: 5
         env:
           SERVER_URL: http://localhost:3000
-
-      - name: Show app logs
-        if: always()
-        run: |
-          echo "=== Application logs ==="
-          cat app.log || true
-          echo ""
-          echo "=== Process status ==="
-          ps -p $(cat app.pid) || echo "App process not running"

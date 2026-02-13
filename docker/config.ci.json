@@ -12,7 +12,7 @@
     "logger": {
       "dir": "./logs/",
       "maxFiles": "7d",
-      "level": "warn",
+      "level": "debug",
       "type": "console",
       "morgan": "dev"
     },
