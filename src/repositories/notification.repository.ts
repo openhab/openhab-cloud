@@ -34,7 +34,10 @@ interface NotificationDocument {
   save(): Promise<NotificationDocument>;
 }
 
-interface NotificationModel extends Model<NotificationDocument> {
+/**
+ * Model type for Notification - exported for use in adapters
+ */
+export interface NotificationModel extends Model<NotificationDocument> {
   new (data: Partial<NotificationDocument>): NotificationDocument;
 }
 

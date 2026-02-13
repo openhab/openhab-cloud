@@ -23,15 +23,9 @@
 
 import type { ILogger, FCMConfig, NotificationPayload } from '../types/notification';
 import { NotificationService } from '../services/notification.service';
-import { NotificationRepository } from '../repositories/notification.repository';
-import { UserDeviceRepository } from '../repositories/userdevice.repository';
+import { NotificationRepository, type NotificationModel } from '../repositories/notification.repository';
+import { UserDeviceRepository, type UserDeviceModel } from '../repositories/userdevice.repository';
 import { FCMProvider } from '../lib/push/fcm.provider';
-
-// Type for existing Mongoose models
-type MongooseModel = {
-  find: (query: object) => { exec: () => Promise<unknown[]> };
-  new (data: object): { save: () => Promise<unknown> };
-};
 
 // Type for existing system module
 interface SystemModule {
@@ -74,8 +68,8 @@ class LoggerAdapter implements ILogger {
  * using the existing Mongoose models and configuration.
  */
 export function createNotificationService(dependencies: {
-  NotificationModel: MongooseModel;
-  UserDeviceModel: MongooseModel;
+  NotificationModel: NotificationModel;
+  UserDeviceModel: UserDeviceModel;
   logger: {
     error: (...args: unknown[]) => void;
     warn: (...args: unknown[]) => void;
@@ -90,8 +84,8 @@ export function createNotificationService(dependencies: {
   const loggerAdapter = new LoggerAdapter(logger);
 
   // Create repositories
-  const notificationRepository = new NotificationRepository(NotificationModel as never);
-  const userDeviceRepository = new UserDeviceRepository(UserDeviceModel as never);
+  const notificationRepository = new NotificationRepository(NotificationModel);
+  const userDeviceRepository = new UserDeviceRepository(UserDeviceModel);
 
   // Create FCM config
   const fcmConfig: FCMConfig | null = system.isGcmConfigured()
@@ -117,8 +111,8 @@ export function createNotificationService(dependencies: {
  * notificationsender/index.js module, allowing drop-in replacement.
  */
 export function createLegacyNotificationSender(dependencies: {
-  NotificationModel: MongooseModel;
-  UserDeviceModel: MongooseModel;
+  NotificationModel: NotificationModel;
+  UserDeviceModel: UserDeviceModel;
   logger: {
     error: (...args: unknown[]) => void;
     warn: (...args: unknown[]) => void;

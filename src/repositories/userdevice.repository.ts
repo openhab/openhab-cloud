@@ -29,7 +29,10 @@ interface UserDeviceDocument {
   registered?: Date;
 }
 
-interface UserDeviceModel extends Model<UserDeviceDocument> {}
+/**
+ * Model type for UserDevice - exported for use in adapters
+ */
+export interface UserDeviceModel extends Model<UserDeviceDocument> {}
 
 /**
  * Repository for UserDevice model
