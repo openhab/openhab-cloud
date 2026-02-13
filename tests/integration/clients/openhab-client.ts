@@ -117,8 +117,24 @@ export class OpenHABTestClient {
     }
 
     return new Promise((resolve, reject) => {
+      let settled = false;
+
+      const settle = (fn: () => void) => {
+        if (!settled) {
+          settled = true;
+          fn();
+        }
+      };
+
       const timeout = setTimeout(() => {
-        reject(new Error('Connection timeout'));
+        settle(() => {
+          if (this.socket) {
+            this.socket.removeAllListeners();
+            this.socket.disconnect();
+            this.socket = null;
+          }
+          reject(new Error('Connection timeout'));
+        });
       }, 10000);
 
       this.socket = socketClient(this.serverUrl, {
@@ -138,16 +154,30 @@ export class OpenHABTestClient {
       });
 
       this.socket.on('connect', () => {
-        clearTimeout(timeout);
-        this.connected = true;
-        resolve();
+        settle(() => {
+          clearTimeout(timeout);
+          this.connected = true;
+          resolve();
+        });
       });
 
       this.socket.on('connect_error', (err) => {
-        clearTimeout(timeout);
-        this.socket?.disconnect();
-        this.socket = null;
-        reject(err);
+        settle(() => {
+          clearTimeout(timeout);
+          this.socket?.disconnect();
+          this.socket = null;
+          reject(err);
+        });
+      });
+
+      // Socket.IO v2 emits 'error' (not 'connect_error') for middleware rejections
+      this.socket.on('error', (errMsg: string) => {
+        settle(() => {
+          clearTimeout(timeout);
+          this.socket?.disconnect();
+          this.socket = null;
+          reject(new Error(errMsg));
+        });
       });
 
       this.socket.on('disconnect', () => {
@@ -188,9 +218,15 @@ export class OpenHABTestClient {
    */
   async disconnect(): Promise<void> {
     if (this.socket) {
+      this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
       this.connected = false;
+      this.requestHandler = null;
+      this.commandHandler = null;
+      this.cancelHandler = null;
+      // Wait for server-side lock release (Redis WATCH+MULTI+DEL)
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
   }
 
@@ -201,10 +237,6 @@ export class OpenHABTestClient {
     if (this.connected) return;
 
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Connection timeout'));
-      }, timeoutMs);
-
       const check = setInterval(() => {
         if (this.connected) {
           clearTimeout(timeout);
@@ -212,6 +244,11 @@ export class OpenHABTestClient {
           resolve();
         }
       }, 100);
+
+      const timeout = setTimeout(() => {
+        clearInterval(check);
+        reject(new Error('Connection timeout'));
+      }, timeoutMs);
     });
   }
 

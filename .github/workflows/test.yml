@@ -148,100 +148,12 @@ jobs:
           cat app.log || true
           exit 1
 
-      - name: Verify server before tests
-        run: |
-          echo "=== Pre-test verification ==="
-
-          # Test multiple endpoints to ensure server is fully working
-          for endpoint in /health /login; do
-            echo "Testing $endpoint..."
-            RESP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000$endpoint)
-            echo "  $endpoint: HTTP $RESP"
-            if [ "$RESP" = "000" ]; then
-              echo "FAILED: Server not responding to $endpoint"
-              cat app.log || true
-              exit 1
-            fi
-          done
-
-          # Check process is still alive
-          if ! ps -p $(cat app.pid) > /dev/null 2>&1; then
-            echo "SERVER CRASHED after endpoint tests!"
-            cat app.log || true
-            exit 1
-          fi
-
-          echo "Server verified and ready for tests"
-
       - name: Run integration tests
-        run: |
-          echo "=== Application logs before tests ==="
-          cat app.log || true
-          echo ""
-          echo "=== Starting tests ==="
-
-          # Start log tail in background (from now on)
-          tail -f app.log &
-          TAIL_PID=$!
-
-          # Multiple sanity checks to ensure server is stable
-          echo "=== Stability check ==="
-          for i in 1 2 3; do
-            echo "Check $i..."
-            curl -s http://localhost:3000/health && echo " OK"
-            curl -s http://localhost:3000/login > /dev/null && echo "  /login OK"
-            sleep 1
-          done
-
-          # Test a POST request like the tests do
-          echo "=== Testing POST to /login (like supertest does) ==="
-          curl -s -X POST http://localhost:3000/login \
-            -H "Content-Type: application/x-www-form-urlencoded" \
-            -d "username=test@example.com&password=test" \
-            -c /tmp/cookies.txt \
-            -w "\n  Status: %{http_code}\n" || echo "  POST failed"
-
-          # Check if server survived
-          sleep 1
-          if ! ps -p $(cat app.pid) > /dev/null 2>&1; then
-            echo "SERVER CRASHED after POST!"
-            echo "=== Crash log ==="
-            cat app.log || true
-            exit 1
-          fi
-          echo "  Server survived POST request"
-
-          # Brief pause to ensure server is fully ready
-          echo "Server appears stable, waiting 2s before tests..."
-          sleep 2
-
-          # Check server still alive
-          if ! ps -p $(cat app.pid) > /dev/null 2>&1; then
-            echo "SERVER DIED during stability checks!"
-            kill $TAIL_PID 2>/dev/null || true
-            exit 1
-          fi
-
-          # Run tests and capture exit code
-          npm run test:integration || TEST_EXIT=$?
-
-          # Stop log tail
-          kill $TAIL_PID 2>/dev/null || true
-
-          # Check if server is still running after tests
-          echo ""
-          echo "=== Checking server status after tests ==="
-          if ps -p $(cat app.pid) > /dev/null 2>&1; then
-            echo "Server still running (PID $(cat app.pid))"
-          else
-            echo "SERVER CRASHED during tests!"
-            echo ""
-            echo "=== Full application logs ==="
-            cat app.log || true
-          fi
-
-          # Exit with test result
-          exit ${TEST_EXIT:-0}
+        run: npm run test:integration
         timeout-minutes: 5
         env:
           SERVER_URL: http://127.0.0.1:3000
+
+      - name: Show application logs on failure
+        if: failure()
+        run: cat app.log || true

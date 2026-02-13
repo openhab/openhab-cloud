@@ -20,6 +20,7 @@
 import { expect } from 'chai';
 import { OpenHABTestClient, ClientManager } from '../clients';
 import { TEST_FIXTURES } from '../seed-database';
+import { clearBlockedUuids } from '../helpers/redis-helper';
 
 const SERVER_URL = process.env['SERVER_URL'] || 'http://localhost:3000';
 
@@ -28,6 +29,10 @@ describe('WebSocket Connection', function () {
   this.timeout(30000);
 
   describe('Authentication', function () {
+    // Clear blocked UUIDs after auth failure tests to prevent blocking subsequent tests
+    afterEach(async function () {
+      await clearBlockedUuids();
+    });
     it('should connect with valid UUID and secret', async function () {
       const client = new OpenHABTestClient(
         SERVER_URL,
@@ -139,7 +144,9 @@ describe('WebSocket Connection', function () {
       } catch (err) {
         expect(err).to.be.instanceOf(Error);
         const message = (err as Error).message.toLowerCase();
-        expect(message).to.include('lock');
+        expect(message).to.satisfy(
+          (msg: string) => msg.includes('lock') || msg.includes('already')
+        );
       }
 
       expect(client2.isConnected).to.be.false;

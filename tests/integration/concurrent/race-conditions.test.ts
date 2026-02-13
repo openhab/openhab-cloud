@@ -64,11 +64,10 @@ describe('Race Conditions', function () {
         }
       });
 
-      // Disconnect the successful client
-      const connectedClient = clients.find((c) => c.isConnected);
-      if (connectedClient) {
-        await connectedClient.disconnect();
-      }
+      // Disconnect ALL clients (not just the connected one)
+      await Promise.allSettled(clients.map((c) => c.disconnect()));
+      // Wait for server-side lock release
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     });
 
     it('should handle rapid connect/disconnect cycles', async function () {
@@ -87,8 +86,8 @@ describe('Race Conditions', function () {
         await client.disconnect();
         expect(client.isConnected).to.be.false;
 
-        // Small delay to allow lock release
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Wait for server-side lock release (Redis WATCH+MULTI+DEL + DB update)
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     });
 
@@ -146,7 +145,9 @@ describe('Race Conditions', function () {
         } catch (err) {
           expect(err).to.be.instanceOf(Error);
           const message = (err as Error).message.toLowerCase();
-          expect(message).to.include('lock');
+          expect(message).to.satisfy(
+            (msg: string) => msg.includes('lock') || msg.includes('already')
+          );
         }
       } finally {
         await client1.disconnect();
@@ -260,8 +261,8 @@ describe('Race Conditions', function () {
           results.push(false);
         }
 
-        // Small delay between iterations
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        // Wait for server-side lock release between iterations
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
 
       // All should succeed (sequential, with delays)

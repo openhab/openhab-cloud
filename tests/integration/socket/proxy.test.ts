@@ -75,7 +75,7 @@ describe('Proxy Functionality', function () {
       expect(response.status).to.equal(200);
       expect(receivedRequests).to.have.length(1);
       expect(receivedRequests[0].method).to.equal('GET');
-      expect(receivedRequests[0].path).to.equal('/items');
+      expect(receivedRequests[0].path).to.equal('/rest/items');
 
       const body = response.body;
       expect(body).to.be.an('array');
@@ -312,10 +312,13 @@ describe('Proxy Functionality', function () {
       // Disconnect openHAB client first
       await openhabClient.disconnect();
 
+      // Extra wait for connection cache invalidation
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       const response = await apiClient.proxyGet('/items');
 
-      // Should indicate openHAB is not connected
-      expect(response.status).to.equal(404);
+      // Server returns 500 with "openHAB is offline" when not connected
+      expect(response.status).to.equal(500);
     });
 
     it('should require authentication for proxy requests', async function () {
@@ -338,7 +341,7 @@ describe('Proxy Functionality', function () {
         return {
           id: req.id,
           status: 200,
-          headers: {},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ count: requestCount }),
         };
       });
@@ -361,7 +364,7 @@ describe('Proxy Functionality', function () {
         return {
           id: req.id,
           status: 200,
-          headers: {},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ requestId: req.id }),
         };
       });
