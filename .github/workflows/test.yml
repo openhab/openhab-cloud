@@ -175,8 +175,58 @@ jobs:
 
       - name: Run integration tests
         run: |
+          echo "=== Application logs before tests ==="
+          cat app.log || true
+          echo ""
+          echo "=== Starting tests ==="
+
+          # Start log tail in background (from now on)
+          tail -f app.log &
+          TAIL_PID=$!
+
+          # Multiple sanity checks to ensure server is stable
+          echo "=== Stability check ==="
+          for i in 1 2 3; do
+            echo "Check $i..."
+            curl -s http://localhost:3000/health && echo " OK"
+            curl -s http://localhost:3000/login > /dev/null && echo "  /login OK"
+            sleep 1
+          done
+
+          # Test a POST request like the tests do
+          echo "=== Testing POST to /login (like supertest does) ==="
+          curl -s -X POST http://localhost:3000/login \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "username=test@example.com&password=test" \
+            -c /tmp/cookies.txt \
+            -w "\n  Status: %{http_code}\n" || echo "  POST failed"
+
+          # Check if server survived
+          sleep 1
+          if ! ps -p $(cat app.pid) > /dev/null 2>&1; then
+            echo "SERVER CRASHED after POST!"
+            echo "=== Crash log ==="
+            cat app.log || true
+            exit 1
+          fi
+          echo "  Server survived POST request"
+
+          # Brief pause to ensure server is fully ready
+          echo "Server appears stable, waiting 2s before tests..."
+          sleep 2
+
+          # Check server still alive
+          if ! ps -p $(cat app.pid) > /dev/null 2>&1; then
+            echo "SERVER DIED during stability checks!"
+            kill $TAIL_PID 2>/dev/null || true
+            exit 1
+          fi
+
           # Run tests and capture exit code
           npm run test:integration || TEST_EXIT=$?
+
+          # Stop log tail
+          kill $TAIL_PID 2>/dev/null || true
 
           # Check if server is still running after tests
           echo ""
@@ -185,12 +235,10 @@ jobs:
             echo "Server still running (PID $(cat app.pid))"
           else
             echo "SERVER CRASHED during tests!"
+            echo ""
+            echo "=== Full application logs ==="
+            cat app.log || true
           fi
-
-          # Show app logs
-          echo ""
-          echo "=== Application logs ==="
-          cat app.log || true
 
           # Exit with test result
           exit ${TEST_EXIT:-0}

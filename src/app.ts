@@ -404,6 +404,51 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   });
   app.use(router);
 
+  // Error handling middleware - must be last
+  // This catches errors from routes/middleware and returns proper error responses
+  // instead of letting them propagate to uncaughtException
+  app.use((err: Error & { code?: string; status?: number }, req: Request, res: Response, _next: NextFunction) => {
+    // Log the error
+    logger.error('Express error handler caught:', {
+      error: err.message,
+      stack: err.stack,
+      code: err.code,
+      path: req.path,
+      method: req.method,
+    });
+
+    // CSRF errors
+    if (err.code === 'EBADCSRFTOKEN') {
+      res.status(403);
+      if (req.accepts('html')) {
+        res.render('error', {
+          title: 'Error',
+          message: 'Invalid CSRF token. Please refresh the page and try again.',
+          error: {},
+        });
+      } else {
+        res.json({ error: 'Invalid CSRF token' });
+      }
+      return;
+    }
+
+    // Other errors
+    const status = err.status || 500;
+    res.status(status);
+    if (req.accepts('html')) {
+      res.render('error', {
+        title: 'Error',
+        message: err.message || 'Something went wrong',
+        error: app.get('env') === 'development' ? err : {},
+      });
+    } else {
+      res.json({
+        error: err.message || 'Internal server error',
+        ...(app.get('env') === 'development' && { stack: err.stack }),
+      });
+    }
+  });
+
   return {
     app,
     server,
