@@ -26,7 +26,13 @@
     "test:integration:pages": "mocha --require tsx --timeout 30000 --exit 'tests/integration/pages/**/*.test.ts'",
     "test:integration:concurrent": "mocha --require tsx --timeout 60000 --exit 'tests/integration/concurrent/**/*.test.ts'",
     "license:check": "tsx scripts/update-license-headers.ts --dry-run",
-    "license:update": "tsx scripts/update-license-headers.ts"
+    "license:update": "tsx scripts/update-license-headers.ts",
+    "deps:audit": "npm audit",
+    "deps:audit:fix": "npm audit fix",
+    "deps:check": "ncu",
+    "deps:check:minor": "ncu --target minor",
+    "deps:upgrade": "ncu -u",
+    "deps:upgrade:minor": "ncu -u --target minor"
   },
   "dependencies": {
     "apns2": "^9.3.0",
@@ -113,6 +119,7 @@
     "istanbul": "^0.4.5",
     "mocha": "^10.8.2",
     "node-gyp": "^7.1.2",
+    "npm-check-updates": "^19.3.2",
     "nyc": "^15.1.0",
     "qunit": "^2.14.0",
     "should": "^13.2.3",
