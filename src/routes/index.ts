@@ -604,7 +604,7 @@ export function createRoutes(deps: RoutesDependencies): Router {
   router.get('/oauth2/authorize', ensureAuthenticated, ...oauth2Controller.authorization);
   router.post('/oauth2/authorize/decision', ensureAuthenticated, ...oauth2Controller.decision);
   router.post('/oauth2/token',
-    passport.authenticate(['basic', 'oauth2-client-password'], { session: false }),
+    passport.authenticate(['oAuthBasic', 'oauth2-client-password'], { session: false }),
     ...oauth2Controller.token);
 
   // ============================================
