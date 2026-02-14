@@ -136,7 +136,7 @@ jobs:
           exit ${TEST_EXIT:-0}
         timeout-minutes: 5
         env:
-          SERVER_URL: http://localhost:3000
+          SERVER_URL: http://127.0.0.1:3000
 
   build-and-push:
     name: Build and Push Docker Image
