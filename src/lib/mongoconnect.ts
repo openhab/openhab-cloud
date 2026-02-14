@@ -18,6 +18,7 @@
  */
 
 import type { Mongoose } from 'mongoose';
+import mongoose from 'mongoose';
 import type { AppLogger } from './logger';
 
 /**
@@ -47,14 +48,17 @@ export class MongoConnect {
    * @param mongoose - Mongoose instance to connect
    * @returns Promise that resolves when connected
    */
-  async connect(mongoose: Mongoose): Promise<void> {
+  async connect(mongooseInstance: Mongoose): Promise<void> {
+    // Preserve Mongoose 6 behavior: allow queries with fields not in schema
+    mongoose.set('strictQuery', false);
+
     const uri = this.getMongoUri();
 
     // Log URI with masked password for debugging
     this.logger.info('Trying to connect to mongodb at: ' + this.getMaskedUri());
 
     try {
-      await mongoose.connect(uri);
+      await mongooseInstance.connect(uri);
       this.logger.info('Successfully connected to mongodb');
     } catch (error) {
       this.logger.error('Error while connecting from openHAB-cloud to mongodb:', error);

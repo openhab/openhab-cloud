@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-import type { RedisClient, Multi } from 'redis';
+import { createClient, type RedisClientType } from 'redis';
 import type { RedisConfig } from '../config';
 import type { ILogger } from '../types/notification';
 
@@ -31,8 +31,10 @@ export interface PromisifiedRedisClient {
   multi(): PromisifiedRedisMulti;
   quit(): Promise<void>;
   on(event: string, callback: (...args: unknown[]) => void): void;
-  /** The underlying Redis client (for libraries like connect-redis that need it) */
-  readonly _rawClient: RedisClient;
+  /** Scan keys matching a pattern. Returns [nextCursor, keys]. */
+  scan(cursor: number, options: { MATCH: string; COUNT: number }): Promise<{ cursor: number; keys: string[] }>;
+  /** The underlying Redis v4 client (for libraries like connect-redis) */
+  readonly nativeClient: RedisClientType;
 }
 
 export interface PromisifiedRedisMulti {
@@ -45,42 +47,31 @@ export interface PromisifiedRedisMulti {
   exec(): Promise<unknown[] | null>;
 }
 
-// Callback types for Redis operations
-type RedisCallback<T> = (err: Error | null, reply: T) => void;
-
 /**
- * Create a promisified Redis client
+ * Create a promisified Redis client (async — must be awaited)
  *
  * @param config - Redis configuration
  * @param logger - Logger instance
- * @returns Promisified Redis client
+ * @returns Promise of a PromisifiedRedisClient
  */
-export function createRedisClient(
+export async function createRedisClient(
   config: RedisConfig,
   logger: ILogger
-): PromisifiedRedisClient {
-  // Dynamic require to handle CommonJS module
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const redis = require('redis') as typeof import('redis');
-
+): Promise<PromisifiedRedisClient> {
   logger.info(`Connecting to Redis at ${config.host}:${config.port}`);
 
-  const client = redis.createClient({
-    port: config.port,
-    host: config.host,
-  }) as RedisClient;
+  const clientOptions: Parameters<typeof createClient>[0] = {
+    socket: {
+      host: config.host,
+      port: config.port,
+    },
+  };
 
-  // Authenticate if password is configured
   if (config.password) {
-    client.auth(config.password, (error: Error | null, data: string) => {
-      if (error) {
-        logger.error('Redis auth error - closing connection:', error);
-        client.quit();
-      } else {
-        logger.info(`Redis connect response: ${data}`);
-      }
-    });
+    clientOptions.password = config.password;
   }
+
+  const client = createClient(clientOptions) as RedisClientType;
 
   // Set up event handlers
   client.on('ready', () => {
@@ -95,97 +86,69 @@ export function createRedisClient(
     logger.error('Redis error:', error);
   });
 
-  // Return promisified wrapper
+  await client.connect();
+
+  // Return wrapper that matches the PromisifiedRedisClient interface
   return wrapRedisClient(client);
 }
 
 /**
- * Wrap a Redis client with Promise-based methods
+ * Wrap a Redis v4 client with our stable interface
  */
-function wrapRedisClient(client: RedisClient): PromisifiedRedisClient {
+function wrapRedisClient(client: RedisClientType): PromisifiedRedisClient {
   return {
-    get(key: string): Promise<string | null> {
-      return new Promise((resolve, reject) => {
-        client.get(key, (err: Error | null, reply: string | null) => {
-          if (err) reject(err);
-          else resolve(reply);
-        });
-      });
+    async get(key: string): Promise<string | null> {
+      return client.get(key);
     },
 
-    set(key: string, value: string, ...args: (string | number)[]): Promise<string | null> {
-      return new Promise((resolve, reject) => {
-        // Build args array for redis client
-        const redisArgs: (string | number)[] = [key, value, ...args];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (client.set as any)(...redisArgs, (err: Error | null, reply: string | null) => {
-          if (err) reject(err);
-          else resolve(reply);
-        });
-      });
+    async set(key: string, value: string, ...args: (string | number)[]): Promise<string | null> {
+      // Parse variadic args to match redis v4 API
+      // Supports: set(key, val), set(key, val, 'EX', 60), set(key, val, 'NX', 'EX', 60)
+      const options: Record<string, unknown> = {};
+      for (let i = 0; i < args.length; i++) {
+        const arg = String(args[i]).toUpperCase();
+        if (arg === 'EX' && i + 1 < args.length) {
+          options['EX'] = Number(args[++i]);
+        } else if (arg === 'PX' && i + 1 < args.length) {
+          options['PX'] = Number(args[++i]);
+        } else if (arg === 'NX') {
+          options['NX'] = true;
+        } else if (arg === 'XX') {
+          options['XX'] = true;
+        }
+      }
+      return client.set(key, value, options);
     },
 
-    del(key: string): Promise<number> {
-      return new Promise((resolve, reject) => {
-        client.del(key, (err: Error | null, reply: number) => {
-          if (err) reject(err);
-          else resolve(reply);
-        });
-      });
+    async del(key: string): Promise<number> {
+      return client.del(key);
     },
 
-    ttl(key: string): Promise<number> {
-      return new Promise((resolve, reject) => {
-        client.ttl(key, (err: Error | null, reply: number) => {
-          if (err) reject(err);
-          else resolve(reply);
-        });
-      });
+    async ttl(key: string): Promise<number> {
+      return client.ttl(key);
     },
 
-    expire(key: string, seconds: number): Promise<number> {
-      return new Promise((resolve, reject) => {
-        client.expire(key, seconds, (err: Error | null, reply: number) => {
-          if (err) reject(err);
-          else resolve(reply);
-        });
-      });
+    async expire(key: string, seconds: number): Promise<number> {
+      const result = await client.expire(key, seconds);
+      return result ? 1 : 0;
     },
 
-    incr(key: string): Promise<number> {
-      return new Promise((resolve, reject) => {
-        client.incr(key, (err: Error | null, reply: number) => {
-          if (err) reject(err);
-          else resolve(reply);
-        });
-      });
+    async incr(key: string): Promise<number> {
+      return client.incr(key);
     },
 
-    mget(keys: string[]): Promise<(string | null)[]> {
-      return new Promise((resolve, reject) => {
-        client.mget(keys, (err: Error | null, reply: (string | null)[]) => {
-          if (err) reject(err);
-          else resolve(reply);
-        });
-      });
+    async mget(keys: string[]): Promise<(string | null)[]> {
+      return client.mGet(keys);
     },
 
-    watch(key: string): Promise<string> {
-      return new Promise((resolve, reject) => {
-        client.watch(key, (err: Error | null, reply: string) => {
-          if (err) reject(err);
-          else resolve(reply);
-        });
-      });
+    async watch(key: string): Promise<string> {
+      await client.watch(key);
+      return 'OK';
     },
 
-    unwatch(): Promise<string> {
-      return new Promise((resolve, reject) => {
-        client.unwatch((err: Error | null, reply: string) => {
-          if (err) reject(err);
-          else resolve(reply);
-        });
-      });
+    async unwatch(): Promise<string> {
+      await client.unwatch();
+      return 'OK';
     },
 
     multi(): PromisifiedRedisMulti {
@@ -193,38 +156,37 @@ function wrapRedisClient(client: RedisClient): PromisifiedRedisClient {
       return wrapRedisMulti(multi);
     },
 
-    quit(): Promise<void> {
-      return new Promise((resolve, reject) => {
-        client.quit((err: Error | null) => {
-          if (err) reject(err);
-          else resolve();
-        });
-      });
+    async quit(): Promise<void> {
+      await client.quit();
     },
 
     on(event: string, callback: (...args: unknown[]) => void): void {
       client.on(event, callback);
     },
 
-    get _rawClient(): RedisClient {
+    async scan(cursor: number, options: { MATCH: string; COUNT: number }): Promise<{ cursor: number; keys: string[] }> {
+      return client.scan(cursor, options);
+    },
+
+    get nativeClient(): RedisClientType {
       return client;
     },
   };
 }
 
 /**
- * Wrap a Redis multi with Promise-based exec
+ * Wrap a Redis v4 multi with our stable interface
  */
-function wrapRedisMulti(multi: Multi): PromisifiedRedisMulti {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function wrapRedisMulti(multi: any): PromisifiedRedisMulti {
   return {
     get(key: string): PromisifiedRedisMulti {
       multi.get(key);
       return this;
     },
 
-    set(key: string, value: string, ...args: (string | number)[]): PromisifiedRedisMulti {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (multi.set as any)(key, value, ...args);
+    set(key: string, value: string): PromisifiedRedisMulti {
+      multi.set(key, value);
       return this;
     },
 
@@ -239,22 +201,17 @@ function wrapRedisMulti(multi: Multi): PromisifiedRedisMulti {
     },
 
     zadd(key: string, score: number, member: string): PromisifiedRedisMulti {
-      multi.zadd(key, score, member);
+      multi.zAdd(key, { score, value: member });
       return this;
     },
 
     zremrangebyscore(key: string, min: string | number, max: string | number): PromisifiedRedisMulti {
-      multi.zremrangebyscore(key, min, max);
+      multi.zRemRangeByScore(key, min, max);
       return this;
     },
 
-    exec(): Promise<unknown[] | null> {
-      return new Promise((resolve, reject) => {
-        multi.exec((err: Error | null, replies: unknown[] | null) => {
-          if (err) reject(err);
-          else resolve(replies);
-        });
-      });
+    async exec(): Promise<unknown[] | null> {
+      return multi.exec();
     },
   };
 }
@@ -310,9 +267,11 @@ export function createMockRedisClient(): PromisifiedRedisClient {
     multi: mockMulti,
     async quit() {},
     on() {},
-    // Mock client doesn't have a real underlying client
-    get _rawClient(): RedisClient {
-      return {} as RedisClient;
+    async scan() {
+      return { cursor: 0, keys: [] };
+    },
+    get nativeClient(): RedisClientType {
+      return {} as RedisClientType;
     },
   };
 }

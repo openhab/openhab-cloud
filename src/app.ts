@@ -30,7 +30,7 @@ import csurf from 'csurf';
 import serveStatic from 'serve-static';
 import passport from 'passport';
 import mongoose from 'mongoose';
-import connectRedis from 'connect-redis';
+import { RedisStore } from 'connect-redis';
 
 import { loadConfig, SystemConfigManager } from './config';
 import { createLoggerFromConfig } from './lib/logger';
@@ -113,8 +113,8 @@ export async function createApp(configPath: string): Promise<AppContainer> {
     logger.error('Unhandled promise rejection at:', promise, 'reason:', reason);
   });
 
-  // Create Redis client
-  const redis = createRedisClient(config.redis, logger);
+  // Create Redis client (async in redis v4)
+  const redis = await createRedisClient(config.redis, logger);
 
   // Initialize MongoDB connection
   const mongoConnect = createMongoConnect(
@@ -198,14 +198,11 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   app.use(cookieParser(config.express.key));
 
   // Session with Redis store
-  // Note: connect-redis needs the raw redis client, not our Promise wrapper
-  const RedisStore = connectRedis(session);
   app.use(
     session({
       secret: config.express.key,
       store: new RedisStore({
-        client: redis._rawClient,
-        logErrors: true,
+        client: redis.nativeClient,
       }),
       cookie,
       resave: false,

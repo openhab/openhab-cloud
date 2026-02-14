@@ -134,39 +134,21 @@ export class StatsJob extends BaseJob {
    * Count online openHAB instances by scanning Redis connection keys.
    * Uses SCAN to avoid blocking Redis on large datasets.
    */
-  private countOpenhabOnline(): Promise<number> {
-    return new Promise((resolve) => {
-      const rawClient = this.redis._rawClient;
+  private async countOpenhabOnline(): Promise<number> {
+    let count = 0;
+    let cursor = 0;
 
-      let count = 0;
-      const scanKeys = (cursor: string) => {
-        rawClient.scan(
-          cursor,
-          'MATCH',
-          'connection:*',
-          'COUNT',
-          '100',
-          (err: Error | null, res: [string, string[]]) => {
-            if (err) {
-              this.logger.error('Error scanning for online openhabs:', err);
-              resolve(count);
-              return;
-            }
+    try {
+      do {
+        const result = await this.redis.scan(cursor, { MATCH: 'connection:*', COUNT: 100 });
+        cursor = result.cursor;
+        count += result.keys.length;
+      } while (cursor !== 0);
+    } catch (err) {
+      this.logger.error('Error scanning for online openhabs:', err);
+    }
 
-            const [nextCursor, keys] = res;
-            count += keys.length;
-
-            if (nextCursor === '0') {
-              resolve(count);
-            } else {
-              scanKeys(nextCursor);
-            }
-          }
-        );
-      };
-
-      scanKeys('0');
-    });
+    return count;
   }
 
   private async saveStats(stats: StatsData): Promise<void> {
