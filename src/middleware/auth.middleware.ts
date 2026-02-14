@@ -115,15 +115,19 @@ export function configurePassport(authService: AuthService, logger: ILogger): vo
   passport.use(
     new BearerStrategy(async (accessToken, done) => {
       try {
+        console.log(`[Bearer Strategy] called with token: ${accessToken.substring(0, 8)}...`);
         const result = await authService.validateBearerToken(accessToken);
 
         if (!result) {
+          console.log('[Bearer Strategy] validateBearerToken returned null');
           return done(null, false);
         }
 
+        console.log(`[Bearer Strategy] success for user: ${result.user.username}`);
         // Pass scopes as info object (third parameter)
         return done(null, result.user, { scope: result.scopes });
       } catch (error) {
+        console.log('[Bearer Strategy] error:', error);
         logger.error('Bearer strategy error:', error);
         return done(error);
       }
