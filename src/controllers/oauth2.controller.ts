@@ -330,10 +330,10 @@ export class OAuth2Controller {
       return done(null, { scope: scopeArr });
     };
 
-    const decisionMiddleware = this.server.decision(parseFn as unknown as oauth2orize.DecisionParseFunction);
+    const decisionMiddlewares = this.server.decision(parseFn as unknown as oauth2orize.DecisionParseFunction) as unknown as RequestHandler[];
 
-    // Wrap decision middleware with pre/post logging and error capture
-    const loggedDecision: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
+    // Pre-logging middleware
+    const logDecisionEntry: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
       this.logger.info(`[OAuth2] decision: POST received, user=${req.user?.username}, body keys=${Object.keys(req.body || {}).join(',')}, transaction_id=${req.body?.transaction_id}`);
 
       // Capture the redirect to log it
@@ -348,15 +348,10 @@ export class OAuth2Controller {
         return originalRedirect(statusOrUrl as string);
       }) as typeof res.redirect;
 
-      (decisionMiddleware as RequestHandler)(req, res, (err?: unknown) => {
-        if (err) {
-          this.logger.error('[OAuth2] decision: middleware error:', err);
-        }
-        next(err);
-      });
+      next();
     };
 
-    return [loggedDecision];
+    return [logDecisionEntry, ...decisionMiddlewares];
   }
 
   /**
