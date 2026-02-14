@@ -175,7 +175,7 @@ export class EmailService {
       verifyUrl,
     };
 
-    await this.sendEmail(email, 'Email Verification', 'verify-email', locals);
+    await this.sendEmail(email, 'Email Verification', 'activation-email', locals);
   }
 
   /**
