@@ -40,23 +40,12 @@ export const ensureAuthenticated: RequestHandler = (req, res, next) => {
  * Does not redirect on failure - returns 401.
  */
 export const ensureRestAuthenticated: RequestHandler = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  console.log(`[REST Auth] ${req.method} ${req.path} - auth header: ${authHeader ? authHeader.substring(0, 20) + '...' : 'none'}, session: ${req.isAuthenticated()}`);
-
   if (req.isAuthenticated()) {
     return next();
   }
 
   // Try Basic or Bearer authentication
-  return passport.authenticate(['basic', 'bearer'], { session: false }, (err: Error | null, user: Express.User | false, info: unknown) => {
-    console.log(`[REST Auth] passport result - err: ${err}, user: ${!!user}, info: ${JSON.stringify(info)}`);
-    if (err) return next(err);
-    if (!user) return res.status(401).json({ error: 'Unauthorized' });
-    req.logIn(user, { session: false }, (loginErr) => {
-      if (loginErr) return next(loginErr);
-      return next();
-    });
-  })(req, res, next);
+  return passport.authenticate(['basic', 'bearer'], { session: false })(req, res, next);
 };
 
 /**

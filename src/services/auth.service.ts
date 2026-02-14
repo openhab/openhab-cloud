@@ -163,28 +163,28 @@ export class AuthService {
       const token = await this.oauth2TokenRepository.findByToken(accessToken);
 
       if (!token) {
-        this.logger.info('[OAuth2] Bearer token not found');
+        this.logger.debug('[OAuth2] Bearer token not found');
         return null;
       }
 
       if (!token.valid) {
-        this.logger.info('[OAuth2] Bearer token is invalid/revoked');
+        this.logger.debug('[OAuth2] Bearer token is invalid/revoked');
         return null;
       }
 
       const user = await this.userRepository.findById(token.user.toString());
 
       if (!user) {
-        this.logger.info(`[OAuth2] User not found for bearer token, userId=${token.user.toString()}`);
+        this.logger.warn(`[OAuth2] User not found for bearer token, userId=${token.user.toString()}`);
         return null;
       }
 
       if (!user.active) {
-        this.logger.info(`[OAuth2] User ${user.username} is inactive`);
+        this.logger.warn(`[OAuth2] User ${user.username} is inactive`);
         return null;
       }
 
-      this.logger.info(`[OAuth2] Bearer token validated for user: ${user.username}`);
+      this.logger.debug(`[OAuth2] Bearer token validated for user: ${user.username}`);
       return {
         user,
         scopes: token.scope,
