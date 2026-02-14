@@ -138,9 +138,9 @@ npm run docker:test:up && npm run docker:test:seed && npm run test:integration
 ## Key Dependencies
 
 - **Express 4.x** - Web framework
-- **Mongoose 6.x** - MongoDB ODM
+- **Mongoose 8.x** - MongoDB ODM
 - **Socket.IO 4.x** - WebSocket communication
-- **Passport 0.6.x** - Authentication
+- **Passport 0.7.x** - Authentication
 - **oauth2orize** - OAuth2 authorization server
 - **Winston** - Logging with daily rotation
 - **Nodemailer** - Email sending

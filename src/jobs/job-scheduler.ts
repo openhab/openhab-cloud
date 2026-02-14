@@ -42,19 +42,17 @@ export class JobScheduler {
       throw new Error(`Job ${job.name} is already registered`);
     }
 
-    const cronJob = new CronJob(
-      job.schedule,
-      async () => {
+    const cronJob = CronJob.from({
+      cronTime: job.schedule,
+      onTick: async () => {
         try {
           await job.run();
         } catch (error) {
           this.logger.error(`Unhandled error in job ${job.name}:`, error);
         }
       },
-      null, // onComplete
-      false, // start
-      undefined // timezone
-    );
+      start: false,
+    });
 
     this.jobs.set(job.name, { job, cronJob });
     this.logger.info(`Registered job: ${job.name} with schedule: ${job.schedule}`);

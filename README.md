@@ -8,7 +8,7 @@ openHAB Cloud is a companion cloud service for [openHAB](https://www.openhab.org
 
 ## Technology Stack
 
-- **Runtime**: Node.js 18+ with TypeScript
+- **Runtime**: Node.js 22+ with TypeScript
 - **Web Framework**: Express.js
 - **Database**: MongoDB 6+
 - **Cache/Sessions**: Redis 7+
@@ -19,7 +19,7 @@ openHAB Cloud is a companion cloud service for [openHAB](https://www.openhab.org
 
 ### Prerequisites
 
-- Node.js 18 or higher
+- Node.js 22 or higher
 - MongoDB 6+
 - Redis 7+
 

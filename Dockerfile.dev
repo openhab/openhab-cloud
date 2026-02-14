@@ -1,5 +1,5 @@
 # Use a more recent Debian-based Node.js image for better development support
-FROM node:18-bullseye
+FROM node:22-bullseye
 
 # Install development tools and dependencies
 RUN apt-get update && apt-get install -y \

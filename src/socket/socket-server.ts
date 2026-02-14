@@ -12,7 +12,7 @@
  */
 
 import type { Server as HttpServer } from 'http';
-import type { Server as SocketIOServer, Socket } from 'socket.io';
+import { Server as SocketIOServer, type Socket } from 'socket.io';
 import { v1 as uuidv1 } from 'uuid';
 import type { Types } from 'mongoose';
 import type { IOpenhab, IUser, IEvent } from '../types/models';
@@ -94,12 +94,9 @@ export class SocketServer {
    * @param httpServer - The HTTP server to attach to
    */
   initialize(httpServer: HttpServer): void {
-    // Dynamic import of socket.io to avoid issues with CommonJS/ESM
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const socketio = require('socket.io') as (server: HttpServer, opts?: unknown) => SocketIOServer;
-
-    this.io = socketio(httpServer, {
+    this.io = new SocketIOServer(httpServer, {
       maxHttpBufferSize: 1e8, // 100MB
+      allowEIO3: true, // Allow Engine.IO v3 (Socket.IO v2) clients to connect
     });
 
     this.proxyHandler = new ProxyHandler(this.requestTracker, this.io!, this.logger);
@@ -512,20 +509,8 @@ export class SocketServer {
     }
 
     if (this.io) {
-      return new Promise((resolve) => {
-        // Socket.IO v2 doesn't have disconnectSockets, iterate through sockets
-        const sockets = this.io!.sockets.sockets;
-        if (sockets) {
-          Object.keys(sockets).forEach((id) => {
-            const socket = sockets[id];
-            if (socket) {
-              socket.disconnect(true);
-            }
-          });
-        }
-        this.logger.info('All socket.io connections closed');
-        resolve();
-      });
+      this.io.disconnectSockets(true);
+      this.logger.info('All socket.io connections closed');
     }
   }
 }
