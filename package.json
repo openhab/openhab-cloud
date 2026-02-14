@@ -69,7 +69,7 @@
     "passport-oauth2-client-password": "0.1.2",
     "qunitjs": "^2.4.1",
     "ratelimiter": "3.4.1",
-    "recachegoose": "^9.0.0",
+    "recachegoose": "^11.0.3",
     "redis": "3.1.2",
     "request": "^2.88.0",
     "serve-favicon": "^2.5.0",
