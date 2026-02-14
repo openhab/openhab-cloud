@@ -106,6 +106,10 @@ npm start
 | `npm run test:integration` | Run integration tests |
 | `npm run docker:test:up` | Start test Docker stack |
 | `npm run docker:test:down` | Stop test Docker stack |
+| `npm run deps:audit` | Check for security vulnerabilities |
+| `npm run deps:check` | Show all available dependency upgrades |
+| `npm run deps:check:minor` | Show only minor/patch upgrades |
+| `npm run deps:upgrade:minor` | Update package.json to latest minor versions |
 
 ### Testing
 
@@ -120,6 +124,31 @@ npm run docker:test:up
 npm run docker:test:seed
 npm run test:integration
 ```
+
+### Dependency Management
+
+Check for security vulnerabilities and outdated packages:
+
+```bash
+# Security audit
+npm run deps:audit
+
+# See all available upgrades (read-only)
+npm run deps:check
+
+# See only minor/patch upgrades (safer)
+npm run deps:check:minor
+
+# Apply minor/patch upgrades to package.json
+npm run deps:upgrade:minor
+npm install
+npm test
+
+# Interactive mode — pick which deps to upgrade
+npx ncu -i
+```
+
+Dependabot is also configured to open weekly PRs for dependency updates.
 
 ## Production Deployment
 
