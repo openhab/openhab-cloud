@@ -240,7 +240,7 @@ function createOAuth2ClientRepository(): IOAuth2ClientRepository {
  */
 function createOAuth2TokenRepository(): IOAuth2TokenRepository {
   return {
-    findByToken: async (token) => OAuth2Token.findOne({ token }).populate('user'),
+    findByToken: async (token) => OAuth2Token.findOne({ token }),
   };
 }
 
