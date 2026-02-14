@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>openHAB Cloud - <%= title %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,800" rel="stylesheet" type="text/css">
+    <link type="text/css" rel="stylesheet" href="/css/layout.css">
+    <link type="text/css" rel="stylesheet" href="/css/colors.css">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <style>
+        body { padding-top: 60px; padding-bottom: 40px; }
+        .container { margin: 0 auto; max-width: 1000px; }
+        .error-content { padding: 40px 0; text-align: center; }
+        .error-content h2 { margin-bottom: 20px; }
+        .error-details { margin-top: 20px; text-align: left; }
+    </style>
+</head>
+<body>
+<header id="mainHeader" class="clearfix">
+    <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container">
+                <a href="/" class="brand"><img src="/img/openhab-logo-top.png" alt="openHAB"/></a>
+            </div>
+        </div>
+    </div>
+</header>
+<div id="globalWrapper">
+    <section id="content">
+        <div class="container">
+            <div class="error-content">
+                <h2><%= title %></h2>
+                <p><%= message %></p>
+                <p><a href="/" class="btn">Return to Home</a></p>
+                <% if (error && error.stack) { %>
+                <div class="error-details">
+                    <pre><%= error.stack %></pre>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

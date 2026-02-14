@@ -15,7 +15,39 @@ node_modules/
 # Development environment settings directories
 .idea
 .project
+.vscode
 /openhab-cloud.iml
 
-# currently used config.json
+# Currently used config.json
 /config.json
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Build output
+dist/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local certificates
+certs/
+
+# Temporary files
+tmp/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Lock files (if using npm)
+yarn.lock
+
+# Local development overrides
+docker-compose.override.yml

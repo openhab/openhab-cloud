@@ -1,0 +1,83 @@
+services:
+  app:
+    image: openhab/openhab-cloud:${IMAGE_TAG:-latest}
+    build:
+      context: ../..
+      # Uncomment to customize timezone
+      # args:
+      #   TZ: America/Los_Angeles
+    volumes:
+      - ./config.json.template:/opt/openhabcloud/config.json.template:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    environment:
+      - DOMAIN_NAME
+      - EXPRESS_KEY
+      - REDIS_PASSWORD
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  mongodb:
+    image: mongo:6
+    volumes:
+      - mongo-data:/data/db
+    restart: always
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ping:1})"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    restart: always
+    command: >-
+      redis-server --appendonly yes
+      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
+    healthcheck:
+      test: ["CMD", "sh", "-c", "redis-cli ${REDIS_PASSWORD:+-a $REDIS_PASSWORD --no-auth-warning} ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+      - certbot-etc:/etc/letsencrypt:ro
+      - certbot-var:/var/lib/letsencrypt
+      - certbot-www:/var/www/certbot:ro
+    environment:
+      - DOMAIN_NAME
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+    depends_on:
+      - app
+    restart: always
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  mongo-data:
+  redis-data:
+  certbot-etc:
+  certbot-var:
+  certbot-www:

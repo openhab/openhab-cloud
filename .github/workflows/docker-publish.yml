@@ -1,66 +1,185 @@
-name: Docker
+name: Build and Publish Docker
 
 on:
   push:
-    # Publish `main` as Docker `latest` image.
     branches:
       - main
-
-    # Publish `v1.2.3` tags as releases.
     tags:
-      - v*
-
-  # Run tests for any PRs.
-  pull_request:
-  
-  # Build image once a week to apply updates in base image.
-  schedule:
-    - cron: 0 0 */7 * *
-
-env:
-  IMAGE_NAME: ${{github.repository}}
+      - 'v*'
 
 jobs:
-  push:
-
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    services:
+      mongodb:
+        image: mongo:6
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ping:1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Build image
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
 
-      - name: Log into registry
-        run: echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Push image
+      - name: Run linter
+        run: npm run lint:ts
+
+      - name: Run type check
+        run: npm run typecheck
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Create logs directory
+        run: mkdir -p logs
+
+      - name: Seed test database
+        run: npx tsx tests/integration/seed-database.ts
+        env:
+          MONGO_HOST: localhost
+          MONGO_PORT: 27017
+          MONGO_DB: openhab_test
+
+      - name: Start application
         run: |
+          npm start > app.log 2>&1 &
+          echo $! > app.pid
+          echo "App started with PID $(cat app.pid)"
+        env:
+          NODE_ENV: test
+          CONFIG_PATH: ./docker/config.ci.json
 
-          GIT_HASH=$(git rev-parse --short "$GITHUB_SHA")
+      - name: Wait for application to be ready
+        run: |
+          echo "Waiting for app to start..."
+          for i in {1..60}; do
+            sleep 1
 
-          # Change all uppercase to lowercase
-          IMAGE_NAME=$(echo $IMAGE_NAME | tr '[A-Z]' '[a-z]')
+            # Check if process is still running
+            if ! ps -p $(cat app.pid) > /dev/null 2>&1; then
+              echo "=== Process died! Showing logs ==="
+              cat app.log || true
+              exit 1
+            fi
 
-          # Strip git ref prefix from version
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+            # Try health check
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health 2>/dev/null || echo "000")
+            echo "Attempt $i: HTTP $RESPONSE"
 
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+            if [ "$RESPONSE" = "200" ]; then
+              echo "Health check passed!"
+              exit 0
+            fi
 
-          # Use Docker `latest` tag convention
-          [ "$VERSION" == "main" ] && VERSION=latest
+            # Show more detail if we get a response but not 200
+            if [ "$RESPONSE" != "000" ]; then
+              curl -s http://localhost:3000/health || true
+            fi
+          done
 
-          echo IMAGE_NAME=$IMAGE_NAME
-          echo VERSION=$VERSION
+          echo "=== Timeout - showing full logs ==="
+          cat app.log || true
+          exit 1
 
-          docker tag $IMAGE_NAME $IMAGE_NAME:$GIT_HASH
-          docker tag $IMAGE_NAME $IMAGE_NAME:$VERSION
-          docker push -a $IMAGE_NAME
-      - name: Create and push tag
-        # skip this step if the push is a tag
-        if: startsWith(github.ref, 'refs/heads/') && github.event_name == 'push'
+      - name: Run integration tests
+        run: |
+          echo "=== Application logs before tests ==="
+          cat app.log || true
+          echo ""
+          echo "=== Starting tests ==="
+
+          # Stability check
+          echo "=== Stability check ==="
+          for i in 1 2 3; do
+            curl -s http://localhost:3000/health && echo " OK"
+            sleep 1
+          done
+
+          # Run tests
+          npm run test:integration || TEST_EXIT=$?
+
+          # Check server status
+          echo ""
+          echo "=== Server status after tests ==="
+          if ps -p $(cat app.pid) > /dev/null 2>&1; then
+            echo "Server still running"
+          else
+            echo "SERVER CRASHED!"
+            cat app.log || true
+          fi
+
+          exit ${TEST_EXIT:-0}
+        timeout-minutes: 5
+        env:
+          SERVER_URL: http://localhost:3000
+
+  build-and-push:
+    name: Build and Push Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: openhab/openhab-cloud
+          tags: |
+            # develop tags for main branch
+            type=raw,value=develop,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=develop-,enable=${{ github.ref == 'refs/heads/main' }}
+            # version tags for releases (v1.2.3 -> 1.2.3, 1.2, latest)
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Create build tag
+        if: github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

@@ -1,0 +1,43 @@
+# Use a more recent Debian-based Node.js image for better development support
+FROM node:18-bullseye
+
+# Install development tools and dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    python3 \
+    build-essential \
+    procps \
+    vim \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add proper timezone
+ARG TZ=Europe/Berlin
+RUN ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime && \
+    echo "${TZ}" > /etc/timezone
+
+# Create non-root user for better security
+RUN useradd -ms /bin/bash vscode
+RUN mkdir -p /home/vscode/workspace
+WORKDIR /home/vscode/workspace
+
+# Install global development tools
+RUN npm install -g node-gyp@latest
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies with legacy peer deps to handle older packages
+RUN npm install --legacy-peer-deps
+
+# Give vscode user ownership of the workspace
+RUN chown -R vscode:vscode /home/vscode
+
+# Switch to non-root user
+USER vscode
+
+# Expose the default port
+EXPOSE 3000
+
+# Default command to keep container running
+CMD ["sleep", "infinity"] 

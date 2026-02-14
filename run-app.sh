@@ -6,4 +6,4 @@ if [ -f config.json.template ]; then
   envsubst < config.json.template > config.json
 fi
 
-exec node app.js
+exec node dist/app.js

@@ -31,10 +31,15 @@
                 <form method="post" action="/account" id="contactform">
                     <input type="hidden" name="_csrf" value="<%= token %>">
                     <label for="openhabuuid">openHAB UUID</label>
-                    <input id="openhabuuid" type="text" name="openhabuuid" value="<%= openhab.uuid %>">
+                    <input id="openhabuuid" type="text" name="openhabuuid" value="<%= openhab ? openhab.uuid : '' %>">
                     <label for="openhabsecret">openHAB Secret</label>
-                    <input id="openhabsecret" type="password" name="openhabsecret" value="<%= openhab.secret %>">
-                    <button name="submit" type="submit" class="btn" id="submit">Update</button>
+                    <input id="openhabsecret" type="password" name="openhabsecret" value="<%= openhab ? openhab.secret : '' %>">
+                    <% if (!openhab) { %>
+                    <div class="alert alert-info" style="margin-bottom: 10px;">
+                        No openHAB installation is connected to your account. Enter your UUID and secret below.
+                    </div>
+                    <% } %>
+                    <button name="submit" type="submit" class="btn" id="submit"><%= openhab ? 'Update' : 'Register' %></button>
                 </form>
                 <div id="message"></div>
             </div>

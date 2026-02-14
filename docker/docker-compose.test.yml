@@ -1,0 +1,65 @@
+services:
+  mongodb:
+    image: mongo:6
+    container_name: openhab-cloud-test-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_test_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: openhab_test
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: openhab-cloud-test-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  openhab-cloud:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+    container_name: openhab-cloud-test-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=test
+      - CONFIG_PATH=/app/config.test.json
+    volumes:
+      - ./config.test.json:/app/config.test.json:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+  nginx:
+    image: nginx:alpine
+    container_name: openhab-cloud-test-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.test.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      openhab-cloud:
+        condition: service_healthy
+
+volumes:
+  mongodb_test_data:

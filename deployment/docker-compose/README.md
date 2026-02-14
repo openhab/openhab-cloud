@@ -1,96 +1,251 @@
-# Docker Compose
+# Docker Compose Deployment
 
-The section describes how the openHAB-cloud docker images can be used with docker-compose
-to spin up the dockerized openhab-cloud backend.
+Deploy openHAB Cloud using Docker Compose with your choice of reverse proxy.
+
+## Docker Hub
+
+Official images are published to Docker Hub:
+
+**[openhab/openhab-cloud](https://hub.docker.com/r/openhab/openhab-cloud)**
+
+| Tag | Description |
+|-----|-------------|
+| `latest` | Latest stable release |
+| `develop` | Latest development build from main branch |
+| `x.y.z` | Specific version (e.g., `1.0.0`) |
+
+```bash
+docker pull openhab/openhab-cloud:latest
+```
 
 ## Architecture
 
-The dockerized openhab-cloud uses a separate docker image and container for each part of the overall system
-according to the following stack:
-* `app`: node.js and express.js (`openhab/openhab-cloud:latest`)
-* `mongodb`: MongoDB database (`mongo:4`)
-* `redis`: redis session manager (`bitnami/redis:latest`)
-* `traefik`: http proxy with LetsEncrypt SSL Certs (`traefik:1.7`)
+The stack consists of the following services:
+
+| Service | Image | Description |
+|---------|-------|-------------|
+| `app` | `openhab/openhab-cloud` | Node.js application |
+| `mongodb` | `mongo:6` | MongoDB database |
+| `redis` | `redis:7-alpine` | Session store and cache |
+| `traefik` or `nginx` | varies | Reverse proxy with SSL |
 
 ## Prerequisites
 
-To run openhab-cloud make sure docker and docker-compose are installed on your machine.
-More information at [Docker's website](https://docs.docker.com/).
+- Docker Engine 20+ with Docker Compose V2
+- A domain name pointing to your server
+- Ports 80 and 443 available
 
-The `docker-compose.yml` file assume you have ports 80, 443 and 8080 available on the host you intend to run on. If you don't, you'll need to adjust these.
+## Quick Start
 
-* Port 80 and 443 are public facing ports, serving your openhab-cloud web interface and API endpoints.
-  You need to expose them to the public, through port forwarding on your router, or AWS security group, etc.
-* Port 8080 is Traefik admin port, for monitoring purposes only. It should NOT be exposed to the public.
+### Option 1: Traefik (Recommended)
 
-## Preparation and customization
+Traefik provides automatic SSL certificate management via Let's Encrypt.
 
-1. Prepare the *project directory*. This step depends on if you want to build your own image or use the pre-built image.
-   - In order to build your own docker image, you need to clone this entire git repo. Your project directory will be `deployment/docker-compose`.
-   - Otherwise, you only need to copy all files from this folder onto the machine that will be hosting your openhab-cloud, and that will be your project directory.
-1. Locate the `.env` file in your *project directory*. Follow the comments in the file to substitute all `<...>` tags with real values.
-   This file should be kept secret and never published to GitHub.
-1. In the `config.json.template` file, update any other settings for openhab-cloud as per the docs.
+```bash
+# 1. Configure environment
+cp .env.example .env
+nano .env  # Edit with your domain and settings
 
-All commands mentioned hereafter are expected to be issued from your *project directory*.
+# 2. Start the stack
+docker compose up -d
 
-## Obtain docker images
-
-### Build
-To build your own image from source code, potentially with your own modifications, run this command:
-```
-docker-compose build
+# 3. View logs
+docker compose logs -f app
 ```
 
-### Pull
-To use pre-built images, download them first with this command:
-```
-docker-compose pull
-```
+### Option 2: Nginx
 
-## Start
+Nginx with Certbot for SSL certificate management.
 
-To create and run the composed application, run the following command: 
-```
-docker-compose up -d
-```
+```bash
+# 1. Configure environment
+cp .env.example .env
+# Edit .env with your domain and settings
 
-## Logs
+# 2. Get initial SSL certificate
+docker compose -f docker-compose.nginx.yml run --rm certbot certonly \
+  --webroot --webroot-path=/var/www/certbot \
+  -d your-domain.com --email your@email.com --agree-tos
 
-To make sure openhab-cloud is running, check the openhab-cloud app logs:
-```
-docker-compose logs app
+# 3. Start the stack
+docker compose -f docker-compose.nginx.yml up -d
 ```
 
-## Stop
+## Configuration
 
-To stop and remove the openhab-cloud containers, use the following command:
+### Environment Variables
+
+Edit the `.env` file:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DOMAIN_NAME` | Yes | Your domain (e.g., `myopenhab.example.com`) |
+| `EMAIL` | Yes | Email for SSL certificate notifications |
+| `EXPRESS_KEY` | Yes | Random secret for session encryption |
+| `IMAGE_TAG` | No | Docker image tag (default: `latest`) |
+| `SMTP_*` | No | Email settings for notifications |
+| `REGISTRATION_ENABLED` | No | Enable user registration (default: `true`) |
+
+### Application Config
+
+The `config.json.template` file is processed at container startup. Environment variables in the template are substituted with values from `.env`.
+
+Two templates are provided:
+- `config.json.template` - Basic config (MongoDB, Redis, no push notifications)
+- `config.full.json.template` - Full config with email, FCM push, and IFTTT
+
+For production with push notifications, copy the full template:
+```bash
+cp config.full.json.template config.json.template
 ```
-docker-compose down
+
+## Commands
+
+### Start
+
+```bash
+# Traefik
+docker compose up -d
+
+# Nginx
+docker compose -f docker-compose.nginx.yml up -d
 ```
 
-After they're stopped, you can restart them by following the steps in the [Start](#start) section again.
+### Stop
 
-## Reset
-
-All application states are persisted in docker volumes, which are not affected by normal stopping and restarts.
-If you want to perform a complete reset of your setup, you can remove the docker volumes and images by:
-```
-docker-compose down -v --rmi all
+```bash
+docker compose down
 ```
 
-Additionally, you can use this command to cleanup all leftover docker data:
+### View Logs
+
+```bash
+# All services
+docker compose logs -f
+
+# App only
+docker compose logs -f app
 ```
-docker system prune
+
+### Update
+
+```bash
+# Pull latest images
+docker compose pull
+
+# Restart with new images
+docker compose up -d
 ```
 
-For more docker-compose commands, please refer to the [official documentation](https://docs.docker.com/compose/gettingstarted/).
+### Build from Source
 
-## Access
+To build the image locally instead of pulling from Docker Hub:
 
-Navigate your browser to ```https://<your-openhab-cloud-host>``` and log in (e.g. https://myopenhab.domain.com). 
+```bash
+docker compose build
+docker compose up -d
+```
 
-If it's the first time you're starting up, make sure you have `registration_enabled` set to `true` in the `config.json.template` file so you can create an initial user login. 
+### Reset (Remove All Data)
 
-Assuming you don't plan to run an open system, switch this back to `false` once you've registered and restart.
+```bash
+docker compose down -v
+```
 
+## SSL Certificates
+
+### Traefik
+
+Traefik automatically obtains and renews certificates from Let's Encrypt. Certificates are stored in the `traefik-data` volume.
+
+For testing, uncomment the staging server line in `traefik.yml`:
+```yaml
+# caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+```
+
+### Nginx + Certbot
+
+Initial certificate:
+```bash
+docker compose -f docker-compose.nginx.yml run --rm certbot certonly \
+  --webroot --webroot-path=/var/www/certbot \
+  -d your-domain.com --email your@email.com --agree-tos
+```
+
+Certificates auto-renew via the certbot container.
+
+Manual renewal:
+```bash
+docker compose -f docker-compose.nginx.yml run --rm certbot renew
+docker compose -f docker-compose.nginx.yml restart nginx
+```
+
+## Troubleshooting
+
+### App won't start
+
+Check logs for errors:
+```bash
+docker compose logs app
+```
+
+Common issues:
+- MongoDB or Redis not ready - the app waits for healthy services
+- Invalid `config.json.template` - check JSON syntax
+- Missing environment variables in `.env`
+
+### SSL certificate issues
+
+**Traefik:**
+```bash
+docker compose logs traefik
+```
+
+**Nginx:**
+```bash
+docker compose -f docker-compose.nginx.yml logs certbot
+```
+
+### Database connection issues
+
+Verify MongoDB is healthy:
+```bash
+docker compose exec mongodb mongosh --eval "db.runCommand({ping:1})"
+```
+
+Verify Redis is healthy:
+```bash
+docker compose exec redis redis-cli ping
+```
+
+## Backup
+
+### Database
+
+```bash
+# Backup
+docker compose exec mongodb mongodump --out /data/backup
+docker cp $(docker compose ps -q mongodb):/data/backup ./backup
+
+# Restore
+docker cp ./backup $(docker compose ps -q mongodb):/data/backup
+docker compose exec mongodb mongorestore /data/backup
+```
+
+### Volumes
+
+```bash
+# List volumes
+docker volume ls | grep openhab-cloud
+
+# Backup a volume
+docker run --rm -v openhab-cloud_mongo-data:/data -v $(pwd):/backup \
+  alpine tar czf /backup/mongo-data.tar.gz -C /data .
+```
+
+## Security Notes
+
+1. **Change the default `EXPRESS_KEY`** - Use a long random string
+2. **Disable registration** after creating your account by setting `REGISTRATION_ENABLED=false`
+3. **Keep images updated** - Regularly pull new images for security patches
+4. **Firewall** - Only expose ports 80 and 443 to the internet
