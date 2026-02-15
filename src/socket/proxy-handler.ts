@@ -229,6 +229,25 @@ export class ProxyHandler {
       return;
     }
 
+    // Detach the socket from the HTTP layer.
+    //
+    // When the request arrives through Express (e.g., a reverse proxy stripped
+    // the Connection: Upgrade header so server.on('upgrade') didn't fire), the
+    // HTTP parser's 'data' listener is still attached to the socket.  If not
+    // removed, the parser will try to interpret incoming WebSocket frames as
+    // HTTP requests, causing a parse error that destroys the socket.
+    //
+    // When the request arrives through server.on('upgrade'), Node.js has
+    // already freed the parser, making this a safe no-op.
+    clientSocket.removeAllListeners('data');
+
+    // Detach the ServerResponse from the socket so its lifecycle events
+    // (close, finish) don't interfere with the WebSocket connection.
+    const httpResponse = request.response as unknown as import('http').ServerResponse;
+    if (typeof httpResponse.detachSocket === 'function') {
+      httpResponse.detachSocket(clientSocket);
+    }
+
     // Build raw HTTP 101 response
     // We can't use response.writeHead() for 101 — it would close the HTTP response
     // Sanitize all values to prevent HTTP header injection / response splitting
