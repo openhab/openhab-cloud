@@ -23,6 +23,7 @@ import type {
   ResponseFinishedData,
   ResponseErrorData,
   WebSocketData,
+  WebSocketCloseData,
 } from './types';
 
 /**
@@ -324,6 +325,40 @@ export class ProxyHandler {
       });
     } catch (error) {
       this.logger.error(`Error handling websocket data for ${requestId}:`, error);
+    }
+  }
+
+  /**
+   * Handle WebSocket close from openHAB
+   *
+   * Sent when the local openHAB WebSocket connection closes normally.
+   * Destroys the corresponding client socket and removes from tracker.
+   */
+  handleWebSocketClose(socket: OpenhabSocket, data: WebSocketCloseData): void {
+    const requestId = data.id;
+
+    if (!this.webSocketTracker.has(requestId)) {
+      return;
+    }
+
+    try {
+      const conn = this.webSocketTracker.get(requestId);
+
+      // Verify the socket owns this connection
+      if (socket.handshake.uuid !== conn.openhab.uuid) {
+        this.logger.warn(
+          `websocketClose: ${socket.handshake.uuid} tried to close connection owned by ${conn.openhab.uuid}`
+        );
+        return;
+      }
+
+      this.logger.info(`WebSocket proxy closed by openHAB: request ${requestId}`);
+      if (!conn.socket.destroyed) {
+        conn.socket.destroy();
+      }
+      this.webSocketTracker.remove(requestId);
+    } catch (error) {
+      this.logger.error(`Error handling websocketClose for ${requestId}:`, error);
     }
   }
 

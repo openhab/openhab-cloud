@@ -25,6 +25,7 @@ import type {
   ResponseContentData,
   ResponseFinishedData,
   ResponseErrorData,
+  WebSocketCloseData,
 } from './types';
 import { ConnectionManager } from './connection-manager';
 import { ProxyHandler } from './proxy-handler';
@@ -252,8 +253,13 @@ export class SocketServer {
       });
 
       // WebSocket proxy data (openHAB → client)
-      socket.on('websocket', (requestId: number, data: ArrayBuffer) => {
+      socket.on('websocket', (requestId: number, data: Buffer) => {
         this.proxyHandler?.handleWebSocketData(openhabSocket, { id: requestId, data });
+      });
+
+      // WebSocket close from openHAB (local WS connection closed)
+      socket.on('websocketClose', (data: WebSocketCloseData) => {
+        this.proxyHandler?.handleWebSocketClose(openhabSocket, data);
       });
 
       // Notification handlers

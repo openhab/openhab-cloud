@@ -142,8 +142,20 @@ export interface TrackedWebSocket {
 
 /**
  * WebSocket data from openHAB via Socket.IO
+ *
+ * Java emits byte[], which Socket.IO delivers as Buffer on Node.js.
+ * We accept both Buffer and ArrayBuffer for compatibility.
  */
 export interface WebSocketData {
   id: number;
-  data: ArrayBuffer;
+  data: Buffer | ArrayBuffer;
+}
+
+/**
+ * WebSocket close event from openHAB via Socket.IO
+ *
+ * Sent when the local openHAB WebSocket connection closes normally.
+ */
+export interface WebSocketCloseData {
+  id: number;
 }
