@@ -674,6 +674,9 @@ export function createRoutes(deps: RoutesDependencies): Router {
 
   const proxyRoute = createProxyHandler(io, requestTracker, systemConfig, logger);
 
+  // WebSocket proxy route — no preassembleBody (upgrade requests have no body to assemble)
+  router.all('/ws/*', ensureRestAuthenticated, setOpenhab, ensureServer, proxyRoute);
+
   const proxyPaths = [
     '/rest*', '/images/*', '/static/*', '/rrdchart.png*', '/chart*',
     '/openhab.app*', '/WebApp*', '/CMD*', '/cometVisu*', '/proxy*',
@@ -717,6 +720,12 @@ function createProxyHandler(
       }
     }
 
+    // Check if this is a WebSocket upgrade request
+    // Also detect via sec-websocket-* headers which survive reverse proxies
+    // that strip hop-by-hop headers (Upgrade, Connection)
+    const isUpgrade = req.headers['upgrade']?.toLowerCase() === 'websocket'
+      || (req.headers['sec-websocket-key'] != null && req.headers['sec-websocket-version'] != null);
+
     // Remove sensitive headers
     delete requestHeaders['cookie'];
     delete requestHeaders['cookie2'];
@@ -724,7 +733,15 @@ function createProxyHandler(
     delete requestHeaders['x-real-ip'];
     delete requestHeaders['x-forwarded-for'];
     delete requestHeaders['x-forwarded-proto'];
-    delete requestHeaders['connection'];
+
+    // For WebSocket upgrades, ensure hop-by-hop headers are present
+    // (reverse proxies like nginx strip Upgrade and Connection headers)
+    if (isUpgrade) {
+      requestHeaders['upgrade'] = 'websocket';
+      requestHeaders['connection'] = 'Upgrade';
+    } else {
+      delete requestHeaders['connection'];
+    }
 
     requestHeaders['host'] = req.headers.host as string || `${systemConfig.getHost()}:${systemConfig.getPort()}`;
     requestHeaders['user-agent'] = 'openhab-cloud/0.0.1';

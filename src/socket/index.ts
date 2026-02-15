@@ -30,10 +30,14 @@ export { ProxyHandler } from './proxy-handler';
 
 export { RequestTracker } from './request-tracker';
 
+export { WebSocketTracker } from './websocket-tracker';
+
 export type {
   ConnectionInfo,
   OpenhabSocket,
   TrackedRequest,
+  TrackedWebSocket,
+  WebSocketData,
   ResponseHeaderData,
   ResponseContentData,
   ResponseFinishedData,

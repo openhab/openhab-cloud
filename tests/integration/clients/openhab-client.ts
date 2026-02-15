@@ -18,6 +18,8 @@
  * for integration testing.
  */
 
+import { createHash } from 'crypto';
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const socketClient = require('socket.io-client');
 type Socket = import('socket.io-client').Socket;
@@ -100,6 +102,7 @@ export class OpenHABTestClient {
     null;
   private commandHandler: ((command: CommandData) => void) | null = null;
   private cancelHandler: ((requestId: number) => void) | null = null;
+  private webSocketHandler: ((requestId: number, data: Buffer) => void) | null = null;
 
   constructor(
     private readonly serverUrl: string,
@@ -210,6 +213,13 @@ export class OpenHABTestClient {
           this.cancelHandler(data.id);
         }
       });
+
+      // Handle WebSocket proxy data (client → openHAB direction)
+      this.socket.on('websocket', (requestId: number, data: Buffer) => {
+        if (this.webSocketHandler) {
+          this.webSocketHandler(requestId, data);
+        }
+      });
     });
   }
 
@@ -225,6 +235,7 @@ export class OpenHABTestClient {
       this.requestHandler = null;
       this.commandHandler = null;
       this.cancelHandler = null;
+      this.webSocketHandler = null;
       // Wait for server-side lock release (Redis WATCH+MULTI+DEL)
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
@@ -412,6 +423,57 @@ export class OpenHABTestClient {
       'action-button-2': options.actionButton2,
       'action-button-3': options.actionButton3,
     };
+  }
+
+  /**
+   * Set handler for WebSocket proxy data (client → openHAB direction)
+   */
+  onWebSocket(handler: (requestId: number, data: Buffer) => void): void {
+    this.webSocketHandler = handler;
+  }
+
+  /**
+   * Send WebSocket data back to client (openHAB → client direction)
+   */
+  sendWebSocketData(requestId: number, data: Buffer | string): void {
+    if (!this.socket) return;
+
+    const content = typeof data === 'string' ? Buffer.from(data) : data;
+    this.socket.emit('websocket', requestId, content);
+  }
+
+  /**
+   * Send a 101 Switching Protocols response header (for WebSocket upgrade)
+   *
+   * @param requestId - The proxy request ID
+   * @param wsKeyOrHeaders - Either the client's Sec-WebSocket-Key string
+   *   (used to compute Sec-WebSocket-Accept per RFC 6455) or a headers object.
+   */
+  sendUpgradeResponse(requestId: number, wsKeyOrHeaders?: string | Record<string, string>): void {
+    if (!this.socket) return;
+
+    let extraHeaders: Record<string, string> = {};
+    if (typeof wsKeyOrHeaders === 'string') {
+      // Compute Sec-WebSocket-Accept per RFC 6455 Section 4.2.2
+      const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+      const accept = createHash('sha1')
+        .update(wsKeyOrHeaders + GUID)
+        .digest('base64');
+      extraHeaders = { 'Sec-WebSocket-Accept': accept };
+    } else if (wsKeyOrHeaders) {
+      extraHeaders = wsKeyOrHeaders;
+    }
+
+    this.socket.emit('responseHeader', {
+      id: requestId,
+      headers: {
+        'Upgrade': 'websocket',
+        'Connection': 'Upgrade',
+        ...extraHeaders,
+      },
+      responseStatusCode: 101,
+      responseStatusText: 'Switching Protocols',
+    });
   }
 
   /**
