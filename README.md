@@ -82,73 +82,7 @@ See [deployment/docker-compose/README.md](deployment/docker-compose/README.md) f
 
 ## Development
 
-### Running in Development Mode
-
-```bash
-# Start dependencies (MongoDB, Redis)
-npm run docker:test:up
-
-# Seed test data
-npm run docker:test:seed
-
-# Start the app (with hot reload via tsx)
-npm start
-```
-
-### NPM Scripts
-
-| Script | Description |
-|--------|-------------|
-| `npm start` | Start the server |
-| `npm run build` | Compile TypeScript |
-| `npm test` | Run unit tests |
-| `npm run test:coverage` | Run tests with coverage |
-| `npm run test:integration` | Run integration tests |
-| `npm run docker:test:up` | Start test Docker stack |
-| `npm run docker:test:down` | Stop test Docker stack |
-| `npm run deps:audit` | Check for security vulnerabilities |
-| `npm run deps:check` | Show all available dependency upgrades |
-| `npm run deps:check:minor` | Show only minor/patch upgrades |
-| `npm run deps:upgrade:minor` | Update package.json to latest minor versions |
-
-### Testing
-
-See [tests/Testing.md](tests/Testing.md) for detailed testing documentation.
-
-```bash
-# Unit tests
-npm test
-
-# Integration tests (requires Docker)
-npm run docker:test:up
-npm run docker:test:seed
-npm run test:integration
-```
-
-### Dependency Management
-
-Check for security vulnerabilities and outdated packages:
-
-```bash
-# Security audit
-npm run deps:audit
-
-# See all available upgrades (read-only)
-npm run deps:check
-
-# See only minor/patch upgrades (safer)
-npm run deps:check:minor
-
-# Apply minor/patch upgrades to package.json
-npm run deps:upgrade:minor
-npm install
-npm test
-
-# Interactive mode — pick which deps to upgrade
-npx ncu -i
-```
-
-Dependabot is also configured to open weekly PRs for dependency updates.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for the full development guide, including project structure, architecture, all npm scripts, testing, and where to add new code.
 
 ## Production Deployment
 
@@ -177,16 +111,6 @@ A systemd service file is provided:
 sudo cp etc/openhabcloud.service /etc/systemd/system/
 sudo systemctl enable openhabcloud
 sudo systemctl start openhabcloud
-```
-
-## CLI Tools
-
-```bash
-# Create admin user
-npm run cli:makeadmin
-
-# Generate invitation codes
-npm run cli:makeinvites
 ```
 
 ## API Documentation

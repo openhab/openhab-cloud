@@ -97,6 +97,8 @@ Or run directly: `npx tsx src/cli/makeadmin.ts <username>`
 | `npm run deps:check:minor` | Check for minor updates only             |
 | `npm run deps:upgrade:minor`| Upgrade minor versions only             |
 
+You can also use `npx ncu -i` for an interactive prompt that lets you pick which dependencies to upgrade. Dependabot is configured to open weekly PRs for dependency updates.
+
 ## Project Structure
 
 ```
@@ -407,6 +409,8 @@ Four Passport strategies configured in `src/middleware/auth.middleware.ts`:
 Session serialization stores the user ID; deserialization loads the full User document from MongoDB.
 
 ## Testing
+
+See also [tests/Testing.md](tests/Testing.md) for additional testing documentation.
 
 ### Unit Tests
 
