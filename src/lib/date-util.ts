@@ -26,7 +26,7 @@ import { DateTime } from 'luxon';
  * @param timezone - Olson timezone string (e.g., 'America/New_York'). Defaults to 'UTC'.
  * @returns Luxon DateTime object with the specified timezone
  */
-export function toTimezone(date: Date | string, timezone?: string): DateTime {
+function toTimezone(date: Date | string, timezone?: string): DateTime {
   const tz = timezone || 'UTC';
 
   if (typeof date === 'string') {

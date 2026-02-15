@@ -13,9 +13,7 @@
 
 import type { Types, Document } from 'mongoose';
 
-// ============================================================================
 // User & Account
-// ============================================================================
 
 export type UserRole = 'master' | 'user';
 export type UserGroup = 'staff' | 'user';
@@ -48,9 +46,7 @@ export interface IUserAccount {
   registered?: Date;
 }
 
-// ============================================================================
 // OpenHAB
-// ============================================================================
 
 export interface IOpenhab {
   _id: Types.ObjectId;
@@ -61,9 +57,7 @@ export interface IOpenhab {
   last_online?: Date;
 }
 
-// ============================================================================
-// User Devices (Push Notifications)
-// ============================================================================
+// User Devices
 
 export type DeviceType = 'ios' | 'android';
 
@@ -78,14 +72,12 @@ export interface IUserDevice {
   registered?: Date;
 }
 
-// ============================================================================
 // Notifications
-// ============================================================================
 
 /**
  * Notification payload sent from openHAB
  */
-export interface INotificationPayload {
+export interface NotificationPayload {
   message: string;
   title?: string;
   icon?: string;
@@ -104,13 +96,11 @@ export interface INotification {
   icon?: string;
   severity?: string;
   acknowledged?: boolean;
-  payload: INotificationPayload;
+  payload: NotificationPayload;
   created: Date;
 }
 
-// ============================================================================
 // OAuth2
-// ============================================================================
 
 export interface IOAuth2Client {
   _id: Types.ObjectId;
@@ -154,9 +144,7 @@ export interface IOAuth2Scope {
   created: Date;
 }
 
-// ============================================================================
 // Events & Items
-// ============================================================================
 
 export type EventColor = 'good' | 'bad' | 'info';
 
@@ -192,9 +180,7 @@ export interface IItem {
   states?: IItemState[];
 }
 
-// ============================================================================
 // Verification & Invitations
-// ============================================================================
 
 export interface IEmailVerification {
   _id: Types.ObjectId;
@@ -223,9 +209,7 @@ export interface ILostPassword {
   created: Date;
 }
 
-// ============================================================================
-// Enrollment (Beta Program)
-// ============================================================================
+// Enrollment
 
 export interface IEnrollment {
   _id: Types.ObjectId;
@@ -237,9 +221,7 @@ export interface IEnrollment {
   invited?: Date;
 }
 
-// ============================================================================
-// Document Types (with Mongoose Document properties)
-// ============================================================================
+// Document Types (Mongoose)
 
 export type UserDocument = Document<Types.ObjectId, object, IUser> & IUser & IUserMethods;
 export type UserAccountDocument = Document<Types.ObjectId, object, IUserAccount> & IUserAccount;

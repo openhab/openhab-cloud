@@ -14,7 +14,7 @@
 import type { RequestHandler, Request } from 'express';
 import type { Types } from 'mongoose';
 import type { IUserDevice, INotification } from '../types/models';
-import type { ILogger, INotificationService, NotificationPayload } from '../types/notification';
+import type { ILogger, NotificationPayload } from '../types/notification';
 import type { ValidatedRequest } from '../middleware/validation.middleware';
 import type { SendMessageInput } from '../schemas';
 

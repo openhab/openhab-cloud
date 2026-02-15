@@ -348,9 +348,7 @@ export class OAuth2Controller {
     return [tokenMiddleware, logTokenError];
   }
 
-  /**
-   * Get the oauth2orize server instance for middleware integration
-   */
+  /** Expose oauth2orize server for testing serialization/deserialization */
   getServer(): oauth2orize.OAuth2Server {
     return this.server;
   }

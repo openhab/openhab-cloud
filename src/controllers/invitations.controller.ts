@@ -13,7 +13,7 @@
 
 import type { RequestHandler, Request } from 'express';
 import type { Types } from 'mongoose';
-import type { IOpenhab, IInvitation } from '../types/models';
+import type { IInvitation } from '../types/models';
 import type { ILogger } from '../types/notification';
 import type { ValidatedRequest } from '../middleware/validation.middleware';
 import type { InvitationInput } from '../schemas';

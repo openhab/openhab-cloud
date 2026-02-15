@@ -635,13 +635,13 @@ export function createRoutes(deps: RoutesDependencies): Router {
     router.get('/ifttt/v1/status', iftttController.ensureChannelKey, iftttController.getStatus);
     router.post('/ifttt/v1/test/setup', iftttController.ensureChannelKey, iftttController.getTestSetup);
     router.post('/ifttt/v1/actions/command', iftttController.authenticate, iftttController.actionCommand);
-    router.post('/ifttt/v1/actions/command/fields/item/options', iftttController.authenticate, iftttController.actionCommandItemOptions);
+    router.post('/ifttt/v1/actions/command/fields/item/options', iftttController.authenticate, iftttController.itemOptions);
     router.post('/ifttt/v1/triggers/itemstate', iftttController.authenticate, iftttController.triggerItemState);
-    router.post('/ifttt/v1/triggers/itemstate/fields/item/options', iftttController.authenticate, iftttController.triggerItemOptions);
+    router.post('/ifttt/v1/triggers/itemstate/fields/item/options', iftttController.authenticate, iftttController.itemOptions);
     router.post('/ifttt/v1/triggers/item_raised_above', iftttController.authenticate, iftttController.triggerItemRaisedAbove);
-    router.post('/ifttt/v1/triggers/item_raised_above/fields/item/options', iftttController.authenticate, iftttController.triggerItemOptions);
+    router.post('/ifttt/v1/triggers/item_raised_above/fields/item/options', iftttController.authenticate, iftttController.itemOptions);
     router.post('/ifttt/v1/triggers/item_dropped_below', iftttController.authenticate, iftttController.triggerItemDroppedBelow);
-    router.post('/ifttt/v1/triggers/item_dropped_below/fields/item/options', iftttController.authenticate, iftttController.triggerItemOptions);
+    router.post('/ifttt/v1/triggers/item_dropped_below/fields/item/options', iftttController.authenticate, iftttController.itemOptions);
   }
 
   // ============================================

@@ -15,24 +15,15 @@ import type { RequestHandler, Request, Response, NextFunction } from 'express';
 import type { Types } from 'mongoose';
 import type { IOpenhab, IItem, IEvent } from '../types/models';
 import type { ILogger } from '../types/notification';
+import type { ConnectionInfo } from '../types/connection';
 import passport from 'passport';
-
-/**
- * Connection info stored in Redis for connected openHAB instances
- */
-export interface IConnectionInfo {
-  serverAddress: string;
-  connectionId: string;
-  connectionTime: string;
-  openhabVersion?: string;
-}
 
 /**
  * Repository interface for Openhab operations
  */
 export interface IOpenhabRepositoryForIfttt {
   findByAccount(accountId: string | Types.ObjectId): Promise<IOpenhab | null>;
-  getConnectionInfo(openhabId: string | Types.ObjectId): Promise<IConnectionInfo | null>;
+  getConnectionInfo(openhabId: string | Types.ObjectId): Promise<ConnectionInfo | null>;
 }
 
 /**
@@ -247,31 +238,6 @@ export class IftttController {
   };
 
   /**
-   * POST /ifttt/v1/actions/command/fields/item/options
-   *
-   * Returns list of items for command action dropdown.
-   */
-  actionCommandItemOptions: RequestHandler = async (req, res) => {
-    try {
-      const openhab = await this.openhabRepository.findByAccount(req.user!.account);
-      if (!openhab) {
-        return res.status(400).json({ errors: [{ message: 'Request failed' }] });
-      }
-
-      const items = await this.itemRepository.findByOpenhab(openhab._id);
-      const responseData = items.map(item => ({
-        label: item.name,
-        value: item.name,
-      }));
-
-      return res.json({ data: responseData });
-    } catch (error) {
-      this.logger.error('Error in actionCommandItemOptions:', error);
-      return res.status(400).json({ errors: [{ message: 'Request failed' }] });
-    }
-  };
-
-  /**
    * POST /ifttt/v1/triggers/itemstate
    *
    * Trigger: Item changed to specific state.
@@ -429,13 +395,14 @@ export class IftttController {
   };
 
   /**
+   * POST /ifttt/v1/actions/command/fields/item/options
    * POST /ifttt/v1/triggers/itemstate/fields/item/options
    * POST /ifttt/v1/triggers/item_raised_above/fields/item/options
    * POST /ifttt/v1/triggers/item_dropped_below/fields/item/options
    *
-   * Returns list of items for trigger field dropdowns.
+   * Returns list of items for action/trigger field dropdowns.
    */
-  triggerItemOptions: RequestHandler = async (req, res) => {
+  itemOptions: RequestHandler = async (req, res) => {
     try {
       const openhab = await this.openhabRepository.findByAccount(req.user!.account);
       if (!openhab) {
@@ -450,7 +417,7 @@ export class IftttController {
 
       return res.json({ data: responseData });
     } catch (error) {
-      this.logger.error('Error in triggerItemOptions:', error);
+      this.logger.error('Error in itemOptions:', error);
       return res.status(400).json({ errors: [{ message: 'Request failed' }] });
     }
   };

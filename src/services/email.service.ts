@@ -39,22 +39,6 @@ export interface EmailServiceConfig {
 }
 
 /**
- * Email template locals for password reset
- */
-export interface PasswordResetLocals {
-  email: string;
-  resetUrl: string;
-}
-
-/**
- * Email template locals for email verification
- */
-export interface EmailVerificationLocals {
-  email: string;
-  verifyUrl: string;
-}
-
-/**
  * Email Service
  *
  * Handles sending emails using nodemailer and email-templates.
@@ -178,12 +162,6 @@ export class EmailService {
     await this.sendEmail(email, 'Email Verification', 'activation-email', locals);
   }
 
-  /**
-   * Check if the email service is properly configured
-   */
-  isConfigured(): boolean {
-    return this.config.isDevelopment || this.emailSender !== null;
-  }
 }
 
 /**

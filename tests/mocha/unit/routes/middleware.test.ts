@@ -17,7 +17,6 @@ import type { Request, Response, NextFunction } from 'express';
 import {
   createMiddleware,
   invalidateConnectionCache,
-  getConnectionCacheStats,
 } from '../../../../src/routes/middleware';
 import type { MiddlewareDependencies } from '../../../../src/routes/middleware';
 
@@ -292,13 +291,6 @@ describe('Route Middleware', () => {
       expect(mockRedis.get.calledTwice).to.be.true;
     });
 
-    it('should report cache stats', () => {
-      const stats = getConnectionCacheStats();
-
-      expect(stats).to.have.property('size');
-      expect(stats).to.have.property('ttlMs');
-      expect(stats.ttlMs).to.equal(30000); // 30 seconds
-    });
   });
 
   describe('ensureServer', () => {

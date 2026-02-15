@@ -14,10 +14,10 @@
 import * as admin from 'firebase-admin';
 import crypto from 'crypto';
 import fs from 'fs';
+import type { INotification } from '../../types/models';
 import type {
   IPushProvider,
   PushResult,
-  INotification,
   FCMConfig,
   ILogger,
 } from '../../types/notification';
@@ -97,55 +97,11 @@ export class FCMProvider implements IPushProvider {
   }
 
   async sendMultiple(tokens: string[], notification: INotification): Promise<PushResult[]> {
-    if (!this.isConfigured() || !this.messaging) {
-      return tokens.map(token => ({
-        success: false,
-        token,
-        error: new Error('FCM provider not configured'),
-      }));
-    }
-
-    if (tokens.length === 0) {
-      return [];
-    }
-
     const message = this.buildMessage(tokens, notification);
-
-    try {
-      this.logger.info(`Sending FCM notification to ${tokens.length} device(s)`);
-      const response = await this.messaging.sendEachForMulticast(message);
-
-      this.logger.info(`FCM response: ${response.successCount} success, ${response.failureCount} failures`);
-
-      return response.responses.map((resp, index) => ({
-        success: resp.success,
-        token: tokens[index] ?? '',
-        error: resp.error ? new Error(resp.error.message) : undefined,
-        response: resp,
-      }));
-    } catch (error) {
-      this.logger.error('FCM send error:', error);
-      return tokens.map(token => ({
-        success: false,
-        token,
-        error: error instanceof Error ? error : new Error(String(error)),
-      }));
-    }
+    return this.sendMulticast(tokens, message);
   }
 
   async sendHideNotification(tokens: string[], notificationId: string): Promise<PushResult[]> {
-    if (!this.isConfigured() || !this.messaging) {
-      return tokens.map(token => ({
-        success: false,
-        token,
-        error: new Error('FCM provider not configured'),
-      }));
-    }
-
-    if (tokens.length === 0) {
-      return [];
-    }
-
     const message: admin.messaging.MulticastMessage = {
       tokens,
       data: {
@@ -166,9 +122,28 @@ export class FCMProvider implements IPushProvider {
         },
       },
     };
+    return this.sendMulticast(tokens, message);
+  }
+
+  /** Send a multicast message via FCM, handling guards and error mapping */
+  private async sendMulticast(
+    tokens: string[],
+    message: admin.messaging.MulticastMessage
+  ): Promise<PushResult[]> {
+    if (!this.isConfigured() || !this.messaging) {
+      return tokens.map(token => ({
+        success: false,
+        token,
+        error: new Error('FCM provider not configured'),
+      }));
+    }
+
+    if (tokens.length === 0) {
+      return [];
+    }
 
     try {
-      this.logger.info(`Sending FCM hide notification to ${tokens.length} device(s)`);
+      this.logger.info(`Sending FCM message to ${tokens.length} device(s)`);
       const response = await this.messaging.sendEachForMulticast(message);
 
       return response.responses.map((resp, index) => ({
@@ -178,7 +153,7 @@ export class FCMProvider implements IPushProvider {
         response: resp,
       }));
     } catch (error) {
-      this.logger.error('FCM hide notification error:', error);
+      this.logger.error('FCM send error:', error);
       return tokens.map(token => ({
         success: false,
         token,

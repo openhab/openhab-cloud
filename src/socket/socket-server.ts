@@ -364,13 +364,7 @@ export class SocketServer {
         return;
       }
 
-      // Pass entire data object to preserve all custom properties (like media-attachment-url)
-      const payload: NotificationPayload = {
-        ...data,
-        message: data.message, // ensure required field is present
-        type: data.type as 'notification' | 'hideNotification' | undefined,
-      };
-
+      const payload = this.buildNotificationPayload(data);
       await this.notificationService.sendToUser(user._id.toString(), payload);
     } catch (error) {
       this.logger.error(`Error sending notification:`, error);
@@ -385,25 +379,10 @@ export class SocketServer {
     data: NotificationData
   ): Promise<void> {
     try {
-      const openhab = await this.openhabRepository.findById(socket.openhabId!);
-      if (!openhab) {
-        this.logger.warn(`openHAB not found: ${socket.openhabId}`);
-        return;
-      }
+      const users = await this.getUsersForOpenhab(socket.openhabId!);
+      if (!users) return;
 
-      const users = await this.userRepository.findByAccount(openhab.account);
-      if (!users || users.length === 0) {
-        this.logger.debug('No users found for openHAB');
-        return;
-      }
-
-      // Pass entire data object to preserve all custom properties (like media-attachment-url)
-      const payload: NotificationPayload = {
-        ...data,
-        message: data.message, // ensure required field is present
-        type: data.type as 'notification' | 'hideNotification' | undefined,
-      };
-
+      const payload = this.buildNotificationPayload(data);
       for (const user of users) {
         try {
           await this.notificationService.sendToUser(user._id.toString(), payload);
@@ -427,26 +406,10 @@ export class SocketServer {
     data: NotificationData
   ): Promise<void> {
     try {
-      const openhab = await this.openhabRepository.findById(socket.openhabId!);
-      if (!openhab) {
-        this.logger.warn(`openHAB not found: ${socket.openhabId}`);
-        return;
-      }
+      const users = await this.getUsersForOpenhab(socket.openhabId!);
+      if (!users) return;
 
-      const users = await this.userRepository.findByAccount(openhab.account);
-      if (!users || users.length === 0) {
-        this.logger.debug('No users found for openHAB');
-        return;
-      }
-
-      // Pass entire data object to preserve all custom properties (like media-attachment-url)
-      const payload: NotificationPayload = {
-        ...data,
-        message: data.message, // ensure required field is present
-        type: data.type as 'notification' | 'hideNotification' | undefined,
-      };
-
-      // Save notification for each user (no push)
+      const payload = this.buildNotificationPayload(data);
       this.logger.info(`Saving log notification for ${users.length} users: ${data.message}`);
       for (const user of users) {
         try {
@@ -458,6 +421,29 @@ export class SocketServer {
     } catch (error) {
       this.logger.error(`Error handling log notification:`, error);
     }
+  }
+
+  /** Build a NotificationPayload from raw socket data, preserving custom properties */
+  private buildNotificationPayload(data: NotificationData): NotificationPayload {
+    return {
+      ...data,
+      type: data.type as 'notification' | 'hideNotification' | undefined,
+    };
+  }
+
+  /** Look up the openhab and return all users for its account, or null if not found */
+  private async getUsersForOpenhab(openhabId: string): Promise<IUser[] | null> {
+    const openhab = await this.openhabRepository.findById(openhabId);
+    if (!openhab) {
+      this.logger.warn(`openHAB not found: ${openhabId}`);
+      return null;
+    }
+    const users = await this.userRepository.findByAccount(openhab.account);
+    if (!users || users.length === 0) {
+      this.logger.debug('No users found for openHAB');
+      return null;
+    }
+    return users;
   }
 
   /**
@@ -512,13 +498,6 @@ export class SocketServer {
    */
   getRequestTracker(): RequestTracker {
     return this.requestTracker;
-  }
-
-  /**
-   * Get the proxy handler instance
-   */
-  getProxyHandler(): ProxyHandler | null {
-    return this.proxyHandler;
   }
 
   /**

@@ -114,10 +114,3 @@ export class MongoConnect {
     return uri;
   }
 }
-
-/**
- * Create a MongoDB connection manager
- */
-export function createMongoConnect(config: MongoConnectConfig, logger: AppLogger): MongoConnect {
-  return new MongoConnect(config, logger);
-}

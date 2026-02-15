@@ -39,9 +39,9 @@ export interface AppLogger extends ILogger {
 /**
  * Request interface for audit logging
  */
-export interface AuditableRequest {
+interface AuditableRequest {
   user?: { username: string };
-  connectionInfo?: { status?: string };
+  connectionInfo?: { serverAddress: string };
   method: string;
   path: string;
   headers: Record<string, string | string[] | undefined>;
@@ -172,7 +172,7 @@ export function createLogger(options: LoggerOptions): AppLogger {
       };
 
       const username = req.user?.username || 'anonymous';
-      const status = req.connectionInfo?.status || 'unknown';
+      const status = req.connectionInfo ? 'online' : 'offline';
       const realIp = sanitize(headers['x-real-ip']);
       const host = sanitize(headers['host']);
       const userAgent = sanitize(headers['user-agent']);
@@ -218,29 +218,3 @@ export function createLoggerFromConfig(
   });
 }
 
-/**
- * Create a simple console logger (for testing or development)
- */
-export function createConsoleLogger(level = 'debug'): AppLogger {
-  return createLogger({
-    level,
-    dir: './logs/',
-    maxFiles: '7d',
-    type: 'console',
-    processPort: 3000,
-  });
-}
-
-/**
- * Create a no-op logger (for testing)
- */
-export function createNullLogger(): AppLogger {
-  return {
-    error: () => {},
-    warn: () => {},
-    info: () => {},
-    debug: () => {},
-    audit: () => {},
-    auditRequest: () => {},
-  };
-}

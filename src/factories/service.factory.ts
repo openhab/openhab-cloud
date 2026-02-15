@@ -20,7 +20,6 @@
 
 import type { AppLogger } from '../lib/logger';
 import type { SystemConfigManager } from '../config';
-import type { PromisifiedRedisClient } from '../lib/redis';
 import type { IUser } from '../types/models';
 
 // Services
@@ -49,7 +48,6 @@ import type {
 
 import type { IOpenhabRepositoryFull } from '../services/openhab.service';
 
-// Import TypeScript Mongoose models
 import {
   User,
   UserAccount,
@@ -70,8 +68,6 @@ import {
 export interface ServiceFactoryDeps {
   configManager: SystemConfigManager;
   logger: AppLogger;
-  // Note: redis is available for future services that need it
-  redis?: PromisifiedRedisClient;
 }
 
 /**

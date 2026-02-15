@@ -11,15 +11,21 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-/**
- * Database Connection Utility for CLI Tools
- *
- * Provides a simple way to connect to MongoDB for CLI scripts.
- */
-
 import mongoose from 'mongoose';
 import path from 'path';
 import { loadConfig, SystemConfigManager } from '../config';
+import { MongoConnect } from '../lib/mongoconnect';
+import type { AppLogger } from '../lib/logger';
+
+/** Simple console logger for CLI tools */
+const cliLogger: AppLogger = {
+  error: (...args: unknown[]) => console.error(...args),
+  warn: (...args: unknown[]) => console.warn(...args),
+  info: (...args: unknown[]) => console.log(...args),
+  debug: () => {},
+  audit: () => {},
+  auditRequest: () => {},
+};
 
 /**
  * Connect to the database using configuration from config.json
@@ -29,20 +35,8 @@ export async function connectToDatabase(): Promise<{ configManager: SystemConfig
   const config = loadConfig(configPath);
   const configManager = new SystemConfigManager(config);
 
-  let uri = 'mongodb://';
-
-  if (configManager.hasDbCredentials()) {
-    const user = configManager.getDbUser() ?? '';
-    const pass = configManager.getDbPass() ?? '';
-    uri += encodeURIComponent(user) + ':' + encodeURIComponent(pass) + '@';
-  }
-
-  uri += configManager.getDbHostsString();
-  uri += '/' + configManager.getDbName();
-
-  console.log('Connecting to MongoDB at:', configManager.getDbHostsString());
-  await mongoose.connect(uri);
-  console.log('Connected to MongoDB');
+  const mongoConnect = new MongoConnect(configManager, cliLogger);
+  await mongoConnect.connect(mongoose);
 
   return { configManager };
 }

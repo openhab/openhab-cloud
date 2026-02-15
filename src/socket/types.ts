@@ -16,16 +16,9 @@ import type { Socket } from 'socket.io';
 import type { Response } from 'express';
 import type { Types } from 'mongoose';
 import type { IOpenhab } from '../types/models';
+import type { ConnectionInfo } from '../types/connection';
 
-/**
- * Connection info stored in Redis
- */
-export interface ConnectionInfo {
-  serverAddress: string;
-  connectionId: string;
-  connectionTime: string;
-  openhabVersion: string;
-}
+export type { ConnectionInfo };
 
 /**
  * Extended Socket with openHAB-specific properties
@@ -104,27 +97,6 @@ export interface NotificationData {
 export interface ISocketSystemConfig {
   getInternalAddress(): string;
   getConnectionLockTimeSeconds(): number;
-}
-
-/**
- * Redis client interface for socket operations
- */
-export interface IRedisClientForSocket {
-  get(key: string): Promise<string | null>;
-  set(key: string, value: string, mode?: string, duration?: string, time?: number): Promise<string | null>;
-  del(key: string): Promise<number>;
-  ttl(key: string): Promise<number>;
-  expire(key: string, seconds: number): Promise<number>;
-  watch(key: string): Promise<string>;
-  unwatch(): Promise<string>;
-  multi(): IRedisMulti;
-}
-
-export interface IRedisMulti {
-  expire(key: string, seconds: number): IRedisMulti;
-  get(key: string): IRedisMulti;
-  del(key: string): IRedisMulti;
-  exec(): Promise<unknown[] | null>;
 }
 
 /**

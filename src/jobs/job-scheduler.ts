@@ -78,35 +78,4 @@ export class JobScheduler {
     }
   }
 
-  /**
-   * Stop and remove a specific job
-   */
-  unregister(jobName: string): void {
-    const scheduled = this.jobs.get(jobName);
-    if (scheduled) {
-      scheduled.cronJob.stop();
-      this.jobs.delete(jobName);
-      this.logger.info(`Unregistered job: ${jobName}`);
-    }
-  }
-
-  /**
-   * Get list of registered job names
-   */
-  getRegisteredJobs(): string[] {
-    return Array.from(this.jobs.keys());
-  }
-
-  /**
-   * Manually trigger a job (for testing or admin purposes)
-   */
-  async triggerJob(jobName: string): Promise<void> {
-    const scheduled = this.jobs.get(jobName);
-    if (!scheduled) {
-      throw new Error(`Job ${jobName} is not registered`);
-    }
-
-    this.logger.info(`Manually triggering job: ${jobName}`);
-    await scheduled.job.run();
-  }
 }

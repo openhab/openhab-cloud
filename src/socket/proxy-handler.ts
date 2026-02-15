@@ -387,13 +387,6 @@ export class ProxyHandler {
   }
 
   /**
-   * Get the WebSocket tracker instance
-   */
-  getWebSocketTracker(): WebSocketTracker {
-    return this.webSocketTracker;
-  }
-
-  /**
    * Clean up orphaned requests
    *
    * Called periodically to remove requests that are finished but
@@ -424,10 +417,4 @@ export class ProxyHandler {
     this.requestTracker.safeRemove(requestId);
   }
 
-  /**
-   * Get the request tracker instance
-   */
-  getRequestTracker(): RequestTracker {
-    return this.requestTracker;
-  }
 }

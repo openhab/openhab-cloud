@@ -43,6 +43,4 @@ export type {
 export type {
   SmtpConfig,
   EmailServiceConfig,
-  PasswordResetLocals,
-  EmailVerificationLocals,
 } from './email.service';
