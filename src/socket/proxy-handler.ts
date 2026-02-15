@@ -289,6 +289,11 @@ export class ProxyHandler {
       openhabSocket.emit('websocket', requestId, chunk);
     });
 
+    // Ensure the socket is in flowing mode so 'data' events fire.
+    // After removeAllListeners('data') above, the stream may have
+    // transitioned to paused mode; resume() restores flowing mode.
+    clientSocket.resume();
+
     // Clean up on client socket close/error — use a flag to ensure
     // this only runs once even though multiple events may fire (e.g.
     // 'error' followed by 'close').

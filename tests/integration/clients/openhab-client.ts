@@ -18,6 +18,8 @@
  * for integration testing.
  */
 
+import { createHash } from 'crypto';
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const socketClient = require('socket.io-client');
 type Socket = import('socket.io-client').Socket;
@@ -442,16 +444,32 @@ export class OpenHABTestClient {
 
   /**
    * Send a 101 Switching Protocols response header (for WebSocket upgrade)
+   *
+   * @param requestId - The proxy request ID
+   * @param wsKeyOrHeaders - Either the client's Sec-WebSocket-Key string
+   *   (used to compute Sec-WebSocket-Accept per RFC 6455) or a headers object.
    */
-  sendUpgradeResponse(requestId: number, headers?: Record<string, string>): void {
+  sendUpgradeResponse(requestId: number, wsKeyOrHeaders?: string | Record<string, string>): void {
     if (!this.socket) return;
+
+    let extraHeaders: Record<string, string> = {};
+    if (typeof wsKeyOrHeaders === 'string') {
+      // Compute Sec-WebSocket-Accept per RFC 6455 Section 4.2.2
+      const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+      const accept = createHash('sha1')
+        .update(wsKeyOrHeaders + GUID)
+        .digest('base64');
+      extraHeaders = { 'Sec-WebSocket-Accept': accept };
+    } else if (wsKeyOrHeaders) {
+      extraHeaders = wsKeyOrHeaders;
+    }
 
     this.socket.emit('responseHeader', {
       id: requestId,
       headers: {
         'Upgrade': 'websocket',
         'Connection': 'Upgrade',
-        ...headers,
+        ...extraHeaders,
       },
       responseStatusCode: 101,
       responseStatusText: 'Switching Protocols',

@@ -15,6 +15,8 @@
  * WebSocket Proxy Tests
  *
  * Tests for WebSocket connections proxied through the cloud to openHAB instances.
+ * The cloud proxy is a raw TCP tunnel — it forwards bytes without interpreting
+ * WebSocket frames. openHAB→client data must therefore be properly framed.
  */
 
 import { expect } from 'chai';
@@ -28,22 +30,62 @@ import { TEST_FIXTURES } from '../seed-database';
 const SERVER_URL = process.env['SERVER_URL'] || 'http://localhost:3000';
 
 /**
- * Create a WebSocket URL with basic auth
+ * Build a WebSocket base URL (no auth)
  */
-function wsUrl(path: string, username: string, password: string): string {
-  const base = SERVER_URL.replace('http://', 'ws://').replace('https://', 'wss://');
-  const url = new URL(path, base);
-  url.username = username;
-  url.password = password;
-  return url.toString();
+function wsBaseUrl(path: string): string {
+  return SERVER_URL.replace('http://', 'ws://').replace('https://', 'wss://') + path;
 }
 
 /**
- * Create a WebSocket URL without auth
+ * Build basic auth headers for WebSocket connections.
+ *
+ * We pass auth via headers rather than URL credentials because the URL API
+ * percent-encodes special characters (e.g. @ → %40) and the ws library
+ * does not decode them before building the Authorization header, causing
+ * passport to receive percent-encoded credentials that don't match.
  */
-function wsUrlNoAuth(path: string): string {
-  return SERVER_URL.replace('http://', 'ws://').replace('https://', 'wss://') + path;
+function basicAuthHeaders(username: string, password: string): Record<string, string> {
+  const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+  return { Authorization: `Basic ${credentials}` };
 }
+
+/**
+ * Create a WebSocket frame (server→client, unmasked) from a payload.
+ *
+ * The proxy is a raw TCP tunnel, so data sent from the openHAB side must
+ * be properly framed for the ws client to parse it.
+ *
+ * @param payload - The data to frame
+ * @param opcode  - 0x01 for text, 0x02 for binary (default: auto-detect)
+ */
+function frameWebSocketMessage(payload: Buffer, opcode?: number): Buffer {
+  const op = opcode ?? (typeof payload === 'string' ? 0x01 : 0x02);
+  const len = payload.length;
+
+  let header: Buffer;
+  if (len < 126) {
+    header = Buffer.alloc(2);
+    header[0] = 0x80 | op; // FIN + opcode
+    header[1] = len;       // no MASK bit (server→client)
+  } else if (len < 65536) {
+    header = Buffer.alloc(4);
+    header[0] = 0x80 | op;
+    header[1] = 126;
+    header.writeUInt16BE(len, 2);
+  } else {
+    header = Buffer.alloc(10);
+    header[0] = 0x80 | op;
+    header[1] = 127;
+    header.writeBigUInt64BE(BigInt(len), 2);
+  }
+
+  return Buffer.concat([header, payload]);
+}
+
+const AUTH_HEADERS = basicAuthHeaders(
+  TEST_FIXTURES.users.testUser.username,
+  TEST_FIXTURES.users.testUser.password
+);
 
 describe('WebSocket Proxy', function () {
   this.timeout(30000);
@@ -63,44 +105,38 @@ describe('WebSocket Proxy', function () {
     await openhabClient?.disconnect();
   });
 
+  /** Set up the openHAB client to handle WebSocket upgrades */
+  function handleUpgrade(): void {
+    openhabClient.onRequest((req: ProxyRequest) => {
+      if (req.headers['upgrade']?.toLowerCase() === 'websocket') {
+        openhabClient.sendUpgradeResponse(req.id, req.headers['sec-websocket-key']);
+        return null as unknown as import('../clients').ProxyResponse;
+      }
+      return { id: req.id, status: 404, headers: {}, body: 'Not found' };
+    });
+  }
+
   describe('Connection Upgrade', function () {
     it('should establish WebSocket connection through proxy', function (done) {
-      // Set up openHAB to accept WebSocket upgrade requests
-      openhabClient.onRequest((req: ProxyRequest) => {
-        if (req.headers['upgrade']?.toLowerCase() === 'websocket') {
-          // Respond with 101 Switching Protocols
-          openhabClient.sendUpgradeResponse(req.id);
-          // Return nothing — the 101 is sent manually above
-          return null as unknown as import('../clients').ProxyResponse;
-        }
-        return { id: req.id, status: 404, headers: {}, body: 'Not found' };
-      });
+      handleUpgrade();
 
-      const url = wsUrl(
-        '/ws/test',
-        TEST_FIXTURES.users.testUser.username,
-        TEST_FIXTURES.users.testUser.password
-      );
-
-      const ws = new WebSocket(url);
+      const ws = new WebSocket(wsBaseUrl('/ws/test'), { headers: AUTH_HEADERS });
+      let wsError: Error | undefined;
 
       ws.on('open', () => {
         expect(ws.readyState).to.equal(WebSocket.OPEN);
-        ws.close();
+        // Use terminate() for immediate close — ws.close() sends a Close
+        // frame and waits for a response, but the raw TCP tunnel doesn't
+        // interpret WebSocket frames so no response would arrive.
+        ws.terminate();
       });
 
-      ws.on('close', () => {
-        done();
-      });
-
-      ws.on('error', (err) => {
-        done(err);
-      });
+      ws.on('error', (err) => { wsError = err; });
+      ws.on('close', () => { done(wsError); });
     });
 
     it('should reject WebSocket without authentication', function (done) {
-      const url = wsUrlNoAuth('/ws/test');
-      const ws = new WebSocket(url);
+      const ws = new WebSocket(wsBaseUrl('/ws/test'));
 
       ws.on('open', () => {
         done(new Error('Expected connection to be rejected'));
@@ -123,13 +159,7 @@ describe('WebSocket Proxy', function () {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       return new Promise<void>((resolve, reject) => {
-        const url = wsUrl(
-          '/ws/test',
-          TEST_FIXTURES.users.testUser.username,
-          TEST_FIXTURES.users.testUser.password
-        );
-
-        const ws = new WebSocket(url);
+        const ws = new WebSocket(wsBaseUrl('/ws/test'), { headers: AUTH_HEADERS });
 
         ws.on('open', () => {
           reject(new Error('Expected connection to fail'));
@@ -153,68 +183,47 @@ describe('WebSocket Proxy', function () {
       const receivedData: Buffer[] = [];
       const testMessage = 'Hello from client';
 
-      openhabClient.onRequest((req: ProxyRequest) => {
-        if (req.headers['upgrade']?.toLowerCase() === 'websocket') {
-          openhabClient.sendUpgradeResponse(req.id);
-          return null as unknown as import('../clients').ProxyResponse;
-        }
-        return { id: req.id, status: 404, headers: {}, body: 'Not found' };
-      });
+      handleUpgrade();
 
       openhabClient.onWebSocket((_requestId: number, data: Buffer) => {
         receivedData.push(data);
       });
 
-      const url = wsUrl(
-        '/ws/test',
-        TEST_FIXTURES.users.testUser.username,
-        TEST_FIXTURES.users.testUser.password
-      );
-
-      const ws = new WebSocket(url);
+      const ws = new WebSocket(wsBaseUrl('/ws/test'), { headers: AUTH_HEADERS });
+      let wsError: Error | undefined;
 
       ws.on('open', () => {
         ws.send(testMessage);
         // Wait a bit for the data to arrive via Socket.IO
         setTimeout(() => {
           expect(receivedData.length).to.be.greaterThan(0);
-          // The data will include WebSocket framing — just verify something arrived
-          ws.close();
+          ws.terminate();
         }, 1000);
       });
 
-      ws.on('close', () => {
-        done();
-      });
-
-      ws.on('error', (err) => {
-        done(err);
-      });
+      ws.on('error', (err) => { wsError = err; });
+      ws.on('close', () => { done(wsError); });
     });
 
     it('should forward data from openHAB to client', function (done) {
       const receivedMessages: Buffer[] = [];
-      const testData = Buffer.from('Hello from openHAB');
+      const testPayload = Buffer.from('Hello from openHAB');
 
       openhabClient.onRequest((req: ProxyRequest) => {
         if (req.headers['upgrade']?.toLowerCase() === 'websocket') {
-          openhabClient.sendUpgradeResponse(req.id);
-          // After upgrade, send some data back
+          openhabClient.sendUpgradeResponse(req.id, req.headers['sec-websocket-key']);
+          // After upgrade, send a properly framed WebSocket text message
           setTimeout(() => {
-            openhabClient.sendWebSocketData(req.id, testData);
+            const frame = frameWebSocketMessage(testPayload, 0x01);
+            openhabClient.sendWebSocketData(req.id, frame);
           }, 500);
           return null as unknown as import('../clients').ProxyResponse;
         }
         return { id: req.id, status: 404, headers: {}, body: 'Not found' };
       });
 
-      const url = wsUrl(
-        '/ws/test',
-        TEST_FIXTURES.users.testUser.username,
-        TEST_FIXTURES.users.testUser.password
-      );
-
-      const ws = new WebSocket(url);
+      const ws = new WebSocket(wsBaseUrl('/ws/test'), { headers: AUTH_HEADERS });
+      let wsError: Error | undefined;
 
       ws.on('message', (data: Buffer) => {
         receivedMessages.push(data);
@@ -224,41 +233,34 @@ describe('WebSocket Proxy', function () {
         // Wait for data from openHAB
         setTimeout(() => {
           expect(receivedMessages.length).to.be.greaterThan(0);
-          ws.close();
+          expect(receivedMessages[0].toString()).to.equal('Hello from openHAB');
+          ws.terminate();
         }, 1500);
       });
 
-      ws.on('close', () => {
-        done();
-      });
-
-      ws.on('error', (err) => {
-        done(err);
-      });
+      ws.on('error', (err) => { wsError = err; });
+      ws.on('close', () => { done(wsError); });
     });
 
     it('should handle binary data', function (done) {
-      const binaryData = Buffer.from([0x00, 0x01, 0x02, 0xff, 0xfe, 0xfd]);
+      const binaryPayload = Buffer.from([0x00, 0x01, 0x02, 0xff, 0xfe, 0xfd]);
       const receivedData: Buffer[] = [];
 
       openhabClient.onRequest((req: ProxyRequest) => {
         if (req.headers['upgrade']?.toLowerCase() === 'websocket') {
-          openhabClient.sendUpgradeResponse(req.id);
+          openhabClient.sendUpgradeResponse(req.id, req.headers['sec-websocket-key']);
+          // Send a properly framed WebSocket binary message
           setTimeout(() => {
-            openhabClient.sendWebSocketData(req.id, binaryData);
+            const frame = frameWebSocketMessage(binaryPayload, 0x02);
+            openhabClient.sendWebSocketData(req.id, frame);
           }, 500);
           return null as unknown as import('../clients').ProxyResponse;
         }
         return { id: req.id, status: 404, headers: {}, body: 'Not found' };
       });
 
-      const url = wsUrl(
-        '/ws/test',
-        TEST_FIXTURES.users.testUser.username,
-        TEST_FIXTURES.users.testUser.password
-      );
-
-      const ws = new WebSocket(url);
+      const ws = new WebSocket(wsBaseUrl('/ws/test'), { headers: AUTH_HEADERS });
+      let wsError: Error | undefined;
 
       ws.on('message', (data: Buffer) => {
         receivedData.push(Buffer.from(data));
@@ -267,17 +269,13 @@ describe('WebSocket Proxy', function () {
       ws.on('open', () => {
         setTimeout(() => {
           expect(receivedData.length).to.be.greaterThan(0);
-          ws.close();
+          expect(Buffer.compare(receivedData[0], binaryPayload)).to.equal(0);
+          ws.terminate();
         }, 1500);
       });
 
-      ws.on('close', () => {
-        done();
-      });
-
-      ws.on('error', (err) => {
-        done(err);
-      });
+      ws.on('error', (err) => { wsError = err; });
+      ws.on('close', () => { done(wsError); });
     });
   });
 
@@ -289,7 +287,7 @@ describe('WebSocket Proxy', function () {
       openhabClient.onRequest((req: ProxyRequest) => {
         if (req.headers['upgrade']?.toLowerCase() === 'websocket') {
           capturedRequestId = req.id;
-          openhabClient.sendUpgradeResponse(req.id);
+          openhabClient.sendUpgradeResponse(req.id, req.headers['sec-websocket-key']);
           return null as unknown as import('../clients').ProxyResponse;
         }
         return { id: req.id, status: 404, headers: {}, body: 'Not found' };
@@ -299,21 +297,16 @@ describe('WebSocket Proxy', function () {
         cancelledIds.push(requestId);
       });
 
-      const url = wsUrl(
-        '/ws/test',
-        TEST_FIXTURES.users.testUser.username,
-        TEST_FIXTURES.users.testUser.password
-      );
-
-      const ws = new WebSocket(url);
+      const ws = new WebSocket(wsBaseUrl('/ws/test'), { headers: AUTH_HEADERS });
 
       ws.on('open', () => {
-        // Close from client side
+        // Terminate from client side (immediate socket destruction)
         setTimeout(() => {
-          ws.close();
+          ws.terminate();
         }, 500);
       });
 
+      ws.on('error', () => { /* ignored — we only care about cancel */ });
       ws.on('close', () => {
         // Wait for cancel event to propagate
         setTimeout(() => {
@@ -322,28 +315,18 @@ describe('WebSocket Proxy', function () {
           done();
         }, 1000);
       });
-
-      ws.on('error', (err) => {
-        done(err);
-      });
     });
 
     it('should close client WebSocket when openHAB disconnects', function (done) {
-      openhabClient.onRequest((req: ProxyRequest) => {
-        if (req.headers['upgrade']?.toLowerCase() === 'websocket') {
-          openhabClient.sendUpgradeResponse(req.id);
-          return null as unknown as import('../clients').ProxyResponse;
-        }
-        return { id: req.id, status: 404, headers: {}, body: 'Not found' };
-      });
+      handleUpgrade();
 
-      const url = wsUrl(
-        '/ws/test',
-        TEST_FIXTURES.users.testUser.username,
-        TEST_FIXTURES.users.testUser.password
-      );
-
-      const ws = new WebSocket(url);
+      const ws = new WebSocket(wsBaseUrl('/ws/test'), { headers: AUTH_HEADERS });
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        done();
+      };
 
       ws.on('open', () => {
         // Disconnect openHAB while WebSocket is active
@@ -352,15 +335,8 @@ describe('WebSocket Proxy', function () {
         }, 500);
       });
 
-      ws.on('close', () => {
-        // Client should be notified of closure
-        done();
-      });
-
-      ws.on('error', () => {
-        // Error is also acceptable — connection was severed
-        done();
-      });
+      ws.on('close', finish);
+      ws.on('error', finish); // Error is also acceptable — connection was severed
     });
   });
 });
