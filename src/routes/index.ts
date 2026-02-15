@@ -721,7 +721,10 @@ function createProxyHandler(
     }
 
     // Check if this is a WebSocket upgrade request
-    const isUpgrade = req.headers['upgrade']?.toLowerCase() === 'websocket';
+    // Also detect via sec-websocket-* headers which survive reverse proxies
+    // that strip hop-by-hop headers (Upgrade, Connection)
+    const isUpgrade = req.headers['upgrade']?.toLowerCase() === 'websocket'
+      || (req.headers['sec-websocket-key'] != null && req.headers['sec-websocket-version'] != null);
 
     // Remove sensitive headers
     delete requestHeaders['cookie'];
@@ -731,8 +734,12 @@ function createProxyHandler(
     delete requestHeaders['x-forwarded-for'];
     delete requestHeaders['x-forwarded-proto'];
 
-    // Preserve connection and upgrade headers for WebSocket upgrades
-    if (!isUpgrade) {
+    // For WebSocket upgrades, ensure hop-by-hop headers are present
+    // (reverse proxies like nginx strip Upgrade and Connection headers)
+    if (isUpgrade) {
+      requestHeaders['upgrade'] = 'websocket';
+      requestHeaders['connection'] = 'Upgrade';
+    } else {
       delete requestHeaders['connection'];
     }
 
