@@ -320,42 +320,10 @@ export class SystemConfigManager {
   }
 
   /**
-   * Get logger level
-   */
-  getLoggerLevel(): string {
-    return this.config.system.logger.level;
-  }
-
-  /**
-   * Get logger directory
-   */
-  getLoggerDir(): string {
-    let dir = this.config.system.logger.dir;
-    if (!dir.endsWith('/')) {
-      dir += '/';
-    }
-    return dir;
-  }
-
-  /**
-   * Get logger max files retention
-   */
-  getLoggerMaxFiles(): string {
-    return this.config.system.logger.maxFiles;
-  }
-
-  /**
    * Get Morgan logger option
    */
   getLoggerMorganOption(): string | null {
     return this.config.system.logger.morgan || null;
-  }
-
-  /**
-   * Get logger type (file or console)
-   */
-  getLoggerType(): string {
-    return this.config.system.logger.type;
   }
 
   /**
@@ -366,45 +334,10 @@ export class SystemConfigManager {
   }
 
   /**
-   * Get the raw configuration object
-   */
-  getRawConfig(): Config {
-    return this.config;
-  }
-
-  /**
-   * Get Redis configuration
-   */
-  getRedisConfig() {
-    return this.config.redis;
-  }
-
-  /**
-   * Get MongoDB configuration
-   */
-  getMongoDBConfig() {
-    return this.config.mongodb;
-  }
-
-  /**
    * Get mailer configuration (if configured)
    */
   getMailerConfig() {
     return this.config.mailer;
-  }
-
-  /**
-   * Get GCM configuration (if configured)
-   */
-  getGCMConfig() {
-    return this.config.gcm;
-  }
-
-  /**
-   * Get IFTTT configuration (if configured)
-   */
-  getIFTTTConfig() {
-    return this.config.ifttt;
   }
 
   /**

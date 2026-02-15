@@ -64,16 +64,6 @@ export function invalidateConnectionCache(openhabId: string): void {
   connectionCache.delete(openhabId);
 }
 
-/**
- * Get connection cache stats (for debugging/monitoring)
- */
-export function getConnectionCacheStats(): { size: number; ttlMs: number } {
-  return {
-    size: connectionCache.size,
-    ttlMs: CONNECTION_CACHE_TTL_MS,
-  };
-}
-
 export interface MiddlewareDependencies {
   redis: PromisifiedRedisClient;
   logger: AppLogger;
@@ -142,7 +132,7 @@ export function createMiddleware(deps: MiddlewareDependencies) {
     res: Response
   ): void => {
     if (!connInfo) {
-      req.connectionInfo = {};
+      req.connectionInfo = undefined;
       res.locals['openhabstatus'] = 'offline';
       res.locals['openhabMajorVersion'] = 0;
     } else {

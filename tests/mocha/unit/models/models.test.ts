@@ -20,7 +20,7 @@ import type {
   IOpenhab,
   IUserDevice,
   INotification,
-  INotificationPayload,
+  NotificationPayload,
   IOAuth2Client,
   IOAuth2Token,
   IOAuth2Code,
@@ -159,9 +159,9 @@ describe('TypeScript Model Types', function () {
     });
   });
 
-  describe('INotificationPayload', function () {
+  describe('NotificationPayload', function () {
     it('should allow creating notification payload', function () {
-      const payload: INotificationPayload = {
+      const payload: NotificationPayload = {
         message: 'Test message',
         title: 'Test Title',
         icon: 'alarm',
@@ -176,7 +176,7 @@ describe('TypeScript Model Types', function () {
     });
 
     it('should allow hideNotification type', function () {
-      const payload: INotificationPayload = {
+      const payload: NotificationPayload = {
         message: '',
         type: 'hideNotification',
       };
@@ -184,7 +184,7 @@ describe('TypeScript Model Types', function () {
     });
 
     it('should allow custom properties via index signature', function () {
-      const payload: INotificationPayload = {
+      const payload: NotificationPayload = {
         message: 'test',
         customField: 'custom value',
         anotherField: 123,

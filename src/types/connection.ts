@@ -12,18 +12,12 @@
  */
 
 /**
- * Connection Types
- *
- * Types related to openHAB connections.
- */
-
-/**
- * Connection info stored in Redis for each connected openHAB
+ * Connection info stored in Redis for each connected openHAB instance.
+ * Written by ConnectionManager.acquireLock(), read by middleware and IFTTT controller.
  */
 export interface ConnectionInfo {
-  status?: string;
-  serverAddress?: string;
-  openhabVersion?: string;
-  socketId?: string;
-  connectedAt?: string;
+  serverAddress: string;
+  connectionId: string;
+  connectionTime: string;
+  openhabVersion: string;
 }

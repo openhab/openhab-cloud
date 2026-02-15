@@ -40,28 +40,16 @@ import { createRedisClient } from './lib/redis';
 import type { AppLogger } from './lib/logger';
 import type { PromisifiedRedisClient } from './lib/redis';
 
-// Import TypeScript routes module
 import { createRoutes } from './routes';
 import { HealthController } from './controllers';
 import { createServices } from './factories';
-
-// Import TypeScript socket module
 import { SocketServer, ConnectionManager } from './socket';
-
-// Import auth configuration
 import { configurePassport } from './middleware/auth.middleware';
-
-// Import TypeScript utility modules
-import { createMongoConnect } from './lib/mongoconnect';
+import { MongoConnect } from './lib/mongoconnect';
 import dateUtil from './lib/date-util';
-
-// Import TypeScript models
 import { User, Openhab, Event, UserDevice, Invitation } from './models';
-
-// Import jobs
 import { JobScheduler, StatsJob } from './jobs';
 
-// Extend Express Request type
 declare global {
   namespace Express {
     interface Request {
@@ -69,8 +57,6 @@ declare global {
     }
   }
 }
-
-// csrfToken is added by @types/csurf to Express.Request
 
 /**
  * Application container
@@ -119,7 +105,7 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   const redis = await createRedisClient(config.redis, logger);
 
   // Initialize MongoDB connection
-  const mongoConnect = createMongoConnect(
+  const mongoConnect = new MongoConnect(
     {
       hasDbCredentials: () => configManager.hasDbCredentials(),
       getDbUser: () => configManager.getDbUser(),
@@ -296,7 +282,6 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   const services = createServices({
     configManager,
     logger,
-    redis,
   });
 
   // Configure Passport authentication strategies

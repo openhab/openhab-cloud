@@ -22,8 +22,6 @@ export { ConnectionManager } from './connection-manager';
 export type {
   IRedisClientForConnection,
   IOpenhabRepositoryForConnection,
-  BlockedResult,
-  LockResult,
 } from './connection-manager';
 
 export { ProxyHandler } from './proxy-handler';
@@ -44,6 +42,4 @@ export type {
   ResponseErrorData,
   NotificationData,
   ISocketSystemConfig,
-  IRedisClientForSocket,
-  IRedisMulti,
 } from './types';

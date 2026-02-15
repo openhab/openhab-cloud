@@ -13,7 +13,7 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { MongoConnect, createMongoConnect, type MongoConnectConfig } from '../../../../src/lib/mongoconnect';
+import { MongoConnect, type MongoConnectConfig } from '../../../../src/lib/mongoconnect';
 import type { AppLogger } from '../../../../src/lib/logger';
 import type { Mongoose } from 'mongoose';
 
@@ -86,7 +86,7 @@ describe('MongoConnect', function () {
   describe('createMongoConnect', function () {
     it('should create a MongoConnect instance', function () {
       const config = createMockConfig();
-      const mongoConnect = createMongoConnect(config, logger as AppLogger);
+      const mongoConnect = new MongoConnect(config, logger as AppLogger);
       expect(mongoConnect).to.be.instanceOf(MongoConnect);
     });
   });

@@ -21,8 +21,8 @@ import type {
   IEventRepositoryForIfttt,
   ISocketEmitterForIfttt,
   IIftttConfig,
-  IConnectionInfo,
 } from '../../../../src/controllers/ifttt.controller';
+import type { ConnectionInfo } from '../../../../src/types/connection';
 import type { IOpenhab, IItem, IEvent } from '../../../../src/types/models';
 import type { ILogger } from '../../../../src/types/notification';
 import type { Request, Response, NextFunction } from 'express';
@@ -51,7 +51,7 @@ class MockLogger implements ILogger {
 
 class MockOpenhabRepository implements IOpenhabRepositoryForIfttt {
   openhabs: IOpenhab[] = [];
-  connectionInfoMap: Map<string, IConnectionInfo> = new Map();
+  connectionInfoMap: Map<string, ConnectionInfo> = new Map();
   shouldThrow = false;
 
   async findByAccount(accountId: string | Types.ObjectId): Promise<IOpenhab | null> {
@@ -59,7 +59,7 @@ class MockOpenhabRepository implements IOpenhabRepositoryForIfttt {
     return this.openhabs.find(o => o.account.toString() === accountId.toString()) || null;
   }
 
-  async getConnectionInfo(openhabId: string | Types.ObjectId): Promise<IConnectionInfo | null> {
+  async getConnectionInfo(openhabId: string | Types.ObjectId): Promise<ConnectionInfo | null> {
     if (this.shouldThrow) throw new Error('Redis error');
     return this.connectionInfoMap.get(openhabId.toString()) || null;
   }
@@ -76,7 +76,7 @@ class MockOpenhabRepository implements IOpenhabRepositoryForIfttt {
     return newOpenhab;
   }
 
-  setConnectionInfo(openhabId: string | Types.ObjectId, info: IConnectionInfo): void {
+  setConnectionInfo(openhabId: string | Types.ObjectId, info: ConnectionInfo): void {
     this.connectionInfoMap.set(openhabId.toString(), info);
   }
 
@@ -437,13 +437,13 @@ describe('IftttController', () => {
     });
   });
 
-  describe('actionCommandItemOptions', () => {
+  describe('itemOptions (action/trigger)', () => {
     it('should return list of items', async () => {
       const openhab = openhabRepository.addOpenhab({ account: mockReq.user!.account });
       itemRepository.addItem({ openhab: openhab._id, name: 'Light_Kitchen' });
       itemRepository.addItem({ openhab: openhab._id, name: 'Light_Bedroom' });
 
-      await controller.actionCommandItemOptions(mockReq as Request, mockRes as Response, nextFunction);
+      await controller.itemOptions(mockReq as Request, mockRes as Response, nextFunction);
 
       expect(jsonStub.calledOnce).to.be.true;
       const responseData = jsonStub.firstCall.args[0].data;
@@ -453,7 +453,7 @@ describe('IftttController', () => {
     });
 
     it('should reject when openhab not found', async () => {
-      await controller.actionCommandItemOptions(mockReq as Request, mockRes as Response, nextFunction);
+      await controller.itemOptions(mockReq as Request, mockRes as Response, nextFunction);
 
       expect(statusStub.calledWith(400)).to.be.true;
     });
@@ -590,32 +590,4 @@ describe('IftttController', () => {
     });
   });
 
-  describe('triggerItemOptions', () => {
-    it('should return list of items', async () => {
-      const openhab = openhabRepository.addOpenhab({ account: mockReq.user!.account });
-      itemRepository.addItem({ openhab: openhab._id, name: 'Light' });
-      itemRepository.addItem({ openhab: openhab._id, name: 'Temperature' });
-
-      await controller.triggerItemOptions(mockReq as Request, mockRes as Response, nextFunction);
-
-      expect(jsonStub.calledOnce).to.be.true;
-      const responseData = jsonStub.firstCall.args[0].data;
-      expect(responseData).to.have.lengthOf(2);
-    });
-
-    it('should reject when openhab not found', async () => {
-      await controller.triggerItemOptions(mockReq as Request, mockRes as Response, nextFunction);
-
-      expect(statusStub.calledWith(400)).to.be.true;
-    });
-
-    it('should handle repository errors', async () => {
-      openhabRepository.shouldThrow = true;
-
-      await controller.triggerItemOptions(mockReq as Request, mockRes as Response, nextFunction);
-
-      expect(statusStub.calledWith(400)).to.be.true;
-      expect(logger.logs.some(l => l.level === 'error')).to.be.true;
-    });
-  });
 });

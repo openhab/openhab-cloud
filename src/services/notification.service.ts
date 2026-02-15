@@ -12,10 +12,9 @@
  */
 
 import type { Types } from 'mongoose';
+import type { INotification, IUserDevice } from '../types/models';
 import type {
   NotificationPayload,
-  INotification,
-  IUserDevice,
   IPushProvider,
   ILogger,
   INotificationRepository,
@@ -66,29 +65,7 @@ export class NotificationService implements INotificationService {
    * @throws PayloadTooLargeError if payload exceeds size limit
    */
   async sendToUser(userId: string, payload: NotificationPayload): Promise<void> {
-    // Validate payload size
-    const payloadJson = JSON.stringify(payload);
-    const payloadSize = Buffer.byteLength(payloadJson, 'utf8');
-
-    if (payloadSize > MAX_PAYLOAD_SIZE_BYTES) {
-      throw new PayloadTooLargeError(payloadSize, MAX_PAYLOAD_SIZE_BYTES);
-    }
-
-    // Normalize tag/severity (tag is replacing severity in OH 4.2)
-    const normalizedPayload: NotificationPayload = {
-      ...payload,
-      tag: payload.tag ?? payload.severity,
-    };
-
-    // Persist notification
-    const notification = await this.notificationRepository.create({
-      user: userId as unknown as Types.ObjectId,
-      message: normalizedPayload.message,
-      icon: normalizedPayload.icon,
-      severity: normalizedPayload.tag, // legacy field
-      payload: normalizedPayload,
-    });
-
+    const notification = await this.validateAndPersist(userId, payload);
     this.logger.info(`Notification ${notification._id} saved for user ${userId}`);
 
     // Get user devices
@@ -121,29 +98,7 @@ export class NotificationService implements INotificationService {
    * @throws PayloadTooLargeError if payload exceeds size limit
    */
   async saveOnly(userId: string, payload: NotificationPayload): Promise<void> {
-    // Validate payload size
-    const payloadJson = JSON.stringify(payload);
-    const payloadSize = Buffer.byteLength(payloadJson, 'utf8');
-
-    if (payloadSize > MAX_PAYLOAD_SIZE_BYTES) {
-      throw new PayloadTooLargeError(payloadSize, MAX_PAYLOAD_SIZE_BYTES);
-    }
-
-    // Normalize tag/severity (tag is replacing severity in OH 4.2)
-    const normalizedPayload: NotificationPayload = {
-      ...payload,
-      tag: payload.tag ?? payload.severity,
-    };
-
-    // Persist notification (no push)
-    const notification = await this.notificationRepository.create({
-      user: userId as unknown as Types.ObjectId,
-      message: normalizedPayload.message,
-      icon: normalizedPayload.icon,
-      severity: normalizedPayload.tag, // legacy field
-      payload: normalizedPayload,
-    });
-
+    const notification = await this.validateAndPersist(userId, payload);
     this.logger.info(`Log notification ${notification._id} saved for user ${userId} (no push)`);
   }
 
@@ -179,6 +134,30 @@ export class NotificationService implements INotificationService {
     const successCount = results.filter(r => r.success).length;
 
     this.logger.info(`Hide notification sent: ${successCount}/${results.length} successful`);
+  }
+
+  /** Validate payload size, normalize tag/severity, and persist to DB */
+  private async validateAndPersist(
+    userId: string,
+    payload: NotificationPayload
+  ): Promise<INotification> {
+    const payloadSize = Buffer.byteLength(JSON.stringify(payload), 'utf8');
+    if (payloadSize > MAX_PAYLOAD_SIZE_BYTES) {
+      throw new PayloadTooLargeError(payloadSize, MAX_PAYLOAD_SIZE_BYTES);
+    }
+
+    const normalizedPayload: NotificationPayload = {
+      ...payload,
+      tag: payload.tag ?? payload.severity,
+    };
+
+    return this.notificationRepository.create({
+      user: userId as unknown as Types.ObjectId,
+      message: normalizedPayload.message,
+      icon: normalizedPayload.icon,
+      severity: normalizedPayload.tag,
+      payload: normalizedPayload,
+    });
   }
 
   /**

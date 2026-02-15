@@ -12,13 +12,9 @@
  */
 
 import type { Types } from 'mongoose';
-import type { INotification, INotificationPayload, IUserDevice, DeviceType } from './models';
+import type { INotification, NotificationPayload, IUserDevice } from './models';
 
-// Re-export types from models for convenience
-export type { DeviceType, INotification, INotificationPayload, IUserDevice };
-
-// Alias for backwards compatibility
-export type NotificationPayload = INotificationPayload;
+export type { NotificationPayload };
 
 /**
  * Result of a push notification send attempt
