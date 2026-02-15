@@ -19,6 +19,8 @@
  */
 
 import express, { Express, Request, Response, NextFunction } from 'express';
+import http from 'http';
+import type { Socket as NetSocket } from 'net';
 import path from 'path';
 import flash from 'connect-flash';
 import bodyParser from 'body-parser';
@@ -238,6 +240,7 @@ export async function createApp(configPath: string): Promise<AppContainer> {
     const skipCsrf =
       path.startsWith('/api/') ||
       path.startsWith('/rest') ||
+      path.startsWith('/ws/') ||
       path === '/oauth2/token' ||
       path.startsWith('/ifttt/') ||
       path.startsWith('/remote/');
@@ -449,6 +452,40 @@ export async function createApp(configPath: string): Promise<AppContainer> {
         ...(app.get('env') === 'development' && { stack: err.stack }),
       });
     }
+  });
+
+  // Handle HTTP upgrade events for WebSocket proxy (/ws/ paths)
+  // Socket.IO handles its own upgrades on /socket.io/ — we only intercept /ws/
+  server.on('upgrade', (req: http.IncomingMessage, socket: NetSocket, head: Buffer) => {
+    if (req.url && req.url.startsWith('/ws/')) {
+      // Create a synthetic ServerResponse so Express can process
+      // the request through its middleware chain (auth, setOpenhab, ensureServer)
+      const res = new http.ServerResponse(req);
+      res.assignSocket(socket);
+
+      // For successful 101 upgrades, the proxy handler writes raw HTTP directly
+      // to the socket and takes ownership. We use a flag on the socket to track
+      // whether the upgrade completed — if it did, 'finish' must NOT destroy it.
+      // This guards against Node.js internals or middleware unexpectedly
+      // triggering 'finish' on the synthetic ServerResponse.
+      (socket as NetSocket & { __upgraded?: boolean }).__upgraded = false;
+
+      res.on('finish', () => {
+        if (!(socket as NetSocket & { __upgraded?: boolean }).__upgraded && !socket.destroyed) {
+          res.detachSocket(socket);
+          socket.destroy();
+        }
+      });
+
+      // If the socket has head data from the upgrade, push it back
+      if (head && head.length > 0) {
+        socket.unshift(head);
+      }
+
+      // Process through Express middleware
+      app(req as unknown as Request, res as unknown as Response);
+    }
+    // Else: let Socket.IO or other handlers deal with it
   });
 
   return {

@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
+import type { Socket as NetSocket } from 'net';
 import type { Socket } from 'socket.io';
 import type { Response } from 'express';
 import type { Types } from 'mongoose';
@@ -124,4 +125,25 @@ export interface IRedisMulti {
   get(key: string): IRedisMulti;
   del(key: string): IRedisMulti;
   exec(): Promise<unknown[] | null>;
+}
+
+/**
+ * Tracked WebSocket proxy connection
+ *
+ * Represents a client WebSocket connection being proxied through
+ * the cloud to an openHAB instance via Socket.IO.
+ */
+export interface TrackedWebSocket {
+  openhab: IOpenhab;
+  socket: NetSocket;
+  requestId: number;
+  createdAt: Date;
+}
+
+/**
+ * WebSocket data from openHAB via Socket.IO
+ */
+export interface WebSocketData {
+  id: number;
+  data: ArrayBuffer;
 }

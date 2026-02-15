@@ -29,6 +29,7 @@ import type {
 import { ConnectionManager } from './connection-manager';
 import { ProxyHandler } from './proxy-handler';
 import { RequestTracker } from './request-tracker';
+import { WebSocketTracker } from './websocket-tracker';
 import { invalidateConnectionCache } from '../routes/middleware';
 
 /**
@@ -74,6 +75,7 @@ export class SocketServer {
   private isShuttingDown = false;
   private cleanupInterval: NodeJS.Timeout | null = null;
   private requestTracker: RequestTracker;
+  private webSocketTracker: WebSocketTracker;
   private proxyHandler: ProxyHandler | null = null;
 
   constructor(
@@ -86,6 +88,7 @@ export class SocketServer {
     private readonly logger: ILogger
   ) {
     this.requestTracker = new RequestTracker();
+    this.webSocketTracker = new WebSocketTracker();
   }
 
   /**
@@ -99,7 +102,7 @@ export class SocketServer {
       allowEIO3: true, // Allow Engine.IO v3 (Socket.IO v2) clients to connect
     });
 
-    this.proxyHandler = new ProxyHandler(this.requestTracker, this.io!, this.logger);
+    this.proxyHandler = new ProxyHandler(this.requestTracker, this.webSocketTracker, this.io!, this.logger);
 
     this.setupMiddleware();
     this.setupConnectionHandlers();
@@ -248,6 +251,11 @@ export class SocketServer {
         this.proxyHandler?.handleResponseError(openhabSocket, data);
       });
 
+      // WebSocket proxy data (openHAB → client)
+      socket.on('websocket', (requestId: number, data: ArrayBuffer) => {
+        this.proxyHandler?.handleWebSocketData(openhabSocket, { id: requestId, data });
+      });
+
       // Notification handlers
       socket.on('notification', (data: NotificationData) => {
         this.handleNotification(openhabSocket, data);
@@ -289,6 +297,16 @@ export class SocketServer {
     this.logger.info(
       `Disconnected: ${socket.handshake.uuid}, connectionId ${socket.connectionId}`
     );
+
+    // Clean up any active WebSocket proxy connections for this openHAB
+    if (socket.handshake.uuid) {
+      const wsCount = this.webSocketTracker.removeAllForUuid(socket.handshake.uuid);
+      if (wsCount > 0) {
+        this.logger.info(
+          `Cleaned up ${wsCount} WebSocket proxy connections for ${socket.handshake.uuid}`
+        );
+      }
+    }
 
     if (socket.redisLockKey && socket.connectionId && socket.openhab) {
       this.logger.info(

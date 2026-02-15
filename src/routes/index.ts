@@ -674,6 +674,9 @@ export function createRoutes(deps: RoutesDependencies): Router {
 
   const proxyRoute = createProxyHandler(io, requestTracker, systemConfig, logger);
 
+  // WebSocket proxy route — no preassembleBody (upgrade requests have no body to assemble)
+  router.all('/ws/*', ensureRestAuthenticated, setOpenhab, ensureServer, proxyRoute);
+
   const proxyPaths = [
     '/rest*', '/images/*', '/static/*', '/rrdchart.png*', '/chart*',
     '/openhab.app*', '/WebApp*', '/CMD*', '/cometVisu*', '/proxy*',
@@ -717,6 +720,9 @@ function createProxyHandler(
       }
     }
 
+    // Check if this is a WebSocket upgrade request
+    const isUpgrade = req.headers['upgrade']?.toLowerCase() === 'websocket';
+
     // Remove sensitive headers
     delete requestHeaders['cookie'];
     delete requestHeaders['cookie2'];
@@ -724,7 +730,11 @@ function createProxyHandler(
     delete requestHeaders['x-real-ip'];
     delete requestHeaders['x-forwarded-for'];
     delete requestHeaders['x-forwarded-proto'];
-    delete requestHeaders['connection'];
+
+    // Preserve connection and upgrade headers for WebSocket upgrades
+    if (!isUpgrade) {
+      delete requestHeaders['connection'];
+    }
 
     requestHeaders['host'] = req.headers.host as string || `${systemConfig.getHost()}:${systemConfig.getPort()}`;
     requestHeaders['user-agent'] = 'openhab-cloud/0.0.1';
