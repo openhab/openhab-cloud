@@ -17,6 +17,7 @@
  * Common middleware functions used across routes.
  */
 
+import http from 'http';
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import passport from 'passport';
 import type { PromisifiedRedisClient } from '../lib/redis';
@@ -235,7 +236,12 @@ export function createMiddleware(deps: MiddlewareDependencies) {
   };
 
   /**
-   * Ensure request is served from the correct server (for proxy routes)
+   * Ensure request is served from the correct server (for proxy routes).
+   *
+   * If this server does not hold the openHAB's WebSocket connection, proxy the
+   * request internally to the correct server. The target server's response
+   * (including Set-Cookie: CloudServer) is piped back to the client so that
+   * subsequent requests are routed directly by nginx via cookie affinity.
    */
   const ensureServer: RequestHandler = (req, res, next) => {
     if (!req.connectionInfo?.serverAddress) {
@@ -247,12 +253,45 @@ export function createMiddleware(deps: MiddlewareDependencies) {
     }
 
     if (req.connectionInfo.serverAddress !== systemConfig.getInternalAddress()) {
-      // Redirect to correct cloud server using http:// for internal nginx routing
-      // nginx intercepts these internal redirects and proxies them, not the client
+      const targetAddress = req.connectionInfo.serverAddress;
+      const colonIdx = targetAddress.lastIndexOf(':');
+      const targetHost = targetAddress.substring(0, colonIdx);
+      const targetPort = parseInt(targetAddress.substring(colonIdx + 1), 10);
+
       logger.debug(
-        `Redirecting to correct server: ${req.connectionInfo.serverAddress} (current: ${systemConfig.getInternalAddress()})`
+        `Internal proxy to ${targetAddress} (current: ${systemConfig.getInternalAddress()})`
       );
-      res.redirect(307, 'http://' + req.connectionInfo.serverAddress + req.path);
+
+      const proxyReq = http.request(
+        {
+          hostname: targetHost,
+          port: targetPort,
+          path: req.originalUrl,
+          method: req.method,
+          headers: req.headers,
+        },
+        (proxyRes) => {
+          res.writeHead(proxyRes.statusCode!, proxyRes.headers);
+          proxyRes.pipe(res);
+        }
+      );
+
+      proxyReq.on('error', (err) => {
+        logger.error(`Internal proxy error to ${targetAddress}: ${err.message}`);
+        if (!res.headersSent) {
+          res.writeHead(502, { 'content-type': 'text/plain' });
+          res.end('Bad Gateway');
+        }
+      });
+
+      // Body was already consumed by preassembleBody middleware for most proxy
+      // routes. WebSocket upgrade routes (/ws/*) have no body.
+      if (req.rawBody !== undefined && req.rawBody !== '') {
+        proxyReq.end(req.rawBody);
+      } else {
+        proxyReq.end();
+      }
+
       return;
     }
 
