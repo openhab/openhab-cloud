@@ -270,6 +270,10 @@ export function createMiddleware(deps: MiddlewareDependencies) {
         timeout: INTERNAL_PROXY_TIMEOUT_MS,
       },
       (proxyRes) => {
+        if (res.headersSent) {
+          proxyRes.resume(); // drain response to free resources
+          return;
+        }
         res.writeHead(proxyRes.statusCode!, proxyRes.headers);
         proxyRes.pipe(res);
       }
@@ -351,6 +355,12 @@ export function createMiddleware(deps: MiddlewareDependencies) {
       logger.warn(
         `Internal proxy error to ${targetAddress}: ${err.message}, retrying with fresh lookup`
       );
+
+      // If headers were already sent, the response is committed — can't retry
+      if (res.headersSent) {
+        res.end();
+        return;
+      }
 
       // Invalidate stale cache and re-fetch from Redis
       invalidateConnectionCache(openhabId);
