@@ -39,8 +39,11 @@ interface ConnectionCacheEntry {
  */
 const connectionCache = new Map<string, ConnectionCacheEntry>();
 
-// Default cache TTL: 30 seconds
-const CONNECTION_CACHE_TTL_MS = 30 * 1000;
+// Default cache TTL: 10 seconds
+const CONNECTION_CACHE_TTL_MS = 10 * 1000;
+
+// Timeout for internal proxy requests (ms)
+const INTERNAL_PROXY_TIMEOUT_MS = 5000;
 
 // Cleanup interval: run every 60 seconds
 const CACHE_CLEANUP_INTERVAL_MS = 60 * 1000;
@@ -236,12 +239,92 @@ export function createMiddleware(deps: MiddlewareDependencies) {
   };
 
   /**
+   * Proxy request to target internal server address.
+   * Returns true if proxy was initiated, false if target is this server.
+   */
+  const proxyToServer = (
+    targetAddress: string,
+    req: Request,
+    res: Response,
+    onError: (err: Error) => void
+  ): boolean => {
+    if (targetAddress === systemConfig.getInternalAddress()) {
+      return false;
+    }
+
+    const colonIdx = targetAddress.lastIndexOf(':');
+    const targetHost = targetAddress.substring(0, colonIdx);
+    const targetPort = parseInt(targetAddress.substring(colonIdx + 1), 10);
+
+    logger.debug(
+      `Internal proxy to ${targetAddress} (current: ${systemConfig.getInternalAddress()})`
+    );
+
+    const proxyReq = http.request(
+      {
+        hostname: targetHost,
+        port: targetPort,
+        path: req.originalUrl,
+        method: req.method,
+        headers: req.headers,
+        timeout: INTERNAL_PROXY_TIMEOUT_MS,
+      },
+      (proxyRes) => {
+        res.writeHead(proxyRes.statusCode!, proxyRes.headers);
+        proxyRes.pipe(res);
+      }
+    );
+
+    proxyReq.on('timeout', () => {
+      proxyReq.destroy(new Error('proxy timeout'));
+    });
+
+    proxyReq.on('error', onError);
+
+    // Body was already consumed by preassembleBody middleware for most proxy
+    // routes. WebSocket upgrade routes (/ws/*) have no body.
+    if (req.rawBody !== undefined && req.rawBody !== '') {
+      proxyReq.end(req.rawBody);
+    } else {
+      proxyReq.end();
+    }
+
+    return true;
+  };
+
+  /**
+   * Refresh connection info from Redis (bypassing cache) for an openHAB.
+   */
+  const refreshConnectionInfo = async (
+    openhabId: string
+  ): Promise<ConnectionInfo | null> => {
+    const connectionKey = 'connection:' + openhabId;
+    const result = await redis.get(connectionKey);
+    if (!result) {
+      connectionCache.set(openhabId, {
+        connectionInfo: null,
+        expiresAt: Date.now() + CONNECTION_CACHE_TTL_MS,
+      });
+      return null;
+    }
+    const connInfo = JSON.parse(result) as ConnectionInfo;
+    connectionCache.set(openhabId, {
+      connectionInfo: connInfo,
+      expiresAt: Date.now() + CONNECTION_CACHE_TTL_MS,
+    });
+    return connInfo;
+  };
+
+  /**
    * Ensure request is served from the correct server (for proxy routes).
    *
    * If this server does not hold the openHAB's WebSocket connection, proxy the
    * request internally to the correct server. The target server's response
    * (including Set-Cookie: CloudServer) is piped back to the client so that
    * subsequent requests are routed directly by nginx via cookie affinity.
+   *
+   * On proxy failure, invalidates the cache and retries once with fresh
+   * connection info from Redis — this handles stale references after restarts.
    */
   const ensureServer: RequestHandler = (req, res, next) => {
     if (!req.connectionInfo?.serverAddress) {
@@ -252,54 +335,63 @@ export function createMiddleware(deps: MiddlewareDependencies) {
       return;
     }
 
-    if (req.connectionInfo.serverAddress !== systemConfig.getInternalAddress()) {
-      const targetAddress = req.connectionInfo.serverAddress;
-      const colonIdx = targetAddress.lastIndexOf(':');
-      const targetHost = targetAddress.substring(0, colonIdx);
-      const targetPort = parseInt(targetAddress.substring(colonIdx + 1), 10);
+    const openhabId = req.openhab?._id?.toString() || '';
+    const targetAddress = req.connectionInfo.serverAddress;
 
-      logger.debug(
-        `Internal proxy to ${targetAddress} (current: ${systemConfig.getInternalAddress()})`
-      );
-
-      const proxyReq = http.request(
-        {
-          hostname: targetHost,
-          port: targetPort,
-          path: req.originalUrl,
-          method: req.method,
-          headers: req.headers,
-        },
-        (proxyRes) => {
-          res.writeHead(proxyRes.statusCode!, proxyRes.headers);
-          proxyRes.pipe(res);
-        }
-      );
-
-      proxyReq.on('error', (err) => {
-        logger.error(`Internal proxy error to ${targetAddress}: ${err.message}`);
-        if (!res.headersSent) {
-          res.writeHead(502, { 'content-type': 'text/plain' });
-          res.end('Bad Gateway');
-        }
+    // Target is this server — handle locally
+    if (!proxyToServer(targetAddress, req, res, handleFirstError)) {
+      res.cookie('CloudServer', systemConfig.getInternalAddress(), {
+        maxAge: 900000,
+        httpOnly: true,
       });
-
-      // Body was already consumed by preassembleBody middleware for most proxy
-      // routes. WebSocket upgrade routes (/ws/*) have no body.
-      if (req.rawBody !== undefined && req.rawBody !== '') {
-        proxyReq.end(req.rawBody);
-      } else {
-        proxyReq.end();
-      }
-
-      return;
+      return next();
     }
 
-    res.cookie('CloudServer', systemConfig.getInternalAddress(), {
-      maxAge: 900000,
-      httpOnly: true,
-    });
-    return next();
+    function handleFirstError(err: Error) {
+      logger.warn(
+        `Internal proxy error to ${targetAddress}: ${err.message}, retrying with fresh lookup`
+      );
+
+      // Invalidate stale cache and re-fetch from Redis
+      invalidateConnectionCache(openhabId);
+
+      refreshConnectionInfo(openhabId)
+        .then((freshInfo) => {
+          if (!freshInfo?.serverAddress) {
+            logger.warn(`openHAB ${openhabId} no longer connected after proxy failure`);
+            if (!res.headersSent) {
+              res.writeHead(502, { 'content-type': 'text/plain' });
+              res.end('openHAB is offline');
+            }
+            return;
+          }
+
+          // If fresh info points to this server, handle locally
+          if (!proxyToServer(freshInfo.serverAddress, req, res, handleRetryError)) {
+            req.connectionInfo = freshInfo;
+            res.cookie('CloudServer', systemConfig.getInternalAddress(), {
+              maxAge: 900000,
+              httpOnly: true,
+            });
+            return next();
+          }
+        })
+        .catch((redisErr) => {
+          logger.error(`Redis lookup failed during proxy retry: ${redisErr}`);
+          if (!res.headersSent) {
+            res.writeHead(502, { 'content-type': 'text/plain' });
+            res.end('Bad Gateway');
+          }
+        });
+    }
+
+    function handleRetryError(err: Error) {
+      logger.error(`Internal proxy retry failed: ${err.message}`);
+      if (!res.headersSent) {
+        res.writeHead(502, { 'content-type': 'text/plain' });
+        res.end('Bad Gateway');
+      }
+    }
   };
 
   /**

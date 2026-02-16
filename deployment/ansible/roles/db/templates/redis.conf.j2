@@ -1,0 +1,17 @@
+bind 127.0.0.1 {{ ansible_host }}
+port 6379
+requirepass {{ vault_redis_password }}
+
+# Persistence
+appendonly yes
+appendfsync everysec
+
+# Memory
+maxmemory-policy noeviction
+
+# General
+daemonize no
+supervised systemd
+loglevel notice
+logfile /var/log/redis/redis-server.log
+dir /var/lib/redis

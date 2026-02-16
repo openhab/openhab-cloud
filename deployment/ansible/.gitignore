@@ -1,0 +1,4 @@
+inventory.yml
+.secrets/
+*.retry
+.vault_password

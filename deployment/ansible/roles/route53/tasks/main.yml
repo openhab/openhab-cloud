@@ -1,0 +1,29 @@
+---
+- name: Create weighted A records for app servers
+  amazon.aws.route53:
+    state: present
+    zone: "{{ hostvars[groups['appservers'][0]]['domain'] }}"
+    record: "{{ hostvars[groups['appservers'][0]]['domain'] }}"
+    type: A
+    value: "{{ item.value.ansible_host }}"
+    ttl: 60
+    weight: "{{ item.value.route53_weight }}"
+    identifier: "{{ item.key }}"
+    overwrite: true
+  loop: "{{ hostvars | dict2items | selectattr('value.route53_weight', 'defined') | list }}"
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ vault_aws_access_key_id }}"
+    AWS_SECRET_ACCESS_KEY: "{{ vault_aws_secret_access_key }}"
+
+- name: Create CNAME record for home subdomain
+  amazon.aws.route53:
+    state: present
+    zone: "{{ hostvars[groups['appservers'][0]]['domain'] }}"
+    record: "home.{{ hostvars[groups['appservers'][0]]['domain'] }}"
+    type: CNAME
+    value: "{{ hostvars[groups['appservers'][0]]['domain'] }}"
+    ttl: 300
+    overwrite: true
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ vault_aws_access_key_id }}"
+    AWS_SECRET_ACCESS_KEY: "{{ vault_aws_secret_access_key }}"

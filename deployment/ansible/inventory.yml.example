@@ -1,0 +1,41 @@
+---
+all:
+  vars:
+    # ── Connection defaults ──
+    ansible_user: root
+
+    # ── Domain ──
+    domain: myopenhab.test
+    acme_email: admin@myopenhab.test
+
+    # ── AWS (Route53) ──
+    route53_zone_id: "Z0123456789ABCDEF"
+
+    # Secrets (passwords, AWS creds, API keys) are in vault.yml.
+    # See README.md "Secrets Management" for setup instructions.
+
+    # ── App Tuning ──
+    docker_image: "openhab/openhab-cloud:latest"
+    node_instances: 2          # Node.js instances per server (match CPU count)
+    node_max_old_space: 1500   # MB per instance
+
+    # ── Optional ──
+    # smtp_host: "smtp.example.com"
+    # smtp_port: 587
+    # smtp_user: ""
+    # smtp_from: "openHAB Cloud <noreply@example.com>"
+    # fcm_sender_id: ""
+
+  children:
+    appservers:
+      hosts:
+        app1:
+          ansible_host: 1.2.3.4
+          route53_weight: 100
+        app2:
+          ansible_host: 5.6.7.8
+          route53_weight: 100
+    dbservers:
+      hosts:
+        db:
+          ansible_host: 9.10.11.12

@@ -1,0 +1,60 @@
+---
+- name: Create app directory
+  ansible.builtin.file:
+    path: /opt/openhabcloud
+    state: directory
+    mode: "0755"
+
+- name: Create log directories
+  ansible.builtin.file:
+    path: "/opt/openhabcloud/logs/oh{{ item }}"
+    state: directory
+    owner: "100"
+    group: "101"
+    mode: "0755"
+  loop: "{{ range(1, node_instances + 1) | list }}"
+
+- name: Template config.json.template
+  ansible.builtin.template:
+    src: config.json.j2
+    dest: /opt/openhabcloud/config.json.template
+    mode: "0644"
+  notify: restart app
+
+- name: Template nginx.conf
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /opt/openhabcloud/nginx.conf
+    mode: "0644"
+  notify: reload nginx
+
+- name: Write FCM service account key
+  ansible.builtin.copy:
+    content: "{{ vault_fcm_service_key_json }}"
+    dest: /opt/openhabcloud/serviceAccountKey.json
+    mode: "0644"
+  when: vault_fcm_service_key_json is defined
+  notify: restart app
+
+- name: Template docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/openhabcloud/docker-compose.yml
+    mode: "0640"
+  notify: restart app
+
+- name: Check if app image exists locally
+  community.docker.docker_image_info:
+    name: "{{ docker_image }}"
+  register: app_image
+
+- name: Pull Docker images
+  community.docker.docker_compose_v2_pull:
+    project_src: /opt/openhabcloud
+  when: app_image.images | length == 0
+
+- name: Start containers
+  community.docker.docker_compose_v2:
+    project_src: /opt/openhabcloud
+    state: present
+    remove_orphans: true
