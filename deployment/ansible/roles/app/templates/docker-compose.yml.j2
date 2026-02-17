@@ -25,6 +25,7 @@ services:
 {% endif %}
     environment:
       - NODE_ENV=production
+      - HOST={{ ansible_host }}
       - PORT={{ 3000 + i }}
       - DOMAIN_NAME={{ domain }}
       - PROXY_HOST=home.{{ domain }}
