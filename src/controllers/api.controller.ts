@@ -187,10 +187,10 @@ export class ApiController {
     try {
       const body = req.body;
 
-      // Validate required message field
-      if (!body || typeof body.message !== 'string' || body.message.trim() === '') {
+      // Validate body and message field (message can be empty string)
+      if (!body || (body.message !== undefined && typeof body.message !== 'string')) {
         res.status(400).json({
-          errors: [{ message: 'Message is required' }],
+          errors: [{ message: 'Invalid request body' }],
         });
         return;
       }
@@ -198,7 +198,7 @@ export class ApiController {
       // Pass entire body to preserve all custom properties (like media-attachment-url)
       const data: NotificationPayload = {
         ...body,
-        message: body.message, // ensure required field is present
+        message: body.message ?? '', // default to empty string if undefined
         type: (body.type === 'hideNotification' ? 'hideNotification' : 'notification') as 'notification' | 'hideNotification',
       };
 
