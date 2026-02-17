@@ -21,7 +21,7 @@ import type { INotification, NotificationDocument } from '../types/models';
 const notificationSchema = new Schema<INotification, NotificationModel>(
   {
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    message: { type: String, required: true },
+    message: { type: String, default: '' },
     icon: { type: String },
     severity: { type: String },
     acknowledged: { type: Boolean, default: false },
