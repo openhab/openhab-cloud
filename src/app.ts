@@ -101,7 +101,7 @@ export async function createApp(configPath: string): Promise<AppContainer> {
     logger.error('Unhandled promise rejection at:', promise, 'reason:', reason);
   });
 
-  // Create Redis client (async in redis v4)
+  // Create Redis client (async in redis v5)
   const redis = await createRedisClient(config.redis, logger);
 
   // Initialize MongoDB connection

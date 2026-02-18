@@ -12,7 +12,7 @@ openHAB Cloud is a backend service that connects local [openHAB](https://www.ope
 - **IFTTT integration** — trigger IFTTT applets from openHAB events
 - **Web dashboard** — manage accounts, devices, notifications, and connected openHAB instances
 
-**Tech stack:** Node.js 22+, TypeScript, Express 4, Mongoose 8, Socket.IO 4, Redis (ioredis), Zod.
+**Tech stack:** Node.js 22+, TypeScript, Express 5, Mongoose 9, Socket.IO 4, Redis, Zod.
 
 ## Prerequisites
 

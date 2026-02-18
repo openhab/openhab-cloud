@@ -100,7 +100,7 @@ Socket.IO manages WebSocket connections from openHAB instances:
 ### Database Layer
 
 - **MongoDB** via Mongoose - Primary data store
-- **Redis** via ioredis - Session store, Socket.IO adapter, query caching
+- **Redis** via redis - Session store, Socket.IO adapter, query caching
 
 ## Testing
 
@@ -137,8 +137,8 @@ npm run docker:test:up && npm run docker:test:seed && npm run test:integration
 
 ## Key Dependencies
 
-- **Express 4.x** - Web framework
-- **Mongoose 8.x** - MongoDB ODM
+- **Express 5.x** - Web framework
+- **Mongoose 9.x** - MongoDB ODM
 - **Socket.IO 4.x** - WebSocket communication
 - **Passport 0.7.x** - Authentication
 - **oauth2orize** - OAuth2 authorization server
@@ -179,6 +179,14 @@ When writing new code, include unit tests:
 3. **Repositories** - Test data access with mocked Mongoose models
 
 Use dependency injection for testability - inject dependencies via constructor.
+
+### Git Commits
+
+This repository requires DCO (Developer Certificate of Origin) sign-off on all commits. Before creating commits, get the current git user with `git config user.name` and `git config user.email`, then always use the `--signoff` flag (or `-s`) to add the `Signed-off-by` trailer:
+
+```bash
+git commit --signoff -m "Your commit message"
+```
 
 ### License Headers
 

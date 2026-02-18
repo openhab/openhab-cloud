@@ -45,7 +45,7 @@ declare global {
       rawBody?: Buffer | string;
 
       /**
-       * CSRF token function (from csurf middleware)
+       * CSRF token function (from csrf-sync middleware)
        */
       csrfToken?(): string;
 

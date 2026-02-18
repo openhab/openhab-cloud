@@ -102,7 +102,7 @@ function wrapRedisClient(client: RedisClientType): PromisifiedRedisClient {
     },
 
     async set(key: string, value: string, ...args: (string | number)[]): Promise<string | null> {
-      // Parse variadic args to match redis v4 API
+      // Parse variadic args to match redis v5 API
       // Supports: set(key, val), set(key, val, 'EX', 60), set(key, val, 'NX', 'EX', 60)
       const options: Record<string, unknown> = {};
       for (let i = 0; i < args.length; i++) {
