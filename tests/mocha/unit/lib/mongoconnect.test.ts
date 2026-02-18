@@ -106,7 +106,7 @@ describe('MongoConnect', function () {
       expect(uri).to.equal('mongodb://localhost:27017/testdb');
     });
 
-    it('should embed credentials directly in URI', async function () {
+    it('should pass credentials via connect options', async function () {
       const config = createMockConfig({
         hasCredentials: true,
         user: 'testuser',
@@ -119,13 +119,13 @@ describe('MongoConnect', function () {
       await mongoConnect.connect(mockMongoose as unknown as Mongoose);
 
       expect(mockMongoose.connect.calledOnce).to.be.true;
-      const [uri] = mockMongoose.connect.firstCall.args;
+      const [uri, options] = mockMongoose.connect.firstCall.args;
 
-      // Credentials embedded as-is (MongoDB driver handles special chars internally)
-      expect(uri).to.equal('mongodb://testuser:testpass@localhost:27017/testdb');
+      expect(uri).to.equal('mongodb://localhost:27017/testdb');
+      expect(options).to.deep.include({ auth: { username: 'testuser', password: 'testpass' } });
     });
 
-    it('should pass passwords with special characters as-is (driver handles encoding)', async function () {
+    it('should pass passwords with special characters via options', async function () {
       const config = createMockConfig({
         hasCredentials: true,
         user: 'openhab',
@@ -137,13 +137,13 @@ describe('MongoConnect', function () {
 
       await mongoConnect.connect(mockMongoose as unknown as Mongoose);
 
-      const [uri] = mockMongoose.connect.firstCall.args;
+      const [uri, options] = mockMongoose.connect.firstCall.args;
 
-      // Password passed as-is - MongoDB driver handles special characters internally
-      expect(uri).to.equal('mongodb://openhab:pass%word@localhost/openhab');
+      expect(uri).to.equal('mongodb://localhost/openhab');
+      expect(options).to.deep.include({ auth: { username: 'openhab', password: 'pass%word' } });
     });
 
-    it('should pass passwords with @ symbol as-is', async function () {
+    it('should pass passwords with @ symbol via options', async function () {
       const config = createMockConfig({
         hasCredentials: true,
         user: 'user',
@@ -155,12 +155,12 @@ describe('MongoConnect', function () {
 
       await mongoConnect.connect(mockMongoose as unknown as Mongoose);
 
-      const [uri] = mockMongoose.connect.firstCall.args;
-      // Password with @ passed as-is
-      expect(uri).to.equal('mongodb://user:p@ssword@localhost/testdb');
+      const [uri, options] = mockMongoose.connect.firstCall.args;
+      expect(uri).to.equal('mongodb://localhost/testdb');
+      expect(options).to.deep.include({ auth: { username: 'user', password: 'p@ssword' } });
     });
 
-    it('should pass passwords with multiple special characters as-is', async function () {
+    it('should pass passwords with multiple special characters via options', async function () {
       const config = createMockConfig({
         hasCredentials: true,
         user: 'admin',
@@ -172,9 +172,9 @@ describe('MongoConnect', function () {
 
       await mongoConnect.connect(mockMongoose as unknown as Mongoose);
 
-      const [uri] = mockMongoose.connect.firstCall.args;
-      // All special characters passed as-is
-      expect(uri).to.equal('mongodb://admin:p@ss:w0rd/123?@localhost/testdb');
+      const [uri, options] = mockMongoose.connect.firstCall.args;
+      expect(uri).to.equal('mongodb://localhost/testdb');
+      expect(options).to.deep.include({ auth: { username: 'admin', password: 'p@ss:w0rd/123?' } });
     });
 
     it('should append authSource when configured', async function () {
@@ -190,8 +190,9 @@ describe('MongoConnect', function () {
 
       await mongoConnect.connect(mockMongoose as unknown as Mongoose);
 
-      const [uri] = mockMongoose.connect.firstCall.args;
-      expect(uri).to.equal('mongodb://testuser:testpass@localhost:27017/testdb?authSource=admin');
+      const [uri, options] = mockMongoose.connect.firstCall.args;
+      expect(uri).to.equal('mongodb://localhost:27017/testdb?authSource=admin');
+      expect(options).to.deep.include({ auth: { username: 'testuser', password: 'testpass' } });
     });
 
     it('should not append authSource when not configured', async function () {
