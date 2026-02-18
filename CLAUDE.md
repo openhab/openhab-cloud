@@ -180,11 +180,14 @@ When writing new code, include unit tests:
 
 Use dependency injection for testability - inject dependencies via constructor.
 
-### Git Commits
+### Git Workflow
+
+**Never commit directly to the main branch.** Always create a feature branch, commit there, and open a PR. All changes must go through pull requests.
 
 This repository requires DCO (Developer Certificate of Origin) sign-off on all commits. Before creating commits, get the current git user with `git config user.name` and `git config user.email`, then always use the `--signoff` flag (or `-s`) to add the `Signed-off-by` trailer:
 
 ```bash
+git checkout -b my-feature-branch
 git commit --signoff -m "Your commit message"
 ```
 
