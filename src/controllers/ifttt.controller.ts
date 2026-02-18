@@ -15,7 +15,6 @@ import type { RequestHandler, Request, Response, NextFunction } from 'express';
 import type { Types } from 'mongoose';
 import type { IOpenhab, IItem, IEvent } from '../types/models';
 import type { ILogger } from '../types/notification';
-import type { ConnectionInfo } from '../types/connection';
 import passport from 'passport';
 
 /**
@@ -23,7 +22,6 @@ import passport from 'passport';
  */
 export interface IOpenhabRepositoryForIfttt {
   findByAccount(accountId: string | Types.ObjectId): Promise<IOpenhab | null>;
-  getConnectionInfo(openhabId: string | Types.ObjectId): Promise<ConnectionInfo | null>;
 }
 
 /**
@@ -77,7 +75,6 @@ export interface IIftttConfig {
   getChannelKey(): string;
   getTestToken(): string;
   getBaseURL(): string;
-  getInternalAddress(): string;
 }
 
 /**
@@ -218,18 +215,7 @@ export class IftttController {
         return res.status(400).json({ errors: [{ message: 'Actionfields incomplete' }] });
       }
 
-      const openhab = await this.openhabRepository.findByAccount(req.user!.account);
-      if (!openhab) {
-        return res.status(400).json({ errors: [{ message: 'Request failed' }] });
-      }
-
-      // Check if openHAB is on another server (for clustering)
-      const connectionInfo = await this.openhabRepository.getConnectionInfo(openhab._id);
-      if (connectionInfo && connectionInfo.serverAddress !== this.config.getInternalAddress()) {
-        return res.redirect(307, 'http://' + connectionInfo.serverAddress + req.path);
-      }
-
-      this.socketEmitter.emitCommand(openhab.uuid, item, command);
+      this.socketEmitter.emitCommand(req.openhab!.uuid, item, command);
       return res.json({ data: [{ id: '12345' }] });
     } catch (error) {
       this.logger.error('Error in actionCommand:', error);
