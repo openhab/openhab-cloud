@@ -28,7 +28,7 @@ import errorHandler from 'errorhandler';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import favicon from 'serve-favicon';
-import csurf from 'csurf';
+import { csrfSync } from 'csrf-sync';
 import serveStatic from 'serve-static';
 import passport from 'passport';
 import mongoose from 'mongoose';
@@ -218,30 +218,33 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   });
 
   // CSRF protection (except for API, REST, and remote routes)
-  // Note: Using startsWith for clarity and security - regex patterns like '/api/*'
-  // can be misleading (would also match '/apiary')
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    const csrf = csurf();
-    const path = req.path;
-    const skipCsrf =
-      path.startsWith('/api/') ||
-      path.startsWith('/rest') ||
-      path.startsWith('/ws/') ||
-      path === '/oauth2/token' ||
-      path.startsWith('/ifttt/') ||
-      path.startsWith('/remote/');
-
-    if (!skipCsrf) {
-      csrf(req, res, next);
-    } else {
-      next();
-    }
+  const { csrfSynchronisedProtection, generateToken } = csrfSync({
+    getTokenFromRequest: (req: Request) => req.body?.['_csrf'] as string ?? req.headers['csrf-token'] as string,
+    errorConfig: {
+      statusCode: 403,
+      message: 'Invalid CSRF token. Please refresh the page and try again.',
+      code: 'EBADCSRFTOKEN',
+    },
+    skipCsrfProtection: (req: Request) => {
+      const p = req.path;
+      return (
+        p.startsWith('/api/') ||
+        p.startsWith('/rest') ||
+        p.startsWith('/ws/') ||
+        p === '/oauth2/token' ||
+        p.startsWith('/ifttt/') ||
+        p.startsWith('/remote/')
+      );
+    },
   });
+  app.use(csrfSynchronisedProtection);
 
   // CSRF token for templates
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (typeof req.csrfToken === 'function') {
       res.locals['token'] = req.csrfToken();
+    } else {
+      res.locals['token'] = generateToken(req);
     }
     next();
   });
