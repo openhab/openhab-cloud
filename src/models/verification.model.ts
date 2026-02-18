@@ -12,7 +12,7 @@
  */
 
 import { Schema, model, Model, Types } from 'mongoose';
-import { v1 as uuidv1 } from 'uuid';
+import { randomUUID } from 'crypto';
 import type {
   IEmailVerification,
   IInvitation,
@@ -53,7 +53,7 @@ emailVerificationSchema.static(
   ): Promise<EmailVerificationDocument> {
     const objectId = typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
     const verification = new this({
-      code: uuidv1(),
+      code: randomUUID(),
       email,
       user: objectId,
     });
@@ -113,7 +113,7 @@ interface InvitationModelStatics {
 
 invitationSchema.static('createInvitation', async function (email: string): Promise<InvitationDocument> {
   const invitation = new this({
-    code: uuidv1(),
+    code: randomUUID(),
     email,
   });
   return invitation.save();
@@ -188,7 +188,7 @@ lostPasswordSchema.static(
     const objectId = typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
     const lostPassword = new this({
       user: objectId,
-      recoveryCode: uuidv1(),
+      recoveryCode: randomUUID(),
     });
     return lostPassword.save();
   }

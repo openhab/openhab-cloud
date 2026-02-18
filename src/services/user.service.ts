@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import type { Types } from 'mongoose';
 import type {
   IUser,
@@ -219,7 +219,7 @@ export class UserService {
         return { success: true };
       }
 
-      const recoveryCode = uuidv4();
+      const recoveryCode = randomUUID();
       await this.lostPasswordRepository.create({
         user: user._id,
         recoveryCode,
@@ -309,7 +309,7 @@ export class UserService {
    * Send email verification to user
    */
   async sendEmailVerification(user: IUser): Promise<void> {
-    const code = uuidv4();
+    const code = randomUUID();
 
     await this.emailVerificationRepository.create({
       user: user._id,
