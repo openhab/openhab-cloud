@@ -51,7 +51,3 @@ yarn.lock
 
 # Local development overrides
 docker-compose.override.yml
-
-# Ansible vault
-deployment/ansible/vault.yml
-deployment/ansible/.vault_password
