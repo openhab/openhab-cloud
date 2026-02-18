@@ -1,6 +1,0 @@
----
-- name: reload nginx
-  ansible.builtin.command:
-    cmd: docker compose exec nginx nginx -s reload
-    chdir: /opt/openhabcloud
-  failed_when: false
