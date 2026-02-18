@@ -19,10 +19,7 @@
  */
 
 import { createHash } from 'crypto';
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const socketClient = require('socket.io-client');
-type Socket = import('socket.io-client').Socket;
+import { io, Socket } from 'socket.io-client';
 
 /**
  * Proxy request from the server
@@ -140,15 +137,11 @@ export class OpenHABTestClient {
         });
       }, 10000);
 
-      this.socket = socketClient(this.serverUrl, {
+      this.socket = io(this.serverUrl, {
         query: { uuid: this.uuid },
-        transportOptions: {
-          polling: {
-            extraHeaders: {
-              secret: this.secret,
-              openhabversion: this.version,
-            },
-          },
+        extraHeaders: {
+          secret: this.secret,
+          openhabversion: this.version,
         },
         // Start with polling to send headers, then upgrade to websocket
         transports: ['polling', 'websocket'],
@@ -170,16 +163,6 @@ export class OpenHABTestClient {
           this.socket?.disconnect();
           this.socket = null;
           reject(err);
-        });
-      });
-
-      // Socket.IO v2 emits 'error' (not 'connect_error') for middleware rejections
-      this.socket.on('error', (errMsg: string) => {
-        settle(() => {
-          clearTimeout(timeout);
-          this.socket?.disconnect();
-          this.socket = null;
-          reject(new Error(errMsg));
         });
       });
 
