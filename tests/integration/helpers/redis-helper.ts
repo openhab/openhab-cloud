@@ -17,8 +17,7 @@
  * Provides utilities for managing Redis state during tests.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const Redis = require('ioredis');
+import { createClient } from 'redis';
 
 const REDIS_URL = process.env['REDIS_URL'] || 'redis://localhost:6379';
 
@@ -27,14 +26,15 @@ const REDIS_URL = process.env['REDIS_URL'] || 'redis://localhost:6379';
  * Called after auth failure tests to prevent subsequent tests from being blocked.
  */
 export async function clearBlockedUuids(): Promise<void> {
-  const redis = new Redis(REDIS_URL);
+  const redis = createClient({ url: REDIS_URL });
+  await redis.connect();
   try {
-    const keys: string[] = await redis.keys('blocked:*');
+    const { keys } = await redis.scan('0', { MATCH: 'blocked:*', COUNT: 1000 });
     if (keys.length > 0) {
-      await redis.del(...keys);
+      await redis.del(keys);
     }
   } finally {
-    redis.disconnect();
+    await redis.close();
   }
 }
 
@@ -42,13 +42,14 @@ export async function clearBlockedUuids(): Promise<void> {
  * Clear all connection lock keys from Redis.
  */
 export async function clearConnectionLocks(): Promise<void> {
-  const redis = new Redis(REDIS_URL);
+  const redis = createClient({ url: REDIS_URL });
+  await redis.connect();
   try {
-    const keys: string[] = await redis.keys('connection:*');
+    const { keys } = await redis.scan('0', { MATCH: 'connection:*', COUNT: 1000 });
     if (keys.length > 0) {
-      await redis.del(...keys);
+      await redis.del(keys);
     }
   } finally {
-    redis.disconnect();
+    await redis.close();
   }
 }

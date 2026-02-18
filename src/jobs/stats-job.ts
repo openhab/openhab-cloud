@@ -136,14 +136,14 @@ export class StatsJob extends BaseJob {
    */
   private async countOpenhabOnline(): Promise<number> {
     let count = 0;
-    let cursor = 0;
+    let cursor = '0';
 
     try {
       do {
         const result = await this.redis.scan(cursor, { MATCH: 'connection:*', COUNT: 100 });
         cursor = result.cursor;
         count += result.keys.length;
-      } while (cursor !== 0);
+      } while (cursor !== '0');
     } catch (err) {
       this.logger.error('Error scanning for online openhabs:', err);
     }
