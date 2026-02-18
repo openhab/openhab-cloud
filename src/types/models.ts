@@ -92,7 +92,7 @@ export interface NotificationPayload {
 export interface INotification {
   _id: Types.ObjectId;
   user: Types.ObjectId;
-  message: string;
+  message?: string;
   icon?: string;
   severity?: string;
   acknowledged?: boolean;
