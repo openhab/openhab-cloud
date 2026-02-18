@@ -53,12 +53,13 @@ export class MongoConnect {
     mongoose.set('strictQuery', false);
 
     const uri = this.getMongoUri();
+    const options = this.getConnectOptions();
 
     // Log URI with masked password for debugging
     this.logger.info('Trying to connect to mongodb at: ' + this.getMaskedUri());
 
     try {
-      await mongooseInstance.connect(uri);
+      await mongooseInstance.connect(uri, options);
       this.logger.info('Successfully connected to mongodb');
     } catch (error) {
       this.logger.error('Error while connecting from openHAB-cloud to mongodb:', error);
@@ -69,17 +70,11 @@ export class MongoConnect {
 
   /**
    * Build the MongoDB connection URI from configuration.
-   *
-   * Note: We do NOT URL-encode credentials here because the MongoDB Node.js driver
-   * handles special characters internally. Pre-encoding would cause double-encoding
-   * and authentication failures.
+   * Credentials are passed via connect options (not in the URI) to avoid
+   * percent-encoding issues with special characters in passwords.
    */
   private getMongoUri(): string {
     let uri = 'mongodb://';
-
-    if (this.config.hasDbCredentials()) {
-      uri += this.config.getDbUser() + ':' + this.config.getDbPass() + '@';
-    }
 
     uri += this.config.getDbHostsString();
     uri += '/' + this.config.getDbName();
@@ -91,6 +86,22 @@ export class MongoConnect {
     }
 
     return uri;
+  }
+
+  /**
+   * Build mongoose connect options, including auth credentials.
+   */
+  private getConnectOptions(): Record<string, unknown> {
+    if (!this.config.hasDbCredentials()) {
+      return {};
+    }
+
+    return {
+      auth: {
+        username: this.config.getDbUser(),
+        password: this.config.getDbPass(),
+      },
+    };
   }
 
   /**

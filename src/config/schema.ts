@@ -31,7 +31,7 @@ const SystemSchema = z.object({
     dir: z.string().default('./logs/'),
     maxFiles: z.string().default('7d'),
     level: z.enum(['error', 'warn', 'info', 'verbose', 'debug', 'silly']).default('debug'),
-    type: z.enum(['file', 'console']).default('file'),
+    type: z.enum(['file', 'console', 'both']).default('file'),
     morgan: z.string().nullable().optional(),
   }).default({
     dir: './logs/',

@@ -76,8 +76,9 @@ export class ProxyHandler {
         return;
       }
 
-      // Don't send headers twice
-      if (request.headersSent) {
+      // Don't send headers twice — check both our own flag and the
+      // Node.js response state (another code path may have committed it)
+      if (request.headersSent || request.response.headersSent) {
         this.logger.warn(
           `responseHeader: Headers already sent for request ${requestId}`
         );
@@ -125,6 +126,12 @@ export class ProxyHandler {
         return;
       }
 
+      if (request.response.writableEnded) {
+        socket.emit('cancel', { id: requestId });
+        this.requestTracker.safeRemove(requestId);
+        return;
+      }
+
       request.response.write(data.body);
     } catch (error) {
       this.logger.error(`Error handling responseContent for ${requestId}:`, error);
@@ -154,7 +161,9 @@ export class ProxyHandler {
         return;
       }
 
-      request.response.end();
+      if (!request.response.writableEnded) {
+        request.response.end();
+      }
       this.requestTracker.markFinished(requestId);
       this.requestTracker.safeRemove(requestId);
     } catch (error) {

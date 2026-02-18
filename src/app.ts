@@ -392,7 +392,6 @@ export async function createApp(configPath: string): Promise<AppContainer> {
       getChannelKey: () => configManager.getIftttChannelKey(),
       getTestToken: () => configManager.getIftttTestToken(),
       getBaseURL: () => configManager.getBaseURL(),
-      getInternalAddress: () => configManager.getInternalAddress(),
     },
   });
   app.use(router);

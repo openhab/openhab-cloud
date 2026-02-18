@@ -22,7 +22,6 @@ import type {
   ISocketEmitterForIfttt,
   IIftttConfig,
 } from '../../../../src/controllers/ifttt.controller';
-import type { ConnectionInfo } from '../../../../src/types/connection';
 import type { IOpenhab, IItem, IEvent } from '../../../../src/types/models';
 import type { ILogger } from '../../../../src/types/notification';
 import type { Request, Response, NextFunction } from 'express';
@@ -51,17 +50,11 @@ class MockLogger implements ILogger {
 
 class MockOpenhabRepository implements IOpenhabRepositoryForIfttt {
   openhabs: IOpenhab[] = [];
-  connectionInfoMap: Map<string, ConnectionInfo> = new Map();
   shouldThrow = false;
 
   async findByAccount(accountId: string | Types.ObjectId): Promise<IOpenhab | null> {
     if (this.shouldThrow) throw new Error('Database error');
     return this.openhabs.find(o => o.account.toString() === accountId.toString()) || null;
-  }
-
-  async getConnectionInfo(openhabId: string | Types.ObjectId): Promise<ConnectionInfo | null> {
-    if (this.shouldThrow) throw new Error('Redis error');
-    return this.connectionInfoMap.get(openhabId.toString()) || null;
   }
 
   addOpenhab(openhab: Partial<IOpenhab>): IOpenhab {
@@ -76,13 +69,8 @@ class MockOpenhabRepository implements IOpenhabRepositoryForIfttt {
     return newOpenhab;
   }
 
-  setConnectionInfo(openhabId: string | Types.ObjectId, info: ConnectionInfo): void {
-    this.connectionInfoMap.set(openhabId.toString(), info);
-  }
-
   clear(): void {
     this.openhabs = [];
-    this.connectionInfoMap.clear();
     this.shouldThrow = false;
   }
 }
@@ -206,7 +194,6 @@ class MockIftttConfig implements IIftttConfig {
   channelKey = 'test-channel-key';
   testToken = 'test-token';
   baseURL = 'https://myopenhab.org';
-  internalAddress = 'localhost:3000';
 
   getChannelKey(): string {
     return this.channelKey;
@@ -216,9 +203,6 @@ class MockIftttConfig implements IIftttConfig {
   }
   getBaseURL(): string {
     return this.baseURL;
-  }
-  getInternalAddress(): string {
-    return this.internalAddress;
   }
 }
 
@@ -236,7 +220,6 @@ describe('IftttController', () => {
   let statusStub: sinon.SinonStub;
   let jsonStub: sinon.SinonStub;
   let sendStub: sinon.SinonStub;
-  let redirectStub: sinon.SinonStub;
 
   beforeEach(() => {
     openhabRepository = new MockOpenhabRepository();
@@ -257,7 +240,6 @@ describe('IftttController', () => {
 
     jsonStub = sinon.stub();
     sendStub = sinon.stub();
-    redirectStub = sinon.stub();
     statusStub = sinon.stub().returns({ json: jsonStub, send: sendStub });
 
     mockReq = {
@@ -276,7 +258,6 @@ describe('IftttController', () => {
       status: statusStub,
       json: jsonStub,
       send: sendStub,
-      redirect: redirectStub,
     };
 
     nextFunction = sinon.stub();
@@ -357,6 +338,7 @@ describe('IftttController', () => {
   describe('actionCommand', () => {
     it('should reject requests without actionFields', async () => {
       mockReq.body = {};
+      mockReq.openhab = openhabRepository.addOpenhab({ account: mockReq.user!.account });
 
       await controller.actionCommand(mockReq as Request, mockRes as Response, nextFunction);
 
@@ -366,6 +348,7 @@ describe('IftttController', () => {
 
     it('should reject requests with incomplete actionFields', async () => {
       mockReq.body = { actionFields: { item: 'Light' } };
+      mockReq.openhab = openhabRepository.addOpenhab({ account: mockReq.user!.account });
 
       await controller.actionCommand(mockReq as Request, mockRes as Response, nextFunction);
 
@@ -373,22 +356,9 @@ describe('IftttController', () => {
       expect(jsonStub.firstCall.args[0].errors[0].message).to.equal('Actionfields incomplete');
     });
 
-    it('should reject requests when openhab not found', async () => {
-      mockReq.body = { actionFields: { item: 'Light', command: 'ON' } };
-
-      await controller.actionCommand(mockReq as Request, mockRes as Response, nextFunction);
-
-      expect(statusStub.calledWith(400)).to.be.true;
-      expect(jsonStub.firstCall.args[0].errors[0].message).to.equal('Request failed');
-    });
-
-    it('should emit command when openhab found and on same server', async () => {
+    it('should emit command using req.openhab set by middleware', async () => {
       const openhab = openhabRepository.addOpenhab({ account: mockReq.user!.account });
-      openhabRepository.setConnectionInfo(openhab._id, {
-        serverAddress: config.internalAddress,
-        connectionId: 'conn-1',
-        connectionTime: new Date().toISOString(),
-      });
+      mockReq.openhab = openhab;
       mockReq.body = { actionFields: { item: 'Light', command: 'ON' } };
 
       await controller.actionCommand(mockReq as Request, mockRes as Response, nextFunction);
@@ -398,42 +368,6 @@ describe('IftttController', () => {
       expect(socketEmitter.emittedCommands[0].item).to.equal('Light');
       expect(socketEmitter.emittedCommands[0].command).to.equal('ON');
       expect(jsonStub.firstCall.args[0].data[0].id).to.equal('12345');
-    });
-
-    it('should redirect when openhab on different server', async () => {
-      const openhab = openhabRepository.addOpenhab({ account: mockReq.user!.account });
-      openhabRepository.setConnectionInfo(openhab._id, {
-        serverAddress: 'other-server:3000',
-        connectionId: 'conn-1',
-        connectionTime: new Date().toISOString(),
-      });
-      mockReq.body = { actionFields: { item: 'Light', command: 'ON' } };
-
-      await controller.actionCommand(mockReq as Request, mockRes as Response, nextFunction);
-
-      expect(redirectStub.calledOnce).to.be.true;
-      expect(redirectStub.firstCall.args[0]).to.equal(307);
-      expect(redirectStub.firstCall.args[1]).to.include('other-server:3000');
-    });
-
-    it('should emit command when no connection info (offline)', async () => {
-      const openhab = openhabRepository.addOpenhab({ account: mockReq.user!.account });
-      mockReq.body = { actionFields: { item: 'Light', command: 'ON' } };
-
-      await controller.actionCommand(mockReq as Request, mockRes as Response, nextFunction);
-
-      expect(socketEmitter.emittedCommands).to.have.lengthOf(1);
-      expect(jsonStub.firstCall.args[0].data[0].id).to.equal('12345');
-    });
-
-    it('should handle repository errors', async () => {
-      openhabRepository.shouldThrow = true;
-      mockReq.body = { actionFields: { item: 'Light', command: 'ON' } };
-
-      await controller.actionCommand(mockReq as Request, mockRes as Response, nextFunction);
-
-      expect(statusStub.calledWith(400)).to.be.true;
-      expect(logger.logs.some(l => l.level === 'error')).to.be.true;
     });
   });
 

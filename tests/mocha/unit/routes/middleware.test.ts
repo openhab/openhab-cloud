@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
+import http from 'http';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import type { Request, Response, NextFunction } from 'express';
@@ -46,7 +47,7 @@ describe('Route Middleware', () => {
     };
 
     mockSystemConfig = {
-      getInternalAddress: () => 'server1.internal',
+      getInternalAddress: () => 'server1.internal:3000',
       getHost: () => 'localhost',
       getPort: () => 3000,
       getProxyHost: () => 'proxy.local',
@@ -317,27 +318,71 @@ describe('Route Middleware', () => {
       expect(nextSpy.called).to.be.false;
     });
 
-    it('should redirect to correct server using http://', () => {
+    it('should internal-proxy to correct server when on wrong server', () => {
       const middleware = createMiddleware(deps);
 
       const mockReq = {
         connectionInfo: {
-          serverAddress: 'server2.internal',
+          serverAddress: 'server2.internal:3001',
         },
+        originalUrl: '/rest/items?type=Switch',
         path: '/rest/items',
+        method: 'GET',
+        headers: { host: 'myopenhab.org' },
+        rawBody: undefined,
       } as unknown as Request;
 
-      const redirectStub = sinon.stub();
-      const mockRes = {
-        redirect: redirectStub,
-      } as unknown as Response;
-
+      const mockRes = {} as unknown as Response;
       const nextSpy = sinon.spy();
+
+      const mockProxyReq = {
+        on: sinon.stub().returnsThis(),
+        end: sinon.stub(),
+      };
+      const requestStub = sinon.stub(http, 'request').returns(
+        mockProxyReq as unknown as http.ClientRequest
+      );
 
       middleware.ensureServer(mockReq, mockRes, nextSpy);
 
-      expect(redirectStub.calledWith(307, 'http://server2.internal/rest/items')).to.be.true;
+      expect(requestStub.calledOnce).to.be.true;
+      const opts = requestStub.firstCall.args[0] as http.RequestOptions;
+      expect(opts.hostname).to.equal('server2.internal');
+      expect(opts.port).to.equal(3001);
+      expect(opts.path).to.equal('/rest/items?type=Switch');
+      expect(opts.method).to.equal('GET');
+      expect(mockProxyReq.end.calledOnce).to.be.true;
       expect(nextSpy.called).to.be.false;
+    });
+
+    it('should send body when rawBody is present', () => {
+      const middleware = createMiddleware(deps);
+
+      const mockReq = {
+        connectionInfo: {
+          serverAddress: 'server2.internal:3001',
+        },
+        originalUrl: '/rest/items/Switch1',
+        path: '/rest/items/Switch1',
+        method: 'POST',
+        headers: { host: 'myopenhab.org', 'content-type': 'text/plain' },
+        rawBody: 'ON',
+      } as unknown as Request;
+
+      const mockRes = {} as unknown as Response;
+      const nextSpy = sinon.spy();
+
+      const mockProxyReq = {
+        on: sinon.stub().returnsThis(),
+        end: sinon.stub(),
+      };
+      sinon.stub(http, 'request').returns(
+        mockProxyReq as unknown as http.ClientRequest
+      );
+
+      middleware.ensureServer(mockReq, mockRes, nextSpy);
+
+      expect(mockProxyReq.end.calledWith('ON')).to.be.true;
     });
 
     it('should set CloudServer cookie and call next when on correct server', () => {
@@ -345,7 +390,7 @@ describe('Route Middleware', () => {
 
       const mockReq = {
         connectionInfo: {
-          serverAddress: 'server1.internal',
+          serverAddress: 'server1.internal:3000',
         },
         path: '/rest/items',
       } as unknown as Request;
@@ -359,7 +404,7 @@ describe('Route Middleware', () => {
 
       middleware.ensureServer(mockReq, mockRes, nextSpy);
 
-      expect(cookieStub.calledWith('CloudServer', 'server1.internal')).to.be.true;
+      expect(cookieStub.calledWith('CloudServer', 'server1.internal:3000')).to.be.true;
       expect(nextSpy.calledOnce).to.be.true;
     });
   });

@@ -108,7 +108,6 @@ export interface RoutesDependencies extends MiddlewareDependencies {
     getChannelKey(): string;
     getTestToken(): string;
     getBaseURL(): string;
-    getInternalAddress(): string;
   };
 }
 
@@ -429,11 +428,6 @@ export function createRoutes(deps: RoutesDependencies): Router {
   const iftttController = new IftttController(
     {
       findByAccount: async accountId => Openhab.findOne({ account: accountId }),
-      getConnectionInfo: async openhabId => {
-        const result = await deps.redis.get(`connection:${openhabId}`);
-        if (!result) return null;
-        return JSON.parse(result);
-      },
     },
     {
       findByOpenhab: async (openhabId) => Item.find({ openhab: openhabId }),
@@ -634,7 +628,7 @@ export function createRoutes(deps: RoutesDependencies): Router {
     router.get('/ifttt/v1/user/info', iftttController.authenticate, iftttController.getUserInfo);
     router.get('/ifttt/v1/status', iftttController.ensureChannelKey, iftttController.getStatus);
     router.post('/ifttt/v1/test/setup', iftttController.ensureChannelKey, iftttController.getTestSetup);
-    router.post('/ifttt/v1/actions/command', iftttController.authenticate, iftttController.actionCommand);
+    router.post('/ifttt/v1/actions/command', iftttController.authenticate, setOpenhab, ensureServer, iftttController.actionCommand);
     router.post('/ifttt/v1/actions/command/fields/item/options', iftttController.authenticate, iftttController.itemOptions);
     router.post('/ifttt/v1/triggers/itemstate', iftttController.authenticate, iftttController.triggerItemState);
     router.post('/ifttt/v1/triggers/itemstate/fields/item/options', iftttController.authenticate, iftttController.itemOptions);

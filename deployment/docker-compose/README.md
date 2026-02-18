@@ -84,6 +84,7 @@ Edit the `.env` file:
 | `EXPRESS_KEY` | Yes | Random secret for session encryption |
 | `IMAGE_TAG` | No | Docker image tag (default: `latest`) |
 | `SMTP_*` | No | Email settings for notifications |
+| `MORGAN_FORMAT` | No | HTTP request log format (default: off). Set to `combined`, `short`, etc. |
 | `REGISTRATION_ENABLED` | No | Enable user registration (default: `true`) |
 
 ### Application Config
