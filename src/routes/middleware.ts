@@ -83,7 +83,17 @@ export interface MiddlewareDependencies {
 /**
  * Create route middleware functions
  */
-export function createMiddleware(deps: MiddlewareDependencies) {
+interface RouteMiddleware {
+  ensureAuthenticated: RequestHandler;
+  ensureRestAuthenticated: RequestHandler;
+  ensureMaster: RequestHandler;
+  ensureStaff: RequestHandler;
+  setOpenhab: RequestHandler;
+  ensureServer: RequestHandler;
+  preassembleBody: RequestHandler;
+}
+
+export function createMiddleware(deps: MiddlewareDependencies): RouteMiddleware {
   const { redis, logger, systemConfig } = deps;
 
   /**

@@ -659,8 +659,8 @@ export function createRoutes(deps: RoutesDependencies): Router {
   // Device Registration Routes (TypeScript Controller)
   // ============================================
 
-  router.all('/addAndroidRegistration*', ensureRestAuthenticated, setOpenhab, preassembleBody, registrationController.registerAndroid);
-  router.all('/addIosRegistration*', ensureRestAuthenticated, setOpenhab, preassembleBody, registrationController.registerIos);
+  router.all('/addAndroidRegistration{*path}', ensureRestAuthenticated, setOpenhab, preassembleBody, registrationController.registerAndroid);
+  router.all('/addIosRegistration{*path}', ensureRestAuthenticated, setOpenhab, preassembleBody, registrationController.registerIos);
 
   // ============================================
   // Proxy Routes
@@ -669,13 +669,14 @@ export function createRoutes(deps: RoutesDependencies): Router {
   const proxyRoute = createProxyHandler(io, requestTracker, systemConfig, logger);
 
   // WebSocket proxy route — no preassembleBody (upgrade requests have no body to assemble)
-  router.all('/ws/*', ensureRestAuthenticated, setOpenhab, ensureServer, proxyRoute);
+  router.all('/ws/{*path}', ensureRestAuthenticated, setOpenhab, ensureServer, proxyRoute);
 
+  // Express 5 route patterns: {*param} = zero-or-more path segments, :param = single segment
   const proxyPaths = [
-    '/rest*', '/images/*', '/static/*', '/rrdchart.png*', '/chart*',
-    '/openhab.app*', '/WebApp*', '/CMD*', '/cometVisu*', '/proxy*',
-    '/greent*', '/jquery.*', '/classicui/*', '/paperui/*', '/basicui/*',
-    '/doc/*', '/start/*', '/icon*', '/habmin/*', '/remote*', '/habpanel/*',
+    '/rest{*path}', '/images/{*path}', '/static/{*path}', '/rrdchart.png{*path}', '/chart{*path}',
+    '/openhab.app{*path}', '/WebApp{*path}', '/CMD{*path}', '/cometVisu{*path}', '/proxy{*path}',
+    '/greent{*path}', '/jquery.:ext', '/classicui/{*path}', '/paperui/{*path}', '/basicui/{*path}',
+    '/doc/{*path}', '/start/{*path}', '/icon{*path}', '/habmin/{*path}', '/remote{*path}', '/habpanel/{*path}',
   ];
 
   for (const path of proxyPaths) {

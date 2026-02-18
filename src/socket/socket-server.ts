@@ -13,7 +13,7 @@
 
 import type { Server as HttpServer } from 'http';
 import { Server as SocketIOServer, type Socket } from 'socket.io';
-import { v1 as uuidv1 } from 'uuid';
+import { randomUUID } from 'crypto';
 import type { Types } from 'mongoose';
 import type { IOpenhab, IUser, IEvent } from '../types/models';
 import type { ILogger, INotificationService, NotificationPayload } from '../types/notification';
@@ -175,7 +175,7 @@ export class SocketServer {
     // Acquire connection lock
     this.io.use(async (socket, next) => {
       const openhabSocket = socket as OpenhabSocket;
-      const connectionId = uuidv1();
+      const connectionId = randomUUID();
       openhabSocket.connectionId = connectionId;
 
       const openhabId = openhabSocket.openhab!._id.toString();

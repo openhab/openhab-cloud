@@ -89,7 +89,7 @@ End with a "Verdict" that's one of:
 ## Project-Specific Context (openHAB Cloud)
 
 This is a TypeScript/Node.js project with:
-- Express 4.x web framework
+- Express 5.x web framework
 - Mongoose for MongoDB
 - Socket.IO for WebSocket communication
 - Established pattern: Controller → Service → Repository with dependency injection

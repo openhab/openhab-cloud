@@ -36,10 +36,14 @@ export interface StatsData {
 export interface StatsJobDependencies {
   redis: PromisifiedRedisClient;
   logger: ILogger;
-  userModel: Model<IUser>;
-  openhabModel: Model<IOpenhab>;
-  userDeviceModel: Model<IUserDevice>;
-  invitationModel: Model<IInvitation>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  userModel: Model<IUser, any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  openhabModel: Model<IOpenhab, any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  userDeviceModel: Model<IUserDevice, any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  invitationModel: Model<IInvitation, any, any>;
 }
 
 /**
@@ -53,10 +57,14 @@ export interface StatsJobDependencies {
  * - User devices
  */
 export class StatsJob extends BaseJob {
-  private readonly userModel: Model<IUser>;
-  private readonly openhabModel: Model<IOpenhab>;
-  private readonly userDeviceModel: Model<IUserDevice>;
-  private readonly invitationModel: Model<IInvitation>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly userModel: Model<IUser, any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly openhabModel: Model<IOpenhab, any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly userDeviceModel: Model<IUserDevice, any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly invitationModel: Model<IInvitation, any, any>;
 
   constructor(deps: StatsJobDependencies) {
     super(deps.redis, deps.logger);
@@ -136,14 +144,14 @@ export class StatsJob extends BaseJob {
    */
   private async countOpenhabOnline(): Promise<number> {
     let count = 0;
-    let cursor = 0;
+    let cursor = '0';
 
     try {
       do {
         const result = await this.redis.scan(cursor, { MATCH: 'connection:*', COUNT: 100 });
         cursor = result.cursor;
         count += result.keys.length;
-      } while (cursor !== 0);
+      } while (cursor !== '0');
     } catch (err) {
       this.logger.error('Error scanning for online openhabs:', err);
     }

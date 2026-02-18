@@ -373,16 +373,26 @@ describe('ApiController', () => {
       expect(payload.tag).to.equal('custom-tag');
     });
 
-    it('should return 400 when message is missing', async () => {
+    it('should allow missing message and default to empty string', async () => {
       mockReq.body = {};
 
       await controller.sendNotification(mockReq as Request, mockRes as Response, () => {});
 
-      expect(statusStub.calledWith(400)).to.be.true;
+      expect(statusStub.calledWith(200)).to.be.true;
+      expect(notificationService.sendCalls[0]!.payload.message).to.equal('');
     });
 
-    it('should return 400 when message is empty', async () => {
-      mockReq.body = { message: '   ' };
+    it('should allow empty message', async () => {
+      mockReq.body = { message: '' };
+
+      await controller.sendNotification(mockReq as Request, mockRes as Response, () => {});
+
+      expect(statusStub.calledWith(200)).to.be.true;
+      expect(notificationService.sendCalls[0]!.payload.message).to.equal('');
+    });
+
+    it('should return 400 when message is not a string', async () => {
+      mockReq.body = { message: 123 };
 
       await controller.sendNotification(mockReq as Request, mockRes as Response, () => {});
 

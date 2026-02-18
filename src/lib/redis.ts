@@ -31,9 +31,9 @@ export interface PromisifiedRedisClient {
   multi(): PromisifiedRedisMulti;
   quit(): Promise<void>;
   on(event: string, callback: (...args: unknown[]) => void): void;
-  /** Scan keys matching a pattern. Returns [nextCursor, keys]. */
-  scan(cursor: number, options: { MATCH: string; COUNT: number }): Promise<{ cursor: number; keys: string[] }>;
-  /** The underlying Redis v4 client (for libraries like connect-redis) */
+  /** Scan keys matching a pattern. Returns { cursor, keys }. */
+  scan(cursor: string, options: { MATCH: string; COUNT: number }): Promise<{ cursor: string; keys: string[] }>;
+  /** The underlying Redis v5 client (for libraries like connect-redis) */
   readonly nativeClient: RedisClientType;
 }
 
@@ -93,7 +93,7 @@ export async function createRedisClient(
 }
 
 /**
- * Wrap a Redis v4 client with our stable interface
+ * Wrap a Redis v5 client with our stable interface
  */
 function wrapRedisClient(client: RedisClientType): PromisifiedRedisClient {
   return {
@@ -102,7 +102,7 @@ function wrapRedisClient(client: RedisClientType): PromisifiedRedisClient {
     },
 
     async set(key: string, value: string, ...args: (string | number)[]): Promise<string | null> {
-      // Parse variadic args to match redis v4 API
+      // Parse variadic args to match redis v5 API
       // Supports: set(key, val), set(key, val, 'EX', 60), set(key, val, 'NX', 'EX', 60)
       const options: Record<string, unknown> = {};
       for (let i = 0; i < args.length; i++) {
@@ -157,14 +157,14 @@ function wrapRedisClient(client: RedisClientType): PromisifiedRedisClient {
     },
 
     async quit(): Promise<void> {
-      await client.quit();
+      await client.close();
     },
 
     on(event: string, callback: (...args: unknown[]) => void): void {
       client.on(event, callback);
     },
 
-    async scan(cursor: number, options: { MATCH: string; COUNT: number }): Promise<{ cursor: number; keys: string[] }> {
+    async scan(cursor: string, options: { MATCH: string; COUNT: number }): Promise<{ cursor: string; keys: string[] }> {
       return client.scan(cursor, options);
     },
 
@@ -175,7 +175,7 @@ function wrapRedisClient(client: RedisClientType): PromisifiedRedisClient {
 }
 
 /**
- * Wrap a Redis v4 multi with our stable interface
+ * Wrap a Redis v5 multi with our stable interface
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function wrapRedisMulti(multi: any): PromisifiedRedisMulti {

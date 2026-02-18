@@ -12,7 +12,7 @@ openHAB Cloud is a backend service that connects local [openHAB](https://www.ope
 - **IFTTT integration** — trigger IFTTT applets from openHAB events
 - **Web dashboard** — manage accounts, devices, notifications, and connected openHAB instances
 
-**Tech stack:** Node.js 22+, TypeScript, Express 4, Mongoose 8, Socket.IO 4, Redis (ioredis), Zod.
+**Tech stack:** Node.js 22+, TypeScript, Express 5, Mongoose 9, Socket.IO 4, Redis, Zod.
 
 ## Prerequisites
 
@@ -537,6 +537,33 @@ The `deployment/docker-compose/` directory contains production templates:
 - `nginx.conf.template` — nginx configuration template
 
 See `deployment/docker-compose/README.md` for detailed setup instructions.
+
+## Docker Image Publishing
+
+Docker images are automatically built and pushed to [Docker Hub](https://hub.docker.com/r/openhab/openhab-cloud) via GitHub Actions (`.github/workflows/docker-publish.yml`).
+
+### Setup
+
+Two repository secrets are required (Settings > Secrets and variables > Actions):
+
+- `DOCKER_USER` — Docker Hub username with push access to `openhab/openhab-cloud`
+- `DOCKER_TOKEN` — Docker Hub access token
+
+### Tagging Strategy
+
+| Trigger | Tags pushed to Docker Hub |
+|---------|--------------------------|
+| Push to `main` | `develop`, `develop-<sha>` |
+| Push tag `v1.2.3` | `1.2.3`, `1.2`, `latest` |
+
+Pushing to `main` produces a `develop` image. To publish a `latest` release, create a semver tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The workflow runs the full test suite (unit + integration) before building the image.
 
 ## License
 
