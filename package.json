@@ -39,16 +39,16 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "body-parser": "^1.20.4",
+    "body-parser": "^2.2.2",
     "connect-flash": "0.1.1",
     "connect-redis": "^9.0.0",
     "cookie-parser": "^1.4.7",
     "cron": "^4.4.0",
-    "csurf": "^1.11.0",
+    "csrf-sync": "^4.2.1",
     "ejs": "^3.1.10",
     "email-templates": "^13.0.1",
     "errorhandler": "^1.5.2",
-    "express": "^4.22.1",
+    "express": "^5.2.1",
     "express-session": "^1.19.0",
     "firebase-admin": "^13.6.1",
     "luxon": "^3.7.2",
@@ -63,7 +63,7 @@
     "passport-oauth2-client-password": "0.1.2",
     "redis": "^5.11.0",
     "serve-favicon": "^2.5.1",
-    "serve-static": "^1.16.3",
+    "serve-static": "^2.2.1",
     "socket.io": "^4.8.3",
     "underscore": "^1.13.7",
     "uuid": "^11.1.0",
@@ -75,11 +75,9 @@
     "@types/bcrypt": "^6.0.0",
     "@types/connect-flash": "^0.0.40",
     "@types/cookie-parser": "^1.4.10",
-    "@types/csurf": "^1.11.5",
     "@types/email-templates": "^10.0.4",
     "@types/errorhandler": "^1.5.3",
-    "@types/express": "^4.17.25",
-    "@types/express-serve-static-core": "^4.19.8",
+    "@types/express": "^5.0.6",
     "@types/express-session": "^1.18.2",
     "@types/luxon": "^3.7.1",
     "@types/node": "^25.2.3",
@@ -107,7 +105,5 @@
     "wait-on": "^9.0.4",
     "ws": "^8.19.0"
   },
-  "overrides": {
-    "@types/express-serve-static-core": "^4.19.8"
-  }
+  "overrides": {}
 }
