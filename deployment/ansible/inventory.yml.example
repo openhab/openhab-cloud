@@ -19,6 +19,9 @@ all:
     node_instances: 2          # Node.js instances per server (match CPU count)
     node_max_old_space: 1500   # MB per instance
 
+    # ── Logging ──
+    # morgan_format: "combined"   # HTTP request logging (off by default; nginx handles access logs)
+
     # ── Optional ──
     # smtp_host: "smtp.example.com"
     # smtp_port: 587

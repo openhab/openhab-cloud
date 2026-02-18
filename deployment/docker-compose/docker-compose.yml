@@ -17,6 +17,7 @@ services:
     environment:
       - DOMAIN_NAME
       - EXPRESS_KEY
+      - MORGAN_FORMAT
       - REDIS_PASSWORD
     labels:
       - "traefik.enable=true"

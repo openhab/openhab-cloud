@@ -24,7 +24,7 @@ export interface LoggerOptions {
   level: string;
   dir: string;
   maxFiles: string;
-  type: 'file' | 'console';
+  type: 'file' | 'console' | 'both';
   processPort: number;
 }
 
@@ -74,22 +74,23 @@ export function createLogger(options: LoggerOptions): AppLogger {
   });
 
   const transports: winston.transport[] = [];
+  const formatCombined = winston.format.combine(
+    timeFormat,
+    winston.format.splat(),
+    logFormat
+  );
 
-  if (options.type === 'console') {
-    // Console transport
+  if (options.type === 'console' || options.type === 'both') {
     transports.push(
       new winston.transports.Console({
         handleExceptions: true,
         level: options.level,
-        format: winston.format.combine(
-          timeFormat,
-          winston.format.splat(),
-          logFormat
-        ),
+        format: formatCombined,
       })
     );
-  } else {
-    // File transport with daily rotation
+  }
+
+  if (options.type === 'file' || options.type === 'both') {
     transports.push(
       new DailyRotateFile({
         filename: `${options.dir}openhab-cloud-%DATE%-process-${options.processPort}.log`,
@@ -98,11 +99,7 @@ export function createLogger(options: LoggerOptions): AppLogger {
         maxFiles: options.maxFiles,
         handleExceptions: true,
         level: options.level,
-        format: winston.format.combine(
-          timeFormat,
-          winston.format.splat(),
-          logFormat
-        ),
+        format: formatCombined,
       })
     );
   }

@@ -62,3 +62,17 @@
   environment:
     AWS_ACCESS_KEY_ID: "{{ vault_aws_access_key_id }}"
     AWS_SECRET_ACCESS_KEY: "{{ vault_aws_secret_access_key }}"
+
+- name: Create individual A records for each server
+  amazon.aws.route53:
+    state: present
+    zone: "{{ hostvars[groups['appservers'][0]]['domain'] }}"
+    record: "{{ item }}.{{ hostvars[groups['appservers'][0]]['domain'] }}"
+    type: A
+    value: "{{ hostvars[item].ansible_host }}"
+    ttl: 60
+    overwrite: true
+  loop: "{{ groups['appservers'] + groups['dbservers'] }}"
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ vault_aws_access_key_id }}"
+    AWS_SECRET_ACCESS_KEY: "{{ vault_aws_secret_access_key }}"

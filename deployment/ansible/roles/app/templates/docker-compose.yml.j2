@@ -58,6 +58,7 @@ services:
       - IFTTT_CHANNEL_KEY={{ vault_ifttt_channel_key }}
       - IFTTT_TEST_TOKEN={{ vault_ifttt_test_token | default('') }}
 {% endif %}
+      - MORGAN_FORMAT={{ morgan_format | default('') }}
       - NODE_OPTIONS=--max-old-space-size={{ node_max_old_space }}
 
 {% endfor %}

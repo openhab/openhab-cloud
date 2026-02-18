@@ -17,6 +17,7 @@ services:
     environment:
       - DOMAIN_NAME
       - EXPRESS_KEY
+      - MORGAN_FORMAT
       - REDIS_PASSWORD
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]

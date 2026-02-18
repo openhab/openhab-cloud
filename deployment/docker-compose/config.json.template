@@ -13,7 +13,7 @@
       "maxFiles": "7d",
       "level": "${LOG_LEVEL:-info}",
       "type": "console",
-      "morgan": "combined"
+      "morgan": "${MORGAN_FORMAT:-}"
     },
     "healthEndpoint": {
       "enabled": true
