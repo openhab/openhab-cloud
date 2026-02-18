@@ -36,10 +36,14 @@ export interface StatsData {
 export interface StatsJobDependencies {
   redis: PromisifiedRedisClient;
   logger: ILogger;
-  userModel: Model<IUser>;
-  openhabModel: Model<IOpenhab>;
-  userDeviceModel: Model<IUserDevice>;
-  invitationModel: Model<IInvitation>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  userModel: Model<IUser, any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  openhabModel: Model<IOpenhab, any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  userDeviceModel: Model<IUserDevice, any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  invitationModel: Model<IInvitation, any, any>;
 }
 
 /**
@@ -53,10 +57,14 @@ export interface StatsJobDependencies {
  * - User devices
  */
 export class StatsJob extends BaseJob {
-  private readonly userModel: Model<IUser>;
-  private readonly openhabModel: Model<IOpenhab>;
-  private readonly userDeviceModel: Model<IUserDevice>;
-  private readonly invitationModel: Model<IInvitation>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly userModel: Model<IUser, any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly openhabModel: Model<IOpenhab, any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly userDeviceModel: Model<IUserDevice, any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly invitationModel: Model<IInvitation, any, any>;
 
   constructor(deps: StatsJobDependencies) {
     super(deps.redis, deps.logger);
