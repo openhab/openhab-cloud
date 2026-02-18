@@ -64,7 +64,7 @@
     "passport-oauth2-client-password": "0.1.2",
     "redis": "^4.7.0",
     "serve-favicon": "^2.5.1",
-    "serve-static": "^1.16.3",
+    "serve-static": "^2.2.1",
     "socket.io": "^4.8.3",
     "underscore": "^1.13.7",
     "uuid": "^11.1.0",
