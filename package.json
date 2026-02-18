@@ -53,7 +53,7 @@
     "firebase-admin": "^13.6.1",
     "ioredis": "^5.9.3",
     "luxon": "^3.7.2",
-    "mongoose": "^8.13.0",
+    "mongoose": "^9.2.1",
     "morgan": "^1.10.1",
     "nodemailer": "^8.0.1",
     "oauth2orize": "^1.12.0",
