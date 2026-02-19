@@ -35,7 +35,6 @@ const openhabSchema = new Schema<IOpenhab, OpenhabModel>(
 // Indexes
 // ============================================================================
 
-openhabSchema.index({ uuid: 1 });
 openhabSchema.index({ account: 1 });
 
 // ============================================================================
