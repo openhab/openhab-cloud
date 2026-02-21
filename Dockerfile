@@ -1,6 +1,6 @@
 FROM node:22-alpine
 
-RUN apk add --no-cache tzdata gettext
+RUN apk add --no-cache tzdata
 
 RUN addgroup -S openhabcloud && \
     adduser -H -S -G openhabcloud openhabcloud
