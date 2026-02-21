@@ -7,7 +7,8 @@ if [ -f config.json.template ]; then
   node -e "
     const fs = require('fs');
     const t = fs.readFileSync('config.json.template', 'utf8');
-    const j = t.replace(/\\\$\{(\w+)(?::-(.*?))?\}/g, (_, k, d) => process.env[k] || d || '');
+    const j = t.replace(/\\\$\{(\w+)(?::-(.*?))?\}/g, (_, k, d) => process.env[k] ?? d ?? '');
+    try { JSON.parse(j); } catch (e) { console.error('Expanded config.json is not valid JSON:', e.message); console.error(j); process.exit(1); }
     fs.writeFileSync('config.json', j);
   "
 fi
