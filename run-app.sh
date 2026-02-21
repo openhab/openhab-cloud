@@ -2,8 +2,14 @@
 
 # If config.json.template exists, expand it and overwrite config.json.
 # This gives us a chance to customize configs through runtime environment.
+# Uses Node.js instead of envsubst to support ${VAR:-default} syntax.
 if [ -f config.json.template ]; then
-  envsubst < config.json.template > config.json
+  node -e "
+    const fs = require('fs');
+    const t = fs.readFileSync('config.json.template', 'utf8');
+    const j = t.replace(/\\\$\{(\w+)(?::-(.*?))?\}/g, (_, k, d) => process.env[k] || d || '');
+    fs.writeFileSync('config.json', j);
+  "
 fi
 
 exec node dist/app.js
