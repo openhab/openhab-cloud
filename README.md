@@ -84,35 +84,6 @@ See [deployment/docker-compose/README.md](deployment/docker-compose/README.md) f
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the full development guide, including project structure, architecture, all npm scripts, testing, and where to add new code.
 
-## Production Deployment
-
-### With Nginx
-
-For production, use Nginx as a reverse proxy:
-
-1. Copy the Nginx config:
-   ```bash
-   sudo cp etc/nginx_openhabcloud.conf /etc/nginx/sites-available/openhabcloud.conf
-   sudo ln -s /etc/nginx/sites-available/openhabcloud.conf /etc/nginx/sites-enabled/
-   ```
-
-2. Configure SSL certificates and server name in the config file
-
-3. Restart Nginx:
-   ```bash
-   sudo systemctl restart nginx
-   ```
-
-### With systemd
-
-A systemd service file is provided:
-
-```bash
-sudo cp etc/openhabcloud.service /etc/systemd/system/
-sudo systemctl enable openhabcloud
-sudo systemctl start openhabcloud
-```
-
 ## API Documentation
 
 ### REST API
