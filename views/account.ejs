@@ -1,76 +1,62 @@
 <% section = 'account' %>
 <%- include ('header.ejs') %>
-<section id="content">
-    <header class="headerPage">
-        <div class="container clearfix">
-            <div class="row">
-                <h1 class="span8">My Account</span></h1>
-                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>Account</div>
-            </div>
-        </div>
-    </header>
-</section>
-<div class="slice clearfix">
-    <div class="container">
-        <%- include ('alerts.ejs') %>
-        <div class="row">
-            <% if (user.role == "master") { %>
-            <div class="span6">
-                <h3>openHAB settings</h3>
-                <div class="divider"><span></span></div>
-            </div>
-            <% } %>
-            <div class="span6">
-                <h3>Change password</h3>
-                <div class="divider"><span></span></div>
-            </div>
-        </div>
-        <div class="row">
-            <% if (user.role == "master") { %>
-            <div class="span6">
-                <form method="post" action="/account" id="contactform">
+<h1 class="page-header">My Account</h1>
+<%- include ('alerts.ejs') %>
+<div class="row">
+    <% if (user.role == "master") { %>
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">openHAB Settings</h3>
+                <form method="post" action="/account">
                     <input type="hidden" name="_csrf" value="<%= token %>">
-                    <label for="openhabuuid">openHAB UUID</label>
-                    <input id="openhabuuid" type="text" name="openhabuuid" value="<%= openhab ? openhab.uuid : '' %>">
-                    <label for="openhabsecret">openHAB Secret</label>
-                    <input id="openhabsecret" type="password" name="openhabsecret" value="<%= openhab ? openhab.secret : '' %>">
-                    <% if (!openhab) { %>
-                    <div class="alert alert-info" style="margin-bottom: 10px;">
-                        No openHAB installation is connected to your account. Enter your UUID and secret below.
+                    <div class="form-group">
+                        <label for="openhabuuid" class="form-label">openHAB UUID</label>
+                        <input type="text" class="form-control" id="openhabuuid" name="openhabuuid" value="<%= openhab ? openhab.uuid : '' %>">
                     </div>
+                    <div class="form-group">
+                        <label for="openhabsecret" class="form-label">openHAB Secret</label>
+                        <input type="password" class="form-control" id="openhabsecret" name="openhabsecret" value="<%= openhab ? openhab.secret : '' %>">
+                    </div>
+                    <% if (!openhab) { %>
+                    <div class="alert alert-info">No openHAB installation is connected to your account. Enter your UUID and secret below.</div>
                     <% } %>
-                    <button name="submit" type="submit" class="btn" id="submit"><%= openhab ? 'Update' : 'Register' %></button>
+                    <button type="submit" class="btn btn-primary"><%= openhab ? 'Update' : 'Register' %></button>
                 </form>
-                <div id="message"></div>
             </div>
-            <% } %>
-            <div class="span6">
-                <form method="post" action="/accountpassword" id="contactform">
+        </div>
+    </div>
+    <% } %>
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Change Password</h3>
+                <form method="post" action="/accountpassword">
                     <input type="hidden" name="_csrf" value="<%= token %>">
-                    <label for="oldpassword">Old password</label>
-                    <input id="oldpassword" name="oldpassword" type="password">
-                    <label for="password">New password</label>
-                    <input id="password" type="password" name="password">
-                    <label for="password1">Re-type new password</label>
-                    <input id="password1" type="password" name="password1">
-                    <button name="submit" type="submit" class="btn" id="submit">Change</button>
+                    <div class="form-group">
+                        <label for="oldpassword" class="form-label">Old password</label>
+                        <input type="password" class="form-control" id="oldpassword" name="oldpassword">
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="form-label">New password</label>
+                        <input type="password" class="form-control" id="password" name="password">
+                    </div>
+                    <div class="form-group">
+                        <label for="password1" class="form-label">Re-type new password</label>
+                        <input type="password" class="form-control" id="password1" name="password1">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Change</button>
                 </form>
-                <div id="message"></div>
             </div>
         </div>
-        <div class="row">
-            <div class="span12">
-                <h3>Dangerous actions</h3>
-                <div class="divider"><span></span></div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="span6">
-                <a class="btn btn-danger" href="/itemsdelete">Delete Items and Events</a>
-            </div>
-            <div class="span6">
-                <a class="btn btn-danger" href="/accountdelete">Delete account</a>
-            </div>
+    </div>
+</div>
+<div class="card border-danger">
+    <div class="card-body">
+        <h3 class="card-title text-danger">Danger Zone</h3>
+        <div class="d-flex gap-3">
+            <a class="btn btn-danger" href="/itemsdelete">Delete Items and Events</a>
+            <a class="btn btn-danger" href="/accountdelete">Delete Account</a>
         </div>
     </div>
 </div>

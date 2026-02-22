@@ -1,0 +1,200 @@
+/* openHAB Cloud - Custom Styles
+   Built on Bootstrap 5.3 with light/dark theme support */
+
+/* ── Theme Custom Properties ─────────────────────────────── */
+:root {
+  --ohc-primary: #ed702e;
+  --ohc-primary-hover: #d5621f;
+  --ohc-logo-height: 28px;
+}
+
+/* ── Layout ──────────────────────────────────────────────── */
+body {
+  padding-top: 70px;
+}
+
+.container {
+  max-width: 1000px;
+}
+
+/* ── Navbar ──────────────────────────────────────────────── */
+.ohc-navbar {
+  background-color: var(--bs-body-bg);
+  border-bottom: 3px solid var(--ohc-primary);
+}
+
+.ohc-navbar .nav-link.active {
+  background-color: var(--ohc-primary);
+  color: #fff;
+  border-radius: 0.375rem;
+}
+
+/* ── Logo Swap (light / dark theme) ─────────────────────── */
+.navbar-brand .logo-dark { display: none; }
+
+[data-bs-theme="dark"] .navbar-brand .logo-light { display: none; }
+[data-bs-theme="dark"] .navbar-brand .logo-dark { display: inline; }
+
+.navbar-brand img {
+  height: var(--ohc-logo-height);
+}
+
+/* ── Status Badges ───────────────────────────────────────── */
+.badge-online {
+  background-color: #198754;
+}
+
+.badge-offline {
+  background-color: #dc3545;
+}
+
+/* ── Sidebar Navigation ──────────────────────────────────── */
+.sidebar-nav .nav-link {
+  color: var(--bs-body-color);
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.sidebar-nav .nav-link:hover {
+  background-color: var(--bs-tertiary-bg);
+}
+
+.sidebar-nav .nav-link.active {
+  background-color: var(--ohc-primary);
+  color: #fff;
+}
+
+/* ── Event Row Colors ────────────────────────────────────── */
+.event-good {
+  --bs-table-bg: rgba(25, 135, 84, 0.1);
+}
+
+.event-bad {
+  --bs-table-bg: rgba(220, 53, 69, 0.1);
+}
+
+.event-info {
+  --bs-table-bg: rgba(13, 110, 253, 0.1);
+}
+
+/* ── Primary Buttons ─────────────────────────────────────── */
+.btn-primary {
+  --bs-btn-bg: var(--ohc-primary);
+  --bs-btn-border-color: var(--ohc-primary);
+  --bs-btn-hover-bg: var(--ohc-primary-hover);
+  --bs-btn-hover-border-color: var(--ohc-primary-hover);
+  --bs-btn-active-bg: var(--ohc-primary-hover);
+  --bs-btn-active-border-color: var(--ohc-primary-hover);
+}
+
+/* ── Page Header ─────────────────────────────────────────── */
+.page-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--bs-border-color);
+  border-left: 4px solid var(--ohc-primary);
+  padding-left: 0.75rem;
+  font-size: 1.5rem;
+}
+
+/* ── Cards ───────────────────────────────────────────────── */
+.card-stat {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.card-stat .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.card-stat .stat-label {
+  font-size: 0.875rem;
+  color: var(--bs-secondary-color);
+}
+
+/* ── OAuth Icon ──────────────────────────────────────────── */
+.oauth-icon {
+  height: 24px;
+  width: auto;
+}
+
+/* ── App Badges ──────────────────────────────────────────── */
+.app-badges {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.app-badge {
+  height: 40px;
+  width: auto;
+}
+
+/* ── Footer ──────────────────────────────────────────────── */
+.ohc-footer {
+  margin-top: 3rem;
+  padding: 0.75rem 0;
+  text-align: center;
+  font-size: 0.875rem;
+  border-top: 1px solid var(--bs-border-color);
+  color: var(--bs-secondary-color);
+}
+
+.ohc-footer p {
+  margin-bottom: 0;
+}
+
+.ohc-footer a {
+  color: var(--bs-secondary-color);
+  text-decoration: none;
+}
+
+.ohc-footer a:hover {
+  color: var(--ohc-primary);
+}
+
+.ohc-footer .social-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+}
+
+/* ── Theme Toggle ────────────────────────────────────────── */
+.theme-toggle {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  color: var(--bs-body-color);
+  cursor: pointer;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.theme-toggle:hover {
+  color: var(--ohc-primary);
+}
+
+/* ── Form Spacing ────────────────────────────────────────── */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+/* ── Docs Content ────────────────────────────────────────── */
+.docs-content h3 {
+  margin-top: 1.5rem;
+}
+
+.docs-content h3:first-child {
+  margin-top: 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 991.98px) {
+  body {
+    padding-top: 56px;
+  }
+}

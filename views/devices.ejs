@@ -1,81 +1,61 @@
 <% section = 'devices' %>
 <%- include ('header.ejs') %>
-<style type="text/css">
-    #map-canvas { width: 100%; height: 350px;}
-    .nav-subitem {
-        margin-left: 20px;
-    }
-</style>
-<!-- page content -->
-<section id="content" class="sidebar">
-    <header class="headerPage">
-        <div class="container clearfix">
-            <div class="row">
-                <h1 class="span8">My Devices</h1>
-                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>Devices</div>
+<h1 class="page-header">My Devices</h1>
+<%- include ('alerts.ejs') %>
+<div class="row">
+    <div class="col-md-3 mb-3">
+        <nav class="sidebar-nav">
+            <ul class="nav nav-pills flex-column">
+                <% for (let i = 0; i < userDevices.length; i++) { %>
+                <li class="nav-item"><a class="nav-link<% if (userDevices[i]._id == selectedDeviceId) { %> active<% } %>" href="/devices/<%=userDevices[i]._id%>"><%=userDevices[i].deviceModel%></a></li>
+                <% } %>
+            </ul>
+        </nav>
+        <% if (userDevices.length == 0) { %>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">No Devices</h5>
+                <p class="card-text">You currently have no devices registered with openHAB Cloud. To register a new device, download the openHAB app and set <em><%=baseUrl%></em> as the remote URL and your openHAB Cloud login data as username and password.</p>
             </div>
         </div>
-    </header>
-    <div class="slice clearfix">
-        <div class="container">
-            <%- include ('alerts.ejs') %>
-            <div class="row">
-                <aside class="span3" id="sidebar">
-                    <nav id="subnav">
-                        <ul>
-                            <% for (var i=0; i<userDevices.length; i++) { %>
-                            <li><a <% if (userDevices[i]._id == selectedDeviceId) { %>class="active"<%}%> href="/devices/<%=userDevices[i]._id%>"><%=userDevices[i].deviceModel%></a></li>
-                            <% } %>
-                        </ul>
-                        <div class="littleShadow"></div>
-                    </nav>
-                    <% if (userDevices.length == 0) { %>
-                    <section id="widgetArea">
-                        <div class="widget">
-                            <h3>No Devices</h3>
-                            <p>You currently have no devices registered with openHAB Cloud. To register a new device, download the openHAB app and set <i><%=baseUrl%></i> as the remote URL and your openHAB Cloud login data as username and password.</p>
-                        </div>
-                    </section>
-                    <% } %>
-                </aside>
-                <div class="span9">
-                    <% if (userDevices.length > 0 ) { %>
-                    <table class="table">
-                        <thead>
-                        <tr><th>Type</th><th>ID</th><th>Registered</th><th></th></tr>
-                        </thead>
-                        <tr>
-                            <td><%= userDevices[selectedDeviceArrayId].deviceType%></td>
-                            <td><%= userDevices[selectedDeviceArrayId].deviceId%></td>
-                            <td><%= date_util(userDevices[selectedDeviceArrayId].registered, timeZone).toRelativeCalendar()%></td>
-                            <td>
-                                <a href="/devices/<%=userDevices[selectedDeviceArrayId].id%>/delete"><i class="icon-trash"></i></a>
-                                <a href="#"><i class="icon-edit"></i> </a>
-                            </td>
-                        </tr>
-                    </table>
-                    <% } %>
-                </div>
-                <% if (userDevices.length > 0 ) { %>
-                <div class="span9 deviceRightPane">
-                    <h3>Send a message to this device</h3>
-                    <div class="divider"><span></span></div>
-                    <form method="post" action="/devices/<%=userDevices[selectedDeviceArrayId].id%>/sendmessage">
-                        <input type="hidden" name="_csrf" value="<%= token %>">
-                        <textarea id="messagetext" name="messagetext" maxlength="250" rows="4"></textarea>
-                        <button type="submit" class="btn">Send message</button>
-                    </form>
-                </div>
-                <% } %>
-                <div class="span9 deviceRightPane">
-                    <div class="app-badges">
-                        <a href="<%=androidLink%>" target="_blank"><img src="/img/apps/google-play-badge.png" class="app-badge"></a>
-                        <a href="<%=appleLink%>" target="_blank"><img src="/img/apps/download-app-store.svg" class="app-badge"></a>
+        <% } %>
+    </div>
+    <div class="col-md-9">
+        <% if (userDevices.length > 0) { %>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                <tr><th>Type</th><th>ID</th><th>Registered</th><th></th></tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><%= userDevices[selectedDeviceArrayId].deviceType%></td>
+                    <td><%= userDevices[selectedDeviceArrayId].deviceId%></td>
+                    <td><%= date_util(userDevices[selectedDeviceArrayId].registered, timeZone).toRelativeCalendar()%></td>
+                    <td>
+                        <a href="/devices/<%=userDevices[selectedDeviceArrayId].id%>/delete" class="text-danger" title="Delete"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Send a message to this device</h5>
+                <form method="post" action="/devices/<%=userDevices[selectedDeviceArrayId].id%>/sendmessage">
+                    <input type="hidden" name="_csrf" value="<%= token %>">
+                    <div class="form-group">
+                        <textarea class="form-control" id="messagetext" name="messagetext" maxlength="250" rows="4"></textarea>
                     </div>
-                </div>
+                    <button type="submit" class="btn btn-primary">Send message</button>
+                </form>
             </div>
+        </div>
+        <% } %>
+        <div class="app-badges">
+            <a href="<%=androidLink%>" target="_blank"><img src="/img/apps/google-play-badge.png" class="app-badge" alt="Get it on Google Play"></a>
+            <a href="<%=appleLink%>" target="_blank"><img src="/img/apps/download-app-store.svg" class="app-badge" alt="Download on the App Store"></a>
         </div>
     </div>
-</section>
-<!-- page content -->
+</div>
 <%- include ('footer.ejs') %>

@@ -1,80 +1,68 @@
 <% section = 'users' %>
 <%- include ('header.ejs') %>
-<style type="text/css">
-    #map-canvas { width: 100%; height: 350px;}
-    .nav-subitem {
-        margin-left: 20px;
-    }
-</style>
-<!-- page content -->
-<section id="content" class="sidebar">
-    <header class="headerPage">
-        <div class="container clearfix">
-            <div class="row">
-                <h1 class="span8">My Users</h1>
-                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>Users</div>
+<h1 class="page-header">My Users</h1>
+<%- include ('alerts.ejs') %>
+<div class="row">
+    <div class="col-md-3 mb-3">
+        <nav class="sidebar-nav">
+            <ul class="nav nav-pills flex-column">
+                <li class="nav-item"><a class="nav-link" href="/users/add"><i class="bi bi-plus-circle"></i> Add new user</a></li>
+                <% for (let i = 0; i < users.length; i++) { %>
+                <li class="nav-item"><a class="nav-link<% if (users[i]._id == selectedUserId) { %> active<% } %>" href="/users/<%=users[i]._id%>"><i class="bi bi-person"></i> <%=users[i].username%></a></li>
+                <% } %>
+            </ul>
+        </nav>
+        <% if (users.length == 0) { %>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">No Users</h5>
             </div>
         </div>
-    </header>
-    <div class="slice clearfix">
-        <div class="container">
-            <%- include ('alerts.ejs') %>
-            <div class="row">
-                <aside class="span3" id="sidebar">
-                    <nav id="subnav">
-                        <ul>
-                            <li><a href="/users/add"><i class="icon-plus"></i>Add new user</a></li>
-                            <% for (var i=0; i<users.length; i++) { %>
-                            <li><a <% if (users[i]._id == selectedUserId) { %>class="active"<%}%> href="/users/<%=users[i]._id%>"><i class="icon-user"></i><%=users[i].username%></a></li>
-                            <% } %>
-                        </ul>
-                        <div class="littleShadow"></div>
-                    </nav>
-                    <% if (users.length == 0) { %>
-                    <section id="widgetArea">
-                        <div class="widget">
-                            <h3>No Users</h3>
-                            <p></p>
+        <% } %>
+    </div>
+    <div class="col-md-9">
+        <% if (usersAction == 'list') { %>
+            <% if (users.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table">
+                    <tbody>
+                    <tr><td>Username:</td><td><%=users[selectedUserArrayId].username%></td></tr>
+                    <tr><td>Role:</td><td><%=users[selectedUserArrayId].role%></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <a href="/users/delete/<%=users[selectedUserArrayId].id%>" class="btn btn-danger">Delete user</a>
+            <% } %>
+        <% } else if (usersAction == 'add') { %>
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Add New User</h3>
+                    <form method="post" action="/users/add">
+                        <input type="hidden" name="_csrf" value="<%= token %>">
+                        <div class="form-group">
+                            <label for="username" class="form-label">Email address</label>
+                            <input type="email" class="form-control" name="username" id="username" placeholder="Email address" <% if (typeof username != 'undefined') { %>value="<%=username%>"<% } %>>
                         </div>
-                    </section>
-                    <% } %>
-                </aside>
-                <div class="span9">
-                    <% if (usersAction == 'list') { %>
-                        <% if (users.length > 0 ) { %>
-                            <table class="table">
-                                <tr>
-                                    <td>Username:</td><td><%=users[selectedUserArrayId].username%></td>
-                                </tr>
-                                <tr>
-                                    <td>Role:</td><td><%=users[selectedUserArrayId].role%></td>
-                                </tr>
-                                <tr>
-                                    <td><a href="/users/delete/<%=users[selectedUserArrayId].id%>" class="btn btn-default btn-danger">Delete user</a></td>
-                                </tr>
-                            </table>
-                        <% } %>
-                    <% } else if (usersAction == 'add') { %>
-                        <form method="post" action="/users/add" id="contactform">
-                            <input type="hidden" name="_csrf" value="<%= token %>" class="form-control">
-                            <label for="username"></label>
-                            <input type="text" name="username" value="<% if (typeof username != 'undefined') username %>" placeholder="Email address">
-                            <label for="password"></label>
-                            <input type="password" name="password" placeholder="Password">
-                            <label for="password1"></label>
-                            <input type="password" name="password1" placeholder="Verify password">
-                            <select name="role">
-                                <option name="master" value="master">Master user</option>
-                                <option name="user" value="user" selected="true">Regular user</option>
+                        <div class="form-group">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" name="password" id="password" placeholder="Password">
+                        </div>
+                        <div class="form-group">
+                            <label for="password1" class="form-label">Verify password</label>
+                            <input type="password" class="form-control" name="password1" id="password1" placeholder="Verify password">
+                        </div>
+                        <div class="form-group">
+                            <label for="role" class="form-label">Role</label>
+                            <select class="form-select" name="role" id="role">
+                                <option value="master">Master user</option>
+                                <option value="user" selected>Regular user</option>
                             </select>
-                            <br />
-                            <button name="submit" type="submit" class="btn" id="submit">Add user</button>
-                        </form>
-                    <% } %>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add user</button>
+                    </form>
                 </div>
             </div>
-        </div>
+        <% } %>
     </div>
-</section>
-<!-- page content -->
+</div>
 <%- include ('footer.ejs') %>
