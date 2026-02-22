@@ -1,63 +1,33 @@
 <% section = 'notifications' %>
 <%- include ('header.ejs') %>
-<!-- page content -->
-<section id="content" class="sidebar">
-    <header class="headerPage">
-        <div class="container clearfix">
-            <div class="row">
-                <h1 class="span8">Notifications</h1>
-                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>Notifications</div>
-            </div>
-        </div>
-    </header>
-    <div class="slice clearfix">
-        <div class="container">
-            <%- include ('alerts.ejs') %>
-            <div class="row">
-                <aside class="span3" id="sidebar">
-                    <nav id="subnav">
-                        <ul>
-                            <li class="active"><a href="/events">All</a></li>
-                            <li ><a href="">Today</a></li>
-                            <li ><a href="">Last week</a></li>
-                        </ul>
-                        <div class="littleShadow"></div>
-                    </nav>
-                    <!-- <section id="widgetArea">
-                        <div class="widget">
-                            <h3> widget 1</h3>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque ut auctor lorem. Curabitur at lobortis nulla. Sed tincidunt, orci sit amet varius ornare,</p>
-                        </div>
-                    </section> -->
-                </aside>
-                <div class="span9">
-                    <table class="table table-hover">
-                        <thead>
-                        <tr><th class="col-sm-2">When</th><th class="col-sm-10">What</th></tr>
-                        </thead>
-                        <% for (var i=0; i<notifications.length; i++) { %>
-                            <% const title = notifications[i].payload && notifications[i].payload.type === 'hideNotification' ? '(Hide Notification)' : notifications[i].message %>
-                        <tr><td class="col-sm-2"><%= date_util(notifications[i].created, timeZone).toRelativeCalendar() %></td>
-                            <td class="col-sm-10"><%= title %></td>
-                        </tr>
-                        <% } %>
-                    </table>
-                    <% if (pages > 5) { pages = 5 } %>
-                    <% if (pages > 1) { %>
-                    <div class="pagination pagination-centered">
-                        <ul>
-                            <% if (page > 0) { %><li> <a href="?page=<%= page-1 %>"> Prev </a> </li><% } %>
-                            <% for (var i=0; i <= pages; i++) { %>
-                            <li <% if (i == page) {%>class="active"<%}%>> <a href="?page=<%= i %>"><%= i+1 %></a> </li>
-                            <% } %>
-                            <% if (page < pages) { %><li> <a href="?page=<%= page+1 %>"> Next </a> </li><% } %>
-                        </ul>
-                    </div>
-                    <% } %>
-                </div>
-            </div>
-        </div>
+<h1 class="page-header">Notifications</h1>
+<%- include ('alerts.ejs') %>
+<div class="row">
+    <div class="col-md-3 mb-3">
+        <nav class="sidebar-nav">
+            <ul class="nav nav-pills flex-column">
+                <li class="nav-item"><a class="nav-link active" href="/notifications">All</a></li>
+            </ul>
+        </nav>
     </div>
-</section>
-<!-- page content -->
+    <div class="col-md-9">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                <tr><th style="width: 20%">When</th><th>What</th></tr>
+                </thead>
+                <tbody>
+                <% for (let i = 0; i < notifications.length; i++) { %>
+                    <% const title = notifications[i].payload && notifications[i].payload.type === 'hideNotification' ? '(Hide Notification)' : notifications[i].message %>
+                <tr>
+                    <td><%= date_util(notifications[i].created, timeZone).toRelativeCalendar() %></td>
+                    <td><%= title %></td>
+                </tr>
+                <% } %>
+                </tbody>
+            </table>
+        </div>
+        <%- include ('_pagination.ejs') %>
+    </div>
+</div>
 <%- include ('footer.ejs') %>

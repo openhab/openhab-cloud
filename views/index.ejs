@@ -1,135 +1,83 @@
 <% section = 'index' %>
 <%- include ('header.ejs') %>
-      <% if (!user) { %>
-
-<section id="content">
-    <header class="headerPage">
-        <div class="container clearfix">
-            <div class="row">
-                <h1 class="span8">Login or <span>Register</span></h1>
-                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>Login</div>
-            </div>
-        </div>
-    </header>
-    <div class="slice clearfix">
-        <div class="container">
-            <%- include ('alerts.ejs') %>
-            <div class="row">
-                <div class="span2"></div>
-                <div class="span4">
-                    <h3>Registered users, please log in.</h3>
-                    <div class="divider"><span></span></div>
-                </div>
-		<% if (registration_enabled) { %>
-                <div class="span4">
-                    <h3>If you are a new user, please register.</h3>
-                    <div class="divider"><span></span></div>
-                </div> <% } %>
-            </div>
-            <div class="row">
-                <div class="span2"></div>
-                <div class="span4">
-                    <form method="post" action="/login" id="contactform">
-                        <input type="hidden" name="_csrf" value="<%= token %>" class="form-control">
-                        <label for="username"></label>
-                        <input type="text" name="username" id="username" placeholder="E-Mail" class=""/>
-                        <label for="password"></label>
-                        <input type="password" name="password" id="password" placeholder="Password" class=""/>
+<% if (!user) { %>
+<h1 class="page-header">Sign In</h1>
+<%- include ('alerts.ejs') %>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="card-title">Sign In</h3>
+                <form method="post" action="/login">
+                    <input type="hidden" name="_csrf" value="<%= token %>">
+                    <div class="form-group">
+                        <label for="username" class="form-label">Email</label>
+                        <input type="email" class="form-control" name="username" id="username" placeholder="Email">
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" name="password" id="password" placeholder="Password">
+                    </div>
+                    <div class="mb-3">
                         <a href="/lostpassword">Forgot your password?</a>
-                        <p></p>
-                        <button name="submit" type="submit" class="btn" id="submit">Sign in</button>
-                    </form>
-                    <div id="message"></div>
-                </div>
-                <div class="span4">
-		<% if (registration_enabled) { %>
-                <% if (terms && policy) { %>
-                    <form method="post" action="/register" id="contactform">
-                        <input type="hidden" name="_csrf" value="<%= token %>" class="form-control">
-                        <label for="username"></label>
-                        <input type="text" name="username" <% if (typeof username != 'undefined') { %>value="<%=username%>"<% } %> placeholder="Email address">
-                        <label for="password"></label>
-                        <input type="password" name="password" <% if (typeof password != 'undefined') { %>value="<%=password%>"<% } %> placeholder="Password">
-                        <label for="openhabuuid"></label>
-                        <input type="text" name="openhabuuid" <% if (typeof openhabuuid != 'undefined') { %>value="<%=openhabuuid%>"<% } %> placeholder="openHAB UUID" data-toggle="tooltip" title="You will find UUID in 'webapps/static/uuid' file">
-                        <label for="openhabsecret"></label>
-                        <input type="password" name="openhabsecret" <% if (typeof openhabsecret != 'undefined') { %>value="<%=openhabsecret%>"<% } %> placeholder="openHAB Secret" data-toggle="tooltip" title="You will find Secret in 'webapps/static/secret' file">
-                        <label for="agree" class="checkbox">I have read and accepted
-                       	<input type="checkbox"  name="agree" id="agree">
-	                    <a href="<%=terms%>" target="_blank" class="moreLink" title="read our terms"> the Terms of Use</a> and
-	                    <a href="<%=policy%>" target="_blank" class="moreLink" title="privacy policy">the Privacy Policy</a>.</label>
-                        <button name="submit" type="submit" class="btn" id="submit">Register</button>
-                     </form>
-                  <% } else { %>
-                  	 <form method="post" action="/register" id="contactform">
-                        <input type="hidden" name="_csrf" value="<%= token %>" class="form-control">
-                        <label for="username"></label>
-                        <input type="text" name="username" <% if (typeof username != 'undefined') { %>value="<%=username%>"<% } %> placeholder="Email address">
-                        <label for="password"></label>
-                        <input type="password" name="password" <% if (typeof password != 'undefined') { %>value="<%=password%>"<% } %> placeholder="Password">
-                        <label for="openhabuuid"></label>
-                        <input type="text" name="openhabuuid" <% if (typeof openhabuuid != 'undefined') { %>value="<%=openhabuuid%>"<% } %> placeholder="openHAB UUID" data-toggle="tooltip" title="You will find UUID in 'webapps/static/uuid' file">
-                        <label for="openhabsecret"></label>
-                        <input type="password" name="openhabsecret" <% if (typeof openhabsecret != 'undefined') { %>value="<%=openhabsecret%>"<% } %> placeholder="openHAB Secret" data-toggle="tooltip" title="You will find Secret in 'webapps/static/secret' file">
-                        <button name="submit" type="submit" class="btn" id="submit">Register</button>
-                     </form>
-                    <% } %>
-                    <% } %>
-                    <div id="message"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Sign in</button>
+                </form>
+            </div>
+        </div>
+        <% if (registration_enabled) { %>
+        <div class="text-center mb-3">
+            <span>Don't have an account?</span>
+            <a data-bs-toggle="collapse" href="#registerCollapse" role="button" aria-expanded="false">Create an Account</a>
+        </div>
+        <div class="collapse" id="registerCollapse">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title">Register</h3>
+                    <%- include ('_register-form.ejs') %>
                 </div>
             </div>
         </div>
+        <% } %>
     </div>
-</section>
-    <% } else { %>
-<section id="content" class="portfolio">
-    <header class="headerPage">
-        <div class="container clearfix">
-            <%- include ('alerts.ejs') %>
-            <div class="row">
-                <h1 class="span8">Home</h1>
-                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a></div>
-            </div>
-        </div>
-    </header>
-    <section class="slice clearfix">
-        <div class=" clearfix">
-            <div class="container" id="threeColumns">
-                <%
-                    switch (openhabstatus) {
-                        case undefined:
-                %>
-                            You do not have an openHAB installation connected with your account. Please go to your <a href="/account">account settings</a> to add your openHAB installation.
-                <%
+</div>
+<% } else { %>
+<%- include ('alerts.ejs') %>
+<h1 class="page-header">Home</h1>
+<div class="card">
+    <div class="card-body">
+        <%
+            switch (openhabstatus) {
+                case undefined:
+        %>
+                    You do not have an openHAB installation connected with your account. Please go to your <a href="/account">account settings</a> to add your openHAB installation.
+        <%
+                    break;
+                case 'online':
+                    switch (openhabMajorVersion){
+                        case 1:
+        %>
+                            To remotely access your openHAB's web interface go to <code><%=proxyUrl%>/openhab.app?sitemap=yoursitemapname</code>
+        <%
                             break;
-                        case 'online':
-                            switch (openhabMajorVersion){
-                                case 1:
-                %>
-                                    To remotely access your openHAB's web interface go to <code><%=proxyUrl%>/openhab.app?sitemap=yoursitemapname</code>
-                <%
-                                    break;
-                                case 2:
-                %>
-                                    Your openHAB is online. <a href="<%=proxyUrl%>/start/index">Click here to access your openHAB's dashboard</a>
-                <%
-                                    break;
-                                default:
-                %>
-                                    Your openHAB is online. <a href="<%=proxyUrl%>/">Click here to access your openHAB's dashboard</a>
-                <%
-                            }
+                        case 2:
+        %>
+                            Your openHAB is online. <a href="<%=proxyUrl%>/start/index">Click here to access your openHAB's dashboard</a>
+        <%
                             break;
                         default:
-                %>
-                            Your openHAB is not online. Please check if your installation is running or recheck the openHAB settings in your  <a href="/account">account</a>.
-                <%
+        %>
+                            Your openHAB is online. <a href="<%=proxyUrl%>/">Click here to access your openHAB's dashboard</a>
+        <%
                     }
-                %>
-            </div>
-        </div>
-    </section>
-</section>
-      <% } %>
-  </div>
+                    break;
+                default:
+        %>
+                    Your openHAB is not online. Please check if your installation is running or recheck the openHAB settings in your <a href="/account">account</a>.
+        <%
+            }
+        %>
+    </div>
+</div>
+<% } %>
 <%- include ('footer.ejs') %>

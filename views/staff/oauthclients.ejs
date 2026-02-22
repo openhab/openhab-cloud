@@ -1,66 +1,44 @@
 <% section = 'staff' %>
 <%- include ('../header.ejs') %>
-<!-- page content -->
-<section id="content" class="sidebar">
-    <header class="headerPage">
-        <div class="container clearfix">
-            <div class="row">
-                <h1 class="span8">Staff</h1>
-                <div class="span4" id="navTrail"> <a href="index.html" class="homeLink">home</a><span>/</span>Staff<span>/</span>Invitations</div>
-            </div>
-        </div>
-    </header>
-    <div class="slice clearfix">
-        <div class="container">
-           <%- include ('../alerts.ejs') %>
-            <div class="row">
-                <aside class="span3" id="sidebar">
-                    <nav id="subnav">
-                        <ul>
-                            <li ><a href="/staff/stats">Stats</a></li>
-                            <li ><a class="active" href="/staff/oauthclients">OAuth Clients</a></li>
-                            <li ><a href="">Users</a></li>
-                        </ul>
-                        <div class="littleShadow"></div>
-                    </nav>
-                </aside>
-                <div class="span9">
-                    <table class="table table-hover">
-                        <thead>
-                        <tr>
-                            <th></th>
-                            <th>Name</th>
-                            <th>Client Id</th>
-                            <th>Active</th>
-                            <th>Created</th>
-                        </tr>
-                        </thead>
-                        <% for (var i=0; i<oauthclients.length; i++) { %>
-                        <tr >
-                            <td><img style="height: 24px;" src="/img/oauth2/<%= oauthclients[i].icon %>"></td>
-                            <td><%= oauthclients[i].name %></td>
-                            <td><%= oauthclients[i].clientId %></td>
-                            <td><%= oauthclients[i].active %></td>
-                            <td><%= date_util(oauthclients[i].created, timeZone).toRelativeCalendar() %></td>
-                        </tr>
-                        <% } %>
-                    </table>
-                    <% if (pages > 5) { pages = 5 } %>
-                    <% if (pages > 1) { %>
-                    <div class="pagination pagination-centered">
-                        <ul>
-                            <% if (page > 0) { %><li> <a href="?page=<%= page-1 %>"> Prev </a> </li><% } %>
-                            <% for (var i=0; i <= pages; i++) { %>
-                            <li <% if (i == page) {%>class="active"<%}%>> <a href="?page=<%= i %>"><%= i+1 %></a> </li>
-                            <% } %>
-                            <% if (page < pages) { %><li> <a href="?page=<%= page+1 %>"> Next </a> </li><% } %>
-                        </ul>
-                    </div>
-                    <% } %>
-                </div>
-            </div>
-        </div>
+<h1 class="page-header">Staff</h1>
+<%- include ('../alerts.ejs') %>
+<div class="row">
+    <div class="col-md-3 mb-3">
+        <nav class="sidebar-nav">
+            <ul class="nav nav-pills flex-column">
+                <li class="nav-item"><a class="nav-link" href="/staff/stats">Stats</a></li>
+                <li class="nav-item"><a class="nav-link" href="/staff">Enrollments</a></li>
+                <li class="nav-item"><a class="nav-link" href="/staff/invitations">Invitations</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/staff/oauthclients">OAuth Clients</a></li>
+            </ul>
+        </nav>
     </div>
-</section>
-<!-- page content -->
+    <div class="col-md-9">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>Name</th>
+                    <th>Client Id</th>
+                    <th>Active</th>
+                    <th>Created</th>
+                </tr>
+                </thead>
+                <tbody>
+                <% for (let i = 0; i < oauthclients.length; i++) { %>
+                <tr>
+                    <td><img class="oauth-icon" src="/img/oauth2/<%= oauthclients[i].icon %>" alt=""></td>
+                    <td><%= oauthclients[i].name %></td>
+                    <td><%= oauthclients[i].clientId %></td>
+                    <td><%= oauthclients[i].active %></td>
+                    <td><%= date_util(oauthclients[i].created, timeZone).toRelativeCalendar() %></td>
+                </tr>
+                <% } %>
+                </tbody>
+            </table>
+        </div>
+        <%- include ('../_pagination.ejs') %>
+    </div>
+</div>
 <%- include ('../footer.ejs') %>
