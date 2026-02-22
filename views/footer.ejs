@@ -5,6 +5,11 @@
             <a href="https://x.com/openhab" target="_blank" rel="noopener noreferrer" title="X (Twitter)" aria-label="X (Twitter)"><i class="bi bi-twitter-x"></i></a>
             <a href="https://community.openhab.org" target="_blank" rel="noopener noreferrer" title="Community Forum" aria-label="Community Forum"><i class="bi bi-chat-dots"></i></a>
         </div>
+        <p>
+            <% if (typeof terms !== 'undefined' && terms) { %><a href="<%=terms%>" target="_blank" rel="noopener noreferrer">Terms of Use</a><% } %>
+            <% if (typeof terms !== 'undefined' && terms && typeof policy !== 'undefined' && policy) { %> · <% } %>
+            <% if (typeof policy !== 'undefined' && policy) { %><a href="<%=policy%>" target="_blank" rel="noopener noreferrer">Privacy Policy</a><% } %>
+        </p>
         <p>Copyright &copy; <%=new Date().getFullYear()%> by the <a href="https://github.com/openhab">openHAB Community</a> and the <a href="https://www.openhabfoundation.org/">openHAB Foundation</a></p>
     </div>
 </footer>
