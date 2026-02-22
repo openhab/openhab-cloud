@@ -1,0 +1,28 @@
+<form method="post" action="/register">
+    <input type="hidden" name="_csrf" value="<%= token %>">
+    <div class="form-group">
+        <label for="reg-username" class="form-label">Email address</label>
+        <input type="email" class="form-control" name="username" id="reg-username" placeholder="Email address" <% if (typeof username != 'undefined') { %>value="<%=username%>"<% } %>>
+    </div>
+    <div class="form-group">
+        <label for="reg-password" class="form-label">Password</label>
+        <input type="password" class="form-control" name="password" id="reg-password" placeholder="Password" <% if (typeof password != 'undefined') { %>value="<%=password%>"<% } %>>
+    </div>
+    <div class="form-group">
+        <label for="reg-uuid" class="form-label">openHAB UUID</label>
+        <input type="text" class="form-control" name="openhabuuid" id="reg-uuid" placeholder="openHAB UUID" title="You will find UUID in 'webapps/static/uuid' file" <% if (typeof openhabuuid != 'undefined') { %>value="<%=openhabuuid%>"<% } %>>
+    </div>
+    <div class="form-group">
+        <label for="reg-secret" class="form-label">openHAB Secret</label>
+        <input type="password" class="form-control" name="openhabsecret" id="reg-secret" placeholder="openHAB Secret" title="You will find Secret in 'webapps/static/secret' file" <% if (typeof openhabsecret != 'undefined') { %>value="<%=openhabsecret%>"<% } %>>
+    </div>
+    <% if (typeof terms !== 'undefined' && terms && typeof policy !== 'undefined' && policy) { %>
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="agree" id="agree">
+        <label class="form-check-label" for="agree">
+            I have read and accepted <a href="<%=terms%>" target="_blank">the Terms of Use</a> and <a href="<%=policy%>" target="_blank">the Privacy Policy</a>.
+        </label>
+    </div>
+    <% } %>
+    <button type="submit" class="btn btn-primary">Register</button>
+</form>

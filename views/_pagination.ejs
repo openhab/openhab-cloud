@@ -1,0 +1,16 @@
+<% if (pages > 5) { pages = 5 } %>
+<% if (pages > 1) { %>
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        <% if (page > 0) { %>
+        <li class="page-item"><a class="page-link" href="?page=<%= page-1 %><% if (typeof source !== 'undefined' && source) { %>&source=<%=source%><% } %><% if (typeof email !== 'undefined' && email) { %>&email=<%=email%><% } %>">Previous</a></li>
+        <% } %>
+        <% for (let i = 0; i <= pages; i++) { %>
+        <li class="page-item<% if (i == page) { %> active<% } %>"><a class="page-link" href="?page=<%= i %><% if (typeof source !== 'undefined' && source) { %>&source=<%=source%><% } %><% if (typeof email !== 'undefined' && email) { %>&email=<%=email%><% } %>"><%= i+1 %></a></li>
+        <% } %>
+        <% if (page < pages) { %>
+        <li class="page-item"><a class="page-link" href="?page=<%= page+1 %><% if (typeof source !== 'undefined' && source) { %>&source=<%=source%><% } %><% if (typeof email !== 'undefined' && email) { %>&email=<%=email%><% } %>">Next</a></li>
+        <% } %>
+    </ul>
+</nav>
+<% } %>

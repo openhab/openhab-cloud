@@ -1,196 +1,92 @@
 <!DOCTYPE html>
-<html>
-<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
-<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
-<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
-<!--[if (gte IE 9)|!(IE)]><!-->
 <html lang="en">
-<!--<![endif]-->
 <head>
-    <!-- Basic Page Needs
-        ================================================== -->
     <meta charset="utf-8">
     <title>openHAB Cloud - <%= title %></title>
     <meta name="description" content="openHAB Cloud - cloud companion service for openHAB">
     <meta name="author" content="openHAB">
-    <!-- Mobile Specific Metas
-        ================================================== -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- CSS
-        ================================================== -->
-    <!-- Bootstrap  -->
-    <link type="text/css" rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
-    <!-- web font  -->
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,800" rel="stylesheet" type="text/css">
-    <!-- plugin css  -->
-    <link rel="stylesheet" type="text/css" href="/js-plugin/pretty-photo/css/prettyPhoto.css" />
-    <link rel="stylesheet" type="text/css" href="/js-plugin/rs-plugin/css/settings.css" media="screen" />
-    <link type="text/css" rel="stylesheet" href="/js-plugin/hoverdir/css/style.css">
-    <!-- icon fonts -->
-    <link type="text/css" rel="stylesheet" href="/font-icons/custom-icons/css/custom-icons.css">
-    <link type="text/css" rel="stylesheet" href="/font-icons/custom-icons/css/custom-icons-ie7.css">
-    <!-- Custom css -->
-    <link type="text/css" rel="stylesheet" href="/css/layout.css">
-    <link type="text/css" id="colors" rel="stylesheet" href="/css/colors.css">
-    <!--[if lt IE 9]><script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-    <!--[if gte IE 9]><style type="text/css">.iconBig, .active, .hover a , .Shover a { filter: none !important; } </style> <![endif]-->
-
-    <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
-
-    <script src="/js/modernizr-2.6.1.min.js"></script>
-    <!-- Favicons
-        ================================================== -->
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
-    <link rel="icon" href="favicon.ico" type="image/x-icon" />
-    <link rel="apple-touch-icon" href="apple-icon.png"  />
-
-    <style type="text/css">
-        .inversedlink {
-            color:#FFFFFF;
-        }
-        .inversedlink:hover {
-            color:#FFFFFF;
-        }
-        .inversedlink:visited {
-            color:#FFFFFF;
-        }
-        .inversedlink:active {
-            color:#FFFFFF;
-        }
-
-    </style>
-    <script src="/js/jquery.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstimezonedetect/1.0.4/jstz.min.js"></script>
-    <script type="text/javascript"
-            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCh6fTzWwOMbplxEyNTZSLIn4mxEE3sraE&sensor=false">
-    </script>
-    <script>
-        $( document ).ready(function() {
-            $("[rel='tooltip']").tooltip();
-            <% if (timeZone == 'undefined') { %>
-            var timeZone = 'undefined';
-            <% } else { %>
-            var timeZone = '<%= timeZone %>';
-            <% } %>
-            if (timeZone == 'undefined') {
-                var tz = jstz.determine();
-                $.get("/setTimezone?tz=" + tz.name(), function(data) {
-                });
-            }
-        });
-    </script>
-    <style type="text/css">
-        body {
-            padding-top: 60px;
-            padding-bottom: 40px;
-        }
-        .container {
-            margin: 0 auto;
-            max-width: 1000px;
-        }
-        .container-fluid {
-            margin: 0 auto;
-            max-width: 1000px;
-        }
-        .form-signin {
-            padding: 19px 29px 29px;
-            margin: 0 auto 20px;
-            background-color: #fff;
-            border: 1px solid #e5e5e5;
-            -webkit-border-radius: 5px;
-            -moz-border-radius: 5px;
-            border-radius: 5px;
-            -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
-            -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
-            box-shadow: 0 1px 2px rgba(0,0,0,.05);
-        }
-        .form-signin .form-signin-heading,
-        .form-signin .checkbox {
-            margin-bottom: 10px;
-        }
-        .form-signin input[type="text"],
-        .form-signin input[type="password"] {
-            font-size: 16px;
-            height: auto;
-            margin-bottom: 15px;
-            padding: 7px 9px;
-        }
-
-        .sidebar-nav {
-            display: block;
-            padding: 9px 14px;
-            margin-bottom: 14px;
-        }
-    </style>
-
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/bootstrap-icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/app.css">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <script src="/js/theme.js"></script>
 </head>
 <body>
-<title><%= title %></title>
-<!-- Primary Page Layout
-    ================================================== -->
-<!-- header -->
-<header id="mainHeader" class="clearfix">
-    <div class="navbar navbar-fixed-top">
-        <div class="navbar-inner">
-            <div class="container"> <a href="/" class="brand"><img src="/img/openhab-logo-top.png" alt="openHAB"/></a>
-                <nav id="mainMenu" class="clearfix">
-                    <ul>
-                        <% if (user) { %>
-                        <li><a href="/" class="firstLevel <% if (section == 'index')  { %>active<% } %>">Home</a></li>
-                        <% if (!user.parent) { %>
-                        <li><a href="/items" class="firstLevel <% if (section == 'items')  { %>active<% } %>">Items</a></li>
-                        <li><a href="/events" class="firstLevel <% if (section == 'events')  { %>active<% } %>">Event log</a></li>
+<nav class="navbar navbar-expand-lg fixed-top ohc-navbar">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <img class="logo-light" src="/img/openhab-logo-top.png" alt="openHAB">
+            <img class="logo-dark" src="/img/openhab-logo-top-dark.png" alt="openHAB">
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav me-auto">
+                <% if (user) { %>
+                <li class="nav-item">
+                    <a class="nav-link<% if (section == 'index') { %> active<% } %>" href="/">Home</a>
+                </li>
+                <% if (!user.parent) { %>
+                <li class="nav-item">
+                    <a class="nav-link<% if (section == 'items') { %> active<% } %>" href="/items">Items</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link<% if (section == 'events') { %> active<% } %>" href="/events">Event Log</a>
+                </li>
+                <% } %>
+                <li class="nav-item">
+                    <a class="nav-link<% if (section == 'notifications') { %> active<% } %>" href="/notifications">Notifications</a>
+                </li>
+                <% } %>
+            </ul>
+            <ul class="navbar-nav">
+                <% if (user) if (locals.openhabstatus) { %>
+                <li class="nav-item d-flex align-items-center me-2">
+                    <% if (openhabstatus == 'online') { %>
+                    <a class="badge badge-online text-decoration-none text-white" href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).toRelativeCalendar() %>">Online</a>
+                    <% } else { %>
+                    <a class="badge badge-offline text-decoration-none text-white" href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).toRelativeCalendar() %>">Offline</a>
+                    <% } %>
+                </li>
+                <% } %>
+                <% if (user) if (user.group == 'staff') { %>
+                <li class="nav-item">
+                    <a class="nav-link<% if (section == 'staff') { %> active<% } %>" href="/staff/stats">Staff</a>
+                </li>
+                <% } %>
+                <% if (user) { %>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle<% if (['account', 'devices', 'applications', 'users'].indexOf(section) !== -1) { %> active<% } %>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><%= user.username %></a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item<% if (section == 'account') { %> active<% } %>" href="/account">Account</a></li>
+                        <li><a class="dropdown-item<% if (section == 'devices') { %> active<% } %>" href="/devices">Devices</a></li>
+                        <li><a class="dropdown-item<% if (section == 'applications') { %> active<% } %>" href="/applications">Applications</a></li>
+                        <% if (user.role == "master") { %>
+                        <li><a class="dropdown-item<% if (section == 'users') { %> active<% } %>" href="/users">Users</a></li>
                         <% } %>
-                        <li><a href="/notifications" class="firstLevel <% if (section == 'notifications')  { %>active<% } %>">Notifications</a></li>
-                        <% } %>
-                        <% if (user) if (locals.openhabstatus) { %>
-                        <% if (openhabstatus == 'online') { %>
-                        <li class="openhab-online">
-                            <a href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).toRelativeCalendar()%>">Online</a>
-                        </li>
-                        <% } else { %>
-                        <li class="openhab-offline">
-                            <!-- <a data-toggle="tooltip" data-placement="left" title data-original-title="Last seen on xxx">openHAB <%= openhabstatus %></a> -->
-                            <a href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).toRelativeCalendar()%>">Offline</a>
-                        </li>
-                        <% } %>
-                        <% } %>
-                        <% if (user) if (user.group == 'staff') { %>
-                        <li>
-                            <a href="/staff/stats" class="firstLevel <% if (section == 'staff')  { %>active<% } %>">Staff</a>
-                        </li>
-                        <% } %>
-                        <% if (user) { %>
-                        <li>
-                            <a href="#" class="firstLevel <% if (['account', 'devices', 'applications', 'users'].indexOf(section) !== -1) { %>active<% } %>" data-toggle="dropdown"><%= user.username %></a>
-                            <ul>
-                                <li <% if (section == 'account')  { %>class="active"<% } %>>
-                                    <a href="/account">Account</a>
-                                </li>
-                                <li <% if (section == 'devices')  { %>class="active"<% } %>>
-                                    <a href="/devices">Devices</a>
-                                </li>
-                                <li <% if (section == 'applications')  { %>class="active"<% } %>>
-                                    <a href="/applications">Applications</a>
-                                </li>
-                                <% if (user.role == "master") { %>
-                                    <li <% if (section == 'users')  { %>class="active"<% } %>>
-                                        <a href="/users">Users</a>
-                                    </li>
-                                <% } %>
-                                <li class="divider"></li>
-                                <li>
-                                    <a href="/logout">Logout</a>
-                                </li>
-                            </ul>
-                        </li>
-                        <% } %>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout">Logout</a></li>
                     </ul>
-                </nav>
-            </div>
+                </li>
+                <% } %>
+                <li class="nav-item d-flex align-items-center">
+                    <button class="theme-toggle" id="theme-toggle" type="button" title="Toggle theme" aria-label="Toggle theme">
+                        <i class="bi bi-moon-fill" id="theme-icon"></i>
+                    </button>
+                </li>
+            </ul>
         </div>
     </div>
-</header>
-<!-- header -->
-<!-- globalWrapper -->
-<div id="globalWrapper">
+</nav>
+<div class="container mt-4">
+<script>
+(function () {
+    <% if (typeof timeZone !== 'undefined' && timeZone === 'undefined') { %>
+    var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) fetch('/setTimezone?tz=' + encodeURIComponent(tz));
+    <% } %>
+})();
+</script>

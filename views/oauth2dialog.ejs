@@ -1,47 +1,27 @@
 <% section = 'oauth2' %>
 <%- include ('header.ejs') %>
-<style type="text/css">
-    #map-canvas { width: 100%; height: 350px;}
-    .nav-subitem {
-        margin-left: 20px;
-    }
-</style>
-<!-- page content -->
-<section id="content" class="sidebar">
-    <header class="headerPage">
-        <div class="container clearfix">
-            <div class="row">
-                <h1 class="span8">OAuth2</h1>
-                <div class="span4" id="navTrail"> <a href="/" class="homeLink">home</a><span>/</span>OAuth2</div>
-            </div>
-        </div>
-    </header>
-    <div class="slice clearfix">
-        <div class="container">
-            <%- include ('alerts.ejs') %>
-            <div class="row">
-                <aside class="span3" id="sidebar">
-                    <section id="widgetArea">
-                    </section>
-                </aside>
-                <div class="span9">
-                    <h3>OAuth2 application authorization</h3>
-                    <div class="divider"><span></span></div>
-                    <p>
-                        Application <strong><%= oauthClient.name %></strong> is requesting access to your account for the following scope:<br>
-                        <%= scope.description %>
-                        <form action="/oauth2/authorize/decision" method="post">
-                            <input name="transaction_id" type="hidden" value="<%= transactionID %>">
-                            <input type="hidden" name="_csrf" value="<%= token %>" class="form-control">
-                            <input type="hidden" name="scope" value="ifttt" class="form-control">
-                            <button name="submit" type="submit" class="btn" id="allow" value="Allow">Allow</button>
-                            <button name="cancel" type="submit" class="btn" id="deny" value="Deny">Deny</button>
-                        </form>
-                    </p>
-                </div>
+<h1 class="page-header">OAuth2 Authorization</h1>
+<%- include ('alerts.ejs') %>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Application Authorization</h3>
+                <p>
+                    Application <strong><%= oauthClient.name %></strong> is requesting access to your account for the following scope:
+                </p>
+                <p><%= scope.description %></p>
+                <form action="/oauth2/authorize/decision" method="post">
+                    <input name="transaction_id" type="hidden" value="<%= transactionID %>">
+                    <input type="hidden" name="_csrf" value="<%= token %>">
+                    <input type="hidden" name="scope" value="ifttt">
+                    <div class="d-flex gap-2">
+                        <button name="submit" type="submit" class="btn btn-primary" id="allow" value="Allow">Allow</button>
+                        <button name="cancel" type="submit" class="btn btn-secondary" id="deny" value="Deny">Deny</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-</section>
-<!-- page content -->
+</div>
 <%- include ('footer.ejs') %>
