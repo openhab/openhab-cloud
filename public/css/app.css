@@ -138,8 +138,8 @@ body {
   padding: 0.75rem 0;
   text-align: center;
   font-size: 0.875rem;
-  background-color: var(--ohc-primary);
-  color: #fff;
+  border-top: 1px solid var(--bs-border-color);
+  color: var(--bs-secondary-color);
 }
 
 .ohc-footer p {
@@ -147,11 +147,20 @@ body {
 }
 
 .ohc-footer a {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--bs-secondary-color);
+  text-decoration: none;
 }
 
 .ohc-footer a:hover {
-  color: #fff;
+  color: var(--ohc-primary);
+}
+
+.ohc-footer .social-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
 }
 
 /* ── Theme Toggle ────────────────────────────────────────── */
