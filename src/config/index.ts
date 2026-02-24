@@ -141,27 +141,17 @@ export class SystemConfigManager {
   }
 
   /**
-   * Get the full base URL (omits port for standard http/https ports)
+   * Get the full base URL (protocol://host, never includes port)
    */
   getBaseURL(): string {
-    const protocol = this.getProtocol();
-    const port = this.getPort();
-    const isStandardPort = (protocol === 'https' && port === 443) || (protocol === 'http' && port === 80);
-    return isStandardPort
-      ? `${protocol}://${this.getHost()}`
-      : `${protocol}://${this.getHost()}:${port}`;
+    return `${this.getProtocol()}://${this.getHost()}`;
   }
 
   /**
-   * Get the full proxy URL (omits port for standard http/https ports)
+   * Get the full proxy URL (protocol://host, never includes port)
    */
   getProxyURL(): string {
-    const protocol = this.getProtocol();
-    const port = this.getProxyPort();
-    const isStandardPort = (protocol === 'https' && port === 443) || (protocol === 'http' && port === 80);
-    return isStandardPort
-      ? `${protocol}://${this.getProxyHost()}`
-      : `${protocol}://${this.getProxyHost()}:${port}`;
+    return `${this.getProtocol()}://${this.getProxyHost()}`;
   }
 
   /**
