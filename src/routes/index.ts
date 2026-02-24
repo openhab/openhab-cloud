@@ -145,7 +145,7 @@ export function createRoutes(deps: RoutesDependencies): Router {
     services.userService,
     services.openhabService,
     {
-      getBaseURL: () => `${systemConfig.getHost()}:${systemConfig.getPort()}`,
+      getBaseURL: () => systemConfig.getBaseURL(),
       hasLegalTerms: () => hasLegalTerms,
       hasLegalPolicy: () => hasLegalPolicy,
       isRegistrationEnabled: () => registrationEnabled,
@@ -164,7 +164,7 @@ export function createRoutes(deps: RoutesDependencies): Router {
         return invitation;
       },
     },
-    { getBaseURL: () => `${systemConfig.getHost()}:${systemConfig.getPort()}` },
+    { getBaseURL: () => systemConfig.getBaseURL() },
     logger
   );
 

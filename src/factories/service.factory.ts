@@ -342,6 +342,7 @@ export function createServices(deps: ServiceFactoryDeps): ServiceContainer {
         ? {
             host: mailerConfig.host,
             port: mailerConfig.port,
+            secureConnection: mailerConfig.secureConnection,
             user: mailerConfig.user,
             password: mailerConfig.password,
             from: mailerConfig.from || 'noreply@openhab.org',
