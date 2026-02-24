@@ -363,6 +363,7 @@ export async function createApp(configPath: string): Promise<AppContainer> {
     logger,
     systemConfig: {
       getInternalAddress: () => configManager.getInternalAddress(),
+      getBaseURL: () => configManager.getBaseURL(),
       getHost: () => configManager.getHost(),
       getPort: () => configManager.getPort(),
       getProxyHost: () => configManager.getProxyHost(),

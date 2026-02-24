@@ -73,6 +73,7 @@ export interface MiddlewareDependencies {
   logger: AppLogger;
   systemConfig: {
     getInternalAddress(): string;
+    getBaseURL(): string;
     getHost(): string;
     getPort(): number;
     getProxyHost(): string;
