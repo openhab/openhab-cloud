@@ -65,7 +65,7 @@
     "serve-favicon": "^2.5.1",
     "serve-static": "^2.2.1",
     "socket.io": "^4.8.3",
-    "underscore": "^1.13.7",
+    "underscore": "^1.13.8",
     "winston": "3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
     "zod": "^4.3.6"
