@@ -79,7 +79,7 @@
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.18.2",
     "@types/luxon": "^3.7.1",
-    "@types/node": "^25.2.3",
+    "@types/node": "^25.3.3",
     "@types/oauth2orize": "^1.11.5",
     "@types/passport": "^1.0.17",
     "@types/passport-http": "^0.3.11",
