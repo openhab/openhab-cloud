@@ -96,7 +96,7 @@
     "node-gyp": "^12.2.0",
     "npm-check-updates": "^19.6.3",
     "nyc": "^18.0.0",
-    "sinon": "^21.0.1",
+    "sinon": "^21.0.2",
     "socket.io-client": "^4.8.3",
     "supertest": "^7.2.2",
     "tsx": "^4.21.0",
