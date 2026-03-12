@@ -86,6 +86,7 @@ Edit the `.env` file:
 | `SMTP_*` | No | Email settings for notifications |
 | `MORGAN_FORMAT` | No | HTTP request log format (default: off). Set to `combined`, `short`, etc. |
 | `REGISTRATION_ENABLED` | No | Enable user registration (default: `true`) |
+| `DISABLE_REMOTE_PROXY` | No | Set to `true` to disable automatic `/remote/` URL rewriting. Recommended for single-domain setups behind reverse proxies (default: `false`) |
 
 ### Application Config
 
