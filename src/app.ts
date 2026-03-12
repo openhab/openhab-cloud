@@ -203,20 +203,22 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   app.use(passport.session());
 
   // Remote proxy URL rewriting middleware
-  app.use((req: Request, _res: Response, next: NextFunction) => {
-    const host = req.headers.host;
-    if (!host) {
-      next();
-      return;
-    }
-    if (host.indexOf('remote.') === 0 || host === configManager.getProxyHost()) {
-      if (req.url.indexOf('/remote') !== 0) {
-        req.url = '/remote' + req.url;
-      }
-    }
-    next();
-  });
+  const disableRemoteProxy = process.env['DISABLE_REMOTE_PROXY'] === 'true';
 
+  if (!disableRemoteProxy) {
+    app.use((req: Request, _res: Response, next: NextFunction) => {
+      const host = req.headers.host;
+      if (!host) {
+        return next();
+      }
+      if (host.indexOf('remote.') === 0 || host === configManager.getProxyHost()) {
+        if (req.url.indexOf('/remote') !== 0) {
+          req.url = '/remote' + req.url;
+        }
+      }
+      next();
+    });
+  }
   // CSRF protection (except for API, REST, and remote routes)
   const { csrfSynchronisedProtection, generateToken } = csrfSync({
     getTokenFromRequest: (req: Request) => req.body?.['_csrf'] as string ?? req.headers['csrf-token'] as string,
