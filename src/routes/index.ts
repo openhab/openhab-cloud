@@ -676,12 +676,18 @@ export function createRoutes(deps: RoutesDependencies): Router {
     '/rest{*path}', '/images/{*path}', '/static/{*path}', '/rrdchart.png{*path}', '/chart{*path}',
     '/openhab.app{*path}', '/WebApp{*path}', '/CMD{*path}', '/cometVisu{*path}', '/proxy{*path}',
     '/greent{*path}', '/jquery.:ext', '/classicui/{*path}', '/paperui/{*path}', '/basicui/{*path}',
-    '/doc/{*path}', '/start/{*path}', '/icon{*path}', '/habmin/{*path}', '/remote{*path}', '/habpanel/{*path}',
+    '/doc/{*path}', '/start/{*path}', '/icon{*path}', '/habmin/{*path}', '/habpanel/{*path}',
   ];
 
   for (const path of proxyPaths) {
     router.all(path, ensureRestAuthenticated, setOpenhab, preassembleBody, ensureServer, proxyRoute);
   }
+
+  // Catch-all for vhost proxy requests that didn't match a specific proxy path above
+  router.all('/{*path}', (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.isVhostProxy) return next('route');
+    next();
+  }, ensureRestAuthenticated, setOpenhab, preassembleBody, ensureServer, proxyRoute);
 
   return router;
 }
@@ -741,10 +747,8 @@ function createProxyHandler(
     requestHeaders['host'] = req.headers.host as string || `${systemConfig.getHost()}:${systemConfig.getPort()}`;
     requestHeaders['user-agent'] = 'openhab-cloud/0.0.1';
 
-    // Strip off path prefix for remote vhosts hack
     let requestPath = req.path;
-    if (requestPath.startsWith('/remote/')) {
-      requestPath = requestPath.replace('/remote', '');
+    if (req.isVhostProxy) {
       requestHeaders['host'] = `${systemConfig.getProxyHost()}:${systemConfig.getProxyPort()}`;
     }
 

@@ -154,11 +154,7 @@ export function createLogger(options: LoggerOptions): AppLogger {
     auditRequest: (req: AuditableRequest) => {
       const headers = req.headers;
 
-      // Strip off path prefix for remote vhosts hack
-      let requestPath = req.path;
-      if (requestPath.indexOf('/remote/') === 0) {
-        requestPath = requestPath.replace('/remote', '');
-      }
+      const requestPath = req.path;
 
       // Sanitize user-controlled values to prevent log injection
       const sanitize = (val: string | string[] | undefined): string => {

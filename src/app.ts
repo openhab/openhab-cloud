@@ -202,16 +202,19 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Remote proxy URL rewriting middleware
+  // Remote proxy vhost detection middleware
+  // Activates when the Host header matches either the configured proxyHost
+  // or the "remote.<mainHost>" convention (exact match only, not a broad prefix)
   app.use((req: Request, _res: Response, next: NextFunction) => {
-    const host = req.headers.host;
-    if (!host) {
-      next();
-      return;
-    }
-    if (host.indexOf('remote.') === 0 || host === configManager.getProxyHost()) {
-      if (req.url.indexOf('/remote') !== 0) {
-        req.url = '/remote' + req.url;
+    const host = req.headers.host?.split(':')[0];
+    if (host) {
+      const proxyHost = configManager.getProxyHost();
+      const mainHost = configManager.getHost();
+      if (
+        (proxyHost !== mainHost && host === proxyHost) ||
+        host === `remote.${mainHost}`
+      ) {
+        req.isVhostProxy = true;
       }
     }
     next();
@@ -233,7 +236,7 @@ export async function createApp(configPath: string): Promise<AppContainer> {
         p.startsWith('/ws/') ||
         p === '/oauth2/token' ||
         p.startsWith('/ifttt/') ||
-        p.startsWith('/remote/')
+        req.isVhostProxy === true
       );
     },
   });
