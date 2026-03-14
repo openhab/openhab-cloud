@@ -45,6 +45,7 @@ import { HealthController } from './controllers';
 import { createServices } from './factories';
 import { SocketServer, ConnectionManager } from './socket';
 import { configurePassport } from './middleware/auth.middleware';
+import { createVhostDetection } from './middleware/vhost';
 import { MongoConnect } from './lib/mongoconnect';
 import dateUtil from './lib/date-util';
 import { User, Openhab, Event, UserDevice, Invitation } from './models';
@@ -70,28 +71,6 @@ export interface AppContainer {
   jobScheduler: JobScheduler;
   socketServer: SocketServer;
   services: ReturnType<typeof createServices>;
-}
-
-/**
- * Create vhost detection middleware.
- * Sets req.isVhostProxy when the hostname matches the configured proxyHost
- * or the "remote.<mainHost>" convention.
- */
-export function createVhostDetection(configManager: SystemConfigManager) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    const host = req.hostname?.toLowerCase();
-    if (host) {
-      const proxyHost = configManager.getProxyHost().toLowerCase();
-      const mainHost = configManager.getHost().toLowerCase();
-      if (
-        (proxyHost !== mainHost && host === proxyHost) ||
-        host === `remote.${mainHost}`
-      ) {
-        req.isVhostProxy = true;
-      }
-    }
-    next();
-  };
 }
 
 /**

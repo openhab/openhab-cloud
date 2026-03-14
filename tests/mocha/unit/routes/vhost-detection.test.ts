@@ -14,7 +14,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import type { Request, Response, NextFunction } from 'express';
-import { createVhostDetection } from '../../../../src/app';
+import { createVhostDetection } from '../../../../src/middleware/vhost';
 import type { SystemConfigManager } from '../../../../src/config';
 
 describe('Vhost Detection Middleware', () => {
