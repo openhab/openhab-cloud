@@ -73,6 +73,28 @@ export interface AppContainer {
 }
 
 /**
+ * Create vhost detection middleware.
+ * Sets req.isVhostProxy when the hostname matches the configured proxyHost
+ * or the "remote.<mainHost>" convention.
+ */
+export function createVhostDetection(configManager: SystemConfigManager) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    const host = req.hostname?.toLowerCase();
+    if (host) {
+      const proxyHost = configManager.getProxyHost().toLowerCase();
+      const mainHost = configManager.getHost().toLowerCase();
+      if (
+        (proxyHost !== mainHost && host === proxyHost) ||
+        host === `remote.${mainHost}`
+      ) {
+        req.isVhostProxy = true;
+      }
+    }
+    next();
+  };
+}
+
+/**
  * Initialize and start the application
  */
 export async function createApp(configPath: string): Promise<AppContainer> {
@@ -203,22 +225,10 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   app.use(passport.session());
 
   // Remote proxy vhost detection middleware
-  // Activates when the Host header matches either the configured proxyHost
+  // Activates when the hostname matches either the configured proxyHost
   // or the "remote.<mainHost>" convention (exact match only, not a broad prefix)
-  app.use((req: Request, _res: Response, next: NextFunction) => {
-    const host = req.headers.host?.split(':')[0];
-    if (host) {
-      const proxyHost = configManager.getProxyHost();
-      const mainHost = configManager.getHost();
-      if (
-        (proxyHost !== mainHost && host === proxyHost) ||
-        host === `remote.${mainHost}`
-      ) {
-        req.isVhostProxy = true;
-      }
-    }
-    next();
-  });
+  // Uses req.hostname which handles port stripping, IPv6, and trust proxy / X-Forwarded-Host
+  app.use(createVhostDetection(configManager));
 
   // CSRF protection (except for API, REST, and remote routes)
   const { csrfSynchronisedProtection, generateToken } = csrfSync({

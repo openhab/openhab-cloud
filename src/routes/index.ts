@@ -465,6 +465,20 @@ export function createRoutes(deps: RoutesDependencies): Router {
   );
 
   // ============================================
+  // Vhost Proxy Catch-All (must be before web routes)
+  // ============================================
+  // When a request arrives on the proxy hostname (req.isVhostProxy), this
+  // catch-all proxies it to the user's openHAB instance regardless of path.
+  // For non-vhost requests, next('route') skips to normal web routes below.
+
+  const proxyRoute = createProxyHandler(io, requestTracker, systemConfig, logger);
+
+  router.all('/{*path}', (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.isVhostProxy) return next('route');
+    next();
+  }, ensureRestAuthenticated, setOpenhab, preassembleBody, ensureServer, proxyRoute);
+
+  // ============================================
   // General Routes
   // ============================================
 
@@ -663,10 +677,8 @@ export function createRoutes(deps: RoutesDependencies): Router {
   router.all('/addIosRegistration{*path}', ensureRestAuthenticated, setOpenhab, preassembleBody, registrationController.registerIos);
 
   // ============================================
-  // Proxy Routes
+  // Path-Based Proxy Routes (for non-vhost requests to known openHAB paths)
   // ============================================
-
-  const proxyRoute = createProxyHandler(io, requestTracker, systemConfig, logger);
 
   // WebSocket proxy route — no preassembleBody (upgrade requests have no body to assemble)
   router.all('/ws/{*path}', ensureRestAuthenticated, setOpenhab, ensureServer, proxyRoute);
@@ -682,12 +694,6 @@ export function createRoutes(deps: RoutesDependencies): Router {
   for (const path of proxyPaths) {
     router.all(path, ensureRestAuthenticated, setOpenhab, preassembleBody, ensureServer, proxyRoute);
   }
-
-  // Catch-all for vhost proxy requests that didn't match a specific proxy path above
-  router.all('/{*path}', (req: Request, _res: Response, next: NextFunction) => {
-    if (!req.isVhostProxy) return next('route');
-    next();
-  }, ensureRestAuthenticated, setOpenhab, preassembleBody, ensureServer, proxyRoute);
 
   return router;
 }
