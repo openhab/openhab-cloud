@@ -68,6 +68,7 @@ export interface TokenResponse {
 export class APITestClient {
   private request: supertest.Agent;
   private authHeader: string | null = null;
+  private hostOverride: string | null = null;
 
   constructor(baseUrl: string) {
     this.request = supertest.agent(baseUrl);
@@ -99,12 +100,32 @@ export class APITestClient {
   }
 
   /**
+   * Set the hostname for vhost detection (sets X-Forwarded-Host header).
+   * When trust proxy is enabled, Express uses this to derive req.hostname.
+   */
+  withHost(hostname: string): this {
+    this.hostOverride = hostname;
+    return this;
+  }
+
+  /**
+   * Clear host override
+   */
+  clearHost(): this {
+    this.hostOverride = null;
+    return this;
+  }
+
+  /**
    * Make a GET request
    */
   async get(path: string): Promise<supertest.Response> {
     const req = this.request.get(path);
     if (this.authHeader) {
       req.set('Authorization', this.authHeader);
+    }
+    if (this.hostOverride) {
+      req.set('X-Forwarded-Host', this.hostOverride);
     }
     return req;
   }
@@ -116,6 +137,9 @@ export class APITestClient {
     const req = this.request.post(path);
     if (this.authHeader) {
       req.set('Authorization', this.authHeader);
+    }
+    if (this.hostOverride) {
+      req.set('X-Forwarded-Host', this.hostOverride);
     }
     if (body) {
       req.send(body);
@@ -230,6 +254,9 @@ export class APITestClient {
     const req = this.request.post(`/rest${path}`);
     if (this.authHeader) {
       req.set('Authorization', this.authHeader);
+    }
+    if (this.hostOverride) {
+      req.set('X-Forwarded-Host', this.hostOverride);
     }
     if (body) {
       req.set('Content-Type', 'text/plain');

@@ -45,6 +45,7 @@ import { HealthController } from './controllers';
 import { createServices } from './factories';
 import { SocketServer, ConnectionManager } from './socket';
 import { configurePassport } from './middleware/auth.middleware';
+import { createVhostDetection } from './middleware/vhost';
 import { MongoConnect } from './lib/mongoconnect';
 import dateUtil from './lib/date-util';
 import { User, Openhab, Event, UserDevice, Invitation } from './models';
@@ -202,20 +203,11 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Remote proxy URL rewriting middleware
-  app.use((req: Request, _res: Response, next: NextFunction) => {
-    const host = req.headers.host;
-    if (!host) {
-      next();
-      return;
-    }
-    if (host.indexOf('remote.') === 0 || host === configManager.getProxyHost()) {
-      if (req.url.indexOf('/remote') !== 0) {
-        req.url = '/remote' + req.url;
-      }
-    }
-    next();
-  });
+  // Remote proxy vhost detection middleware
+  // Activates when the hostname matches either the configured proxyHost
+  // or the "remote.<mainHost>" convention (exact match only, not a broad prefix)
+  // Uses req.hostname which handles port stripping, IPv6, and trust proxy / X-Forwarded-Host
+  app.use(createVhostDetection(configManager));
 
   // CSRF protection (except for API, REST, and remote routes)
   const { csrfSynchronisedProtection, generateToken } = csrfSync({
@@ -233,7 +225,7 @@ export async function createApp(configPath: string): Promise<AppContainer> {
         p.startsWith('/ws/') ||
         p === '/oauth2/token' ||
         p.startsWith('/ifttt/') ||
-        p.startsWith('/remote/')
+        req.isVhostProxy === true
       );
     },
   });

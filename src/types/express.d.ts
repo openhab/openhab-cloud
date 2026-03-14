@@ -30,6 +30,11 @@ declare global {
      */
     interface Request {
       /**
+       * True when the request arrived via the remote proxy hostname (vhost mode)
+       */
+      isVhostProxy?: boolean;
+
+      /**
        * The authenticated user's openHAB instance
        */
       openhab?: IOpenhab;

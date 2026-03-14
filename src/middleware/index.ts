@@ -26,3 +26,4 @@ export {
   IdParamSchema,
 } from './validation.middleware';
 export type { ValidatedRequest, IdParam } from './validation.middleware';
+export { createVhostDetection } from './vhost';
