@@ -479,7 +479,7 @@ export class SocketServer {
       const webhookUrl = `${baseURL}/api/hooks/${webhook.uuid}`;
 
       this.logger.info(
-        `Webhook registered for ${socket.handshake.uuid}: ${data.localPath} -> ${webhookUrl}`
+        `Webhook registered for ${socket.handshake.uuid}: ${data.localPath}`
       );
 
       ack({

@@ -496,7 +496,7 @@ export function createRoutes(deps: RoutesDependencies): Router {
   const webhookProxyRoute = createWebhookProxyHandler(io, requestTracker, systemConfig, logger);
   const webhookBodyLimit = createBodySizeLimit(5 * 1024 * 1024);
 
-  router.all('/api/hooks/:uuid', webhookBodyLimit, preassembleBody, setOpenhabForWebhook, ensureServer, webhookProxyRoute);
+  router.all('/api/hooks/:uuid', setOpenhabForWebhook, webhookBodyLimit, preassembleBody, ensureServer, webhookProxyRoute);
 
   // ============================================
   // General Routes

@@ -546,7 +546,7 @@ export function createSetOpenhabForWebhook(
 
     try {
       const webhook = await webhookRepository.findByUuid(uuid);
-      if (!webhook) {
+      if (!webhook || webhook.expiresAt <= new Date()) {
         res.status(404).json({ error: 'Webhook not found or expired' });
         return;
       }

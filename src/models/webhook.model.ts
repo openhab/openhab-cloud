@@ -13,7 +13,7 @@
 
 import { Schema, model, Model, Types } from 'mongoose';
 import { randomUUID } from 'crypto';
-import type { IWebhook, WebhookDocument } from '../types/models';
+import type { IWebhook } from '../types/models';
 
 // ============================================================================
 // Schema Definition
