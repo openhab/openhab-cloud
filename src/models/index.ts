@@ -53,5 +53,8 @@ export {
 // Enrollment
 export { Enrollment, type EnrollmentModel } from './enrollment.model';
 
+// Webhooks
+export { Webhook, type WebhookModel } from './webhook.model';
+
 // Re-export all types
 export type * from '../types/models';

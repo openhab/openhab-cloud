@@ -23,7 +23,8 @@ import passport from 'passport';
 import { Types } from 'mongoose';
 import type { Server as SocketIOServer } from 'socket.io';
 
-import { createMiddleware, MiddlewareDependencies } from './middleware';
+import { createMiddleware, createSetOpenhabForWebhook, createBodySizeLimit, MiddlewareDependencies } from './middleware';
+import type { IWebhookRepositoryForMiddleware, IOpenhabRepositoryForMiddleware } from './middleware';
 import type { AppLogger } from '../lib/logger';
 import type { PromisifiedRedisClient } from '../lib/redis';
 import type { IUser, IInvitation, IOpenhab } from '../types/models';
@@ -80,6 +81,10 @@ export interface RoutesDependencies extends MiddlewareDependencies {
     safeRemove(requestId: number): boolean;
     has(requestId: number): boolean;
   };
+
+  // Webhook repositories
+  webhookRepository: IWebhookRepositoryForMiddleware;
+  openhabRepositoryForWebhook: IOpenhabRepositoryForMiddleware;
 
   // Feature flags
   iftttEnabled: boolean;
@@ -479,6 +484,21 @@ export function createRoutes(deps: RoutesDependencies): Router {
   }, ensureRestAuthenticated, setOpenhab, preassembleBody, ensureServer, proxyRoute);
 
   // ============================================
+  // Webhook Proxy Routes (no authentication — UUID is the secret)
+  // ============================================
+
+  const setOpenhabForWebhook = createSetOpenhabForWebhook(
+    deps.webhookRepository,
+    deps.openhabRepositoryForWebhook,
+    deps.redis,
+    logger
+  );
+  const webhookProxyRoute = createWebhookProxyHandler(io, requestTracker, systemConfig, logger);
+  const webhookBodyLimit = createBodySizeLimit(5 * 1024 * 1024);
+
+  router.all('/api/hooks/:uuid', webhookBodyLimit, preassembleBody, setOpenhabForWebhook, ensureServer, webhookProxyRoute);
+
+  // ============================================
   // General Routes
   // ============================================
 
@@ -699,23 +719,48 @@ export function createRoutes(deps: RoutesDependencies): Router {
 }
 
 /**
- * Create proxy route handler
+ * Options for creating a proxy route handler
  */
-function createProxyHandler(
+interface ProxyHandlerOptions {
+  audit?: boolean;
+  supportWebSocket?: boolean;
+  supportVhost?: boolean;
+  setAuthCookie?: boolean;
+  getPath?: (req: Request) => string | undefined;
+  getUserId?: (req: Request) => string | undefined;
+}
+
+/**
+ * Create a proxy route handler with configurable behavior.
+ * Used for both regular proxy routes and webhook proxy routes.
+ */
+function createProxyHandlerBase(
   io: SocketIOServer,
   requestTracker: RoutesDependencies['requestTracker'],
   systemConfig: MiddlewareDependencies['systemConfig'],
-  logger: AppLogger
+  logger: AppLogger,
+  options: ProxyHandlerOptions = {}
 ) {
+  const {
+    audit = false,
+    supportWebSocket = false,
+    supportVhost = false,
+    setAuthCookie = false,
+    getPath = (req) => req.path,
+    getUserId = () => undefined,
+  } = options;
+
   return (req: Request, res: Response) => {
-    if (logger.auditRequest) {
+    if (audit && logger.auditRequest) {
       logger.auditRequest(req as Parameters<typeof logger.auditRequest>[0]);
     }
 
     req.socket.setTimeout(600000);
 
-    // Tell OH3 to use alternative Authentication header
-    res.cookie('X-OPENHAB-AUTH-HEADER', 'true');
+    if (setAuthCookie) {
+      // Tell OH3 to use alternative Authentication header
+      res.cookie('X-OPENHAB-AUTH-HEADER', 'true');
+    }
 
     const requestId = requestTracker.acquireRequestId();
 
@@ -728,10 +773,13 @@ function createProxyHandler(
     }
 
     // Check if this is a WebSocket upgrade request
-    // Also detect via sec-websocket-* headers which survive reverse proxies
-    // that strip hop-by-hop headers (Upgrade, Connection)
-    const isUpgrade = req.headers['upgrade']?.toLowerCase() === 'websocket'
-      || (req.headers['sec-websocket-key'] != null && req.headers['sec-websocket-version'] != null);
+    let isUpgrade = false;
+    if (supportWebSocket) {
+      // Also detect via sec-websocket-* headers which survive reverse proxies
+      // that strip hop-by-hop headers (Upgrade, Connection)
+      isUpgrade = req.headers['upgrade']?.toLowerCase() === 'websocket'
+        || (req.headers['sec-websocket-key'] != null && req.headers['sec-websocket-version'] != null);
+    }
 
     // Remove sensitive headers
     delete requestHeaders['cookie'];
@@ -742,7 +790,6 @@ function createProxyHandler(
     delete requestHeaders['x-forwarded-proto'];
 
     // For WebSocket upgrades, ensure hop-by-hop headers are present
-    // (reverse proxies like nginx strip Upgrade and Connection headers)
     if (isUpgrade) {
       requestHeaders['upgrade'] = 'websocket';
       requestHeaders['connection'] = 'Upgrade';
@@ -753,12 +800,10 @@ function createProxyHandler(
     requestHeaders['host'] = req.headers.host as string || `${systemConfig.getHost()}:${systemConfig.getPort()}`;
     requestHeaders['user-agent'] = 'openhab-cloud/0.0.1';
 
-    let requestPath = req.path;
-    if (req.isVhostProxy) {
+    if (supportVhost && req.isVhostProxy) {
       requestHeaders['host'] = `${systemConfig.getProxyHost()}:${systemConfig.getProxyPort()}`;
     }
 
-    // Send request to openhab agent module
     const openhab = req.openhab;
     if (!openhab) {
       logger.warn('Proxy request without openhab instance');
@@ -766,15 +811,28 @@ function createProxyHandler(
       return;
     }
 
-    io.sockets.in(openhab.uuid).emit('request', {
+    const requestPath = getPath(req);
+    if (!requestPath) {
+      logger.warn('Proxy request without path');
+      res.status(500).json({ error: 'Proxy configuration error' });
+      return;
+    }
+
+    const payload: Record<string, unknown> = {
       id: requestId,
       method: req.method,
       headers: requestHeaders,
       path: requestPath,
       query: req.query,
       body: req.rawBody,
-      userId: req.user?.username,
-    });
+    };
+
+    const userId = getUserId(req);
+    if (userId !== undefined) {
+      payload['userId'] = userId;
+    }
+
+    io.sockets.in(openhab.uuid).emit('request', payload);
 
     requestTracker.add(openhab, res, requestId);
 
@@ -789,4 +847,37 @@ function createProxyHandler(
       }
     });
   };
+}
+
+/**
+ * Create the standard proxy route handler (authenticated, full-featured)
+ */
+function createProxyHandler(
+  io: SocketIOServer,
+  requestTracker: RoutesDependencies['requestTracker'],
+  systemConfig: MiddlewareDependencies['systemConfig'],
+  logger: AppLogger
+) {
+  return createProxyHandlerBase(io, requestTracker, systemConfig, logger, {
+    audit: true,
+    supportWebSocket: true,
+    supportVhost: true,
+    setAuthCookie: true,
+    getPath: (req) => req.path,
+    getUserId: (req) => req.user?.username,
+  });
+}
+
+/**
+ * Create the webhook proxy route handler (anonymous, path from webhook lookup)
+ */
+function createWebhookProxyHandler(
+  io: SocketIOServer,
+  requestTracker: RoutesDependencies['requestTracker'],
+  systemConfig: MiddlewareDependencies['systemConfig'],
+  logger: AppLogger
+) {
+  return createProxyHandlerBase(io, requestTracker, systemConfig, logger, {
+    getPath: (req) => req.webhookLocalPath,
+  });
 }

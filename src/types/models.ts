@@ -209,6 +209,17 @@ export interface ILostPassword {
   created: Date;
 }
 
+// Webhooks
+
+export interface IWebhook {
+  _id: Types.ObjectId;
+  uuid: string;
+  openhab: Types.ObjectId;
+  localPath: string;
+  createdAt: Date;
+  expiresAt: Date;
+}
+
 // Enrollment
 
 export interface IEnrollment {
@@ -238,3 +249,4 @@ export type EmailVerificationDocument = Document<Types.ObjectId, object, IEmailV
 export type InvitationDocument = Document<Types.ObjectId, object, IInvitation> & IInvitation;
 export type LostPasswordDocument = Document<Types.ObjectId, object, ILostPassword> & ILostPassword;
 export type EnrollmentDocument = Document<Types.ObjectId, object, IEnrollment> & IEnrollment;
+export type WebhookDocument = Document<Types.ObjectId, object, IWebhook> & IWebhook;

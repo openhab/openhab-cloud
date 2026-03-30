@@ -48,7 +48,7 @@ import { configurePassport } from './middleware/auth.middleware';
 import { createVhostDetection } from './middleware/vhost';
 import { MongoConnect } from './lib/mongoconnect';
 import dateUtil from './lib/date-util';
-import { User, Openhab, Event, UserDevice, Invitation } from './models';
+import { User, Openhab, Event, UserDevice, Invitation, Webhook } from './models';
 import { JobScheduler, StatsJob } from './jobs';
 
 declare global {
@@ -286,6 +286,7 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   const socketSystemConfig = {
     getInternalAddress: () => configManager.getInternalAddress(),
     getConnectionLockTimeSeconds: () => configManager.getConnectionLockTimeSeconds(),
+    getBaseURL: () => configManager.getBaseURL(),
   };
 
   const connectionManager = new ConnectionManager(
@@ -337,6 +338,12 @@ export async function createApp(configPath: string): Promise<AppContainer> {
         return event.save();
       },
     },
+    {
+      registerWebhook: async (openhabId: string, localPath: string, ttlDays: number) =>
+        Webhook.registerWebhook(openhabId, localPath, ttlDays),
+      removeWebhook: async (openhabId: string, localPath: string) =>
+        Webhook.removeWebhook(openhabId, localPath),
+    },
     services.notificationService,
     socketSystemConfig,
     logger
@@ -365,6 +372,12 @@ export async function createApp(configPath: string): Promise<AppContainer> {
     services,
     io: socketServer.getIO()!,
     requestTracker: socketServer.getRequestTracker(),
+    webhookRepository: {
+      findByUuid: async (uuid: string) => Webhook.findByUuid(uuid),
+    },
+    openhabRepositoryForWebhook: {
+      findById: async (id: string) => Openhab.findById(id),
+    },
     iftttEnabled: configManager.isIFTTTEnabled(),
     hasLegalTerms: configManager.hasLegalTerms(),
     hasLegalPolicy: configManager.hasLegalPolicy(),

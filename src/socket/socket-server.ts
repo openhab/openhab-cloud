@@ -15,7 +15,7 @@ import type { Server as HttpServer } from 'http';
 import { Server as SocketIOServer, type Socket } from 'socket.io';
 import { randomUUID } from 'crypto';
 import type { Types } from 'mongoose';
-import type { IOpenhab, IUser, IEvent } from '../types/models';
+import type { IOpenhab, IUser, IEvent, IWebhook } from '../types/models';
 import type { ILogger, INotificationService, NotificationPayload } from '../types/notification';
 import type {
   OpenhabSocket,
@@ -26,6 +26,10 @@ import type {
   ResponseFinishedData,
   ResponseErrorData,
   WebSocketCloseData,
+  WebhookRegisterData,
+  WebhookRegisterResponse,
+  WebhookRemoveData,
+  WebhookRemoveResponse,
 } from './types';
 import { ConnectionManager } from './connection-manager';
 import { ProxyHandler } from './proxy-handler';
@@ -47,6 +51,18 @@ export interface IUserRepositoryForSocket {
 export interface IOpenhabRepositoryForSocket {
   findById(id: string | Types.ObjectId): Promise<IOpenhab | null>;
   updateLastOnline(id: string | Types.ObjectId): Promise<void>;
+}
+
+/**
+ * Repository interface for Webhook operations
+ */
+export interface IWebhookRepositoryForSocket {
+  registerWebhook(
+    openhabId: string,
+    localPath: string,
+    ttlDays: number
+  ): Promise<IWebhook>;
+  removeWebhook(openhabId: string, localPath: string): Promise<void>;
 }
 
 /**
@@ -84,6 +100,7 @@ export class SocketServer {
     private readonly userRepository: IUserRepositoryForSocket,
     private readonly openhabRepository: IOpenhabRepositoryForSocket,
     private readonly eventRepository: IEventRepositoryForSocket,
+    private readonly webhookRepository: IWebhookRepositoryForSocket,
     private readonly notificationService: INotificationService,
     private readonly systemConfig: ISocketSystemConfig,
     private readonly logger: ILogger
@@ -274,6 +291,21 @@ export class SocketServer {
       socket.on('lognotification', (data: NotificationData) => {
         this.handleLogNotification(openhabSocket, data);
       });
+
+      // Webhook management handlers
+      socket.on(
+        'webhook:register',
+        (data: WebhookRegisterData, ack: (response: WebhookRegisterResponse) => void) => {
+          this.handleWebhookRegister(openhabSocket, data, ack);
+        }
+      );
+
+      socket.on(
+        'webhook:remove',
+        (data: WebhookRemoveData, ack: (response: WebhookRemoveResponse) => void) => {
+          this.handleWebhookRemove(openhabSocket, data, ack);
+        }
+      );
     });
   }
 
@@ -420,6 +452,72 @@ export class SocketServer {
       }
     } catch (error) {
       this.logger.error(`Error handling log notification:`, error);
+    }
+  }
+
+  /**
+   * Handle webhook registration request from openHAB
+   */
+  private async handleWebhookRegister(
+    socket: OpenhabSocket,
+    data: WebhookRegisterData,
+    ack: (response: WebhookRegisterResponse) => void
+  ): Promise<void> {
+    try {
+      if (!data.localPath) {
+        ack({ success: false, error: 'localPath is required' });
+        return;
+      }
+
+      const webhook = await this.webhookRepository.registerWebhook(
+        socket.openhabId!,
+        data.localPath,
+        30
+      );
+
+      const baseURL = this.systemConfig.getBaseURL().replace(/\/+$/, '');
+      const webhookUrl = `${baseURL}/api/hooks/${webhook.uuid}`;
+
+      this.logger.info(
+        `Webhook registered for ${socket.handshake.uuid}: ${data.localPath} -> ${webhookUrl}`
+      );
+
+      ack({
+        success: true,
+        webhookUrl,
+        uuid: webhook.uuid,
+        expiresAt: webhook.expiresAt.toISOString(),
+      });
+    } catch (error) {
+      this.logger.error('Error registering webhook:', error);
+      ack({ success: false, error: 'Failed to register webhook' });
+    }
+  }
+
+  /**
+   * Handle webhook removal request from openHAB
+   */
+  private async handleWebhookRemove(
+    socket: OpenhabSocket,
+    data: WebhookRemoveData,
+    ack: (response: WebhookRemoveResponse) => void
+  ): Promise<void> {
+    try {
+      if (!data.localPath) {
+        ack({ success: false, error: 'localPath is required' });
+        return;
+      }
+
+      await this.webhookRepository.removeWebhook(socket.openhabId!, data.localPath);
+
+      this.logger.info(
+        `Webhook removed for ${socket.handshake.uuid}: ${data.localPath}`
+      );
+
+      ack({ success: true });
+    } catch (error) {
+      this.logger.error('Error removing webhook:', error);
+      ack({ success: false, error: 'Failed to remove webhook' });
     }
   }
 
