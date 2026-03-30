@@ -97,6 +97,7 @@ export interface NotificationData {
 export interface ISocketSystemConfig {
   getInternalAddress(): string;
   getConnectionLockTimeSeconds(): number;
+  getBaseURL(): string;
 }
 
 /**
@@ -130,4 +131,37 @@ export interface WebSocketData {
  */
 export interface WebSocketCloseData {
   id: number;
+}
+
+/**
+ * Webhook registration request from openHAB binding
+ */
+export interface WebhookRegisterData {
+  localPath: string;
+}
+
+/**
+ * Webhook registration response (sent via Socket.IO ack)
+ */
+export interface WebhookRegisterResponse {
+  success: boolean;
+  webhookUrl?: string;
+  uuid?: string;
+  expiresAt?: string;
+  error?: string;
+}
+
+/**
+ * Webhook removal request from openHAB binding
+ */
+export interface WebhookRemoveData {
+  localPath: string;
+}
+
+/**
+ * Webhook removal response (sent via Socket.IO ack)
+ */
+export interface WebhookRemoveResponse {
+  success: boolean;
+  error?: string;
 }

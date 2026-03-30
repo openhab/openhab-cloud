@@ -108,6 +108,7 @@ export interface ICascadeDeleteRepositories {
   deleteDevicesByOwner(userId: string | Types.ObjectId): Promise<void>;
   deleteNotificationsByUser(userId: string | Types.ObjectId): Promise<void>;
   deleteOAuth2TokensByUser(userId: string | Types.ObjectId): Promise<void>;
+  deleteWebhooksByOpenhab(openhabId: string | Types.ObjectId): Promise<void>;
 }
 
 /**
@@ -375,6 +376,7 @@ export class UserService {
       if (openhab) {
         await this.cascadeDelete.deleteItemsByOpenhab(openhab._id);
         await this.cascadeDelete.deleteEventsByOpenhab(openhab._id);
+        await this.cascadeDelete.deleteWebhooksByOpenhab(openhab._id);
       }
 
       await this.cascadeDelete.deleteDevicesByOwner(userId);

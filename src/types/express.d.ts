@@ -50,6 +50,11 @@ declare global {
       rawBody?: Buffer | string;
 
       /**
+       * Local path for webhook proxy (set by setOpenhabForWebhook middleware)
+       */
+      webhookLocalPath?: string;
+
+      /**
        * CSRF token function (from csrf-sync middleware)
        */
       csrfToken?(): string;

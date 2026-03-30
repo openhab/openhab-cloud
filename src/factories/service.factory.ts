@@ -60,6 +60,7 @@ import {
   Event,
   Notification,
   UserDevice,
+  Webhook,
 } from '../models';
 
 /**
@@ -218,6 +219,9 @@ function createCascadeDeleteRepositories(): ICascadeDeleteRepositories {
     },
     deleteOAuth2TokensByUser: async (userId) => {
       await OAuth2Token.deleteMany({ user: userId });
+    },
+    deleteWebhooksByOpenhab: async (openhabId) => {
+      await Webhook.deleteMany({ openhab: openhabId });
     },
   };
 }

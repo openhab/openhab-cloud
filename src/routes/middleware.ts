@@ -23,7 +23,7 @@ import passport from 'passport';
 import type { PromisifiedRedisClient } from '../lib/redis';
 import type { AppLogger } from '../lib/logger';
 import type { ConnectionInfo } from '../types/connection';
-import type { IOpenhab } from '../types/models';
+import type { IOpenhab, IWebhook } from '../types/models';
 
 /**
  * Cache entry for connection info
@@ -66,6 +66,42 @@ cleanupTimer.unref();
  */
 export function invalidateConnectionCache(openhabId: string): void {
   connectionCache.delete(openhabId);
+}
+
+/**
+ * Get connection info from cache or Redis.
+ * Returns null if the instance is offline or not found.
+ */
+export async function getConnectionInfoCached(
+  openhabId: string,
+  redis: PromisifiedRedisClient,
+  logger: AppLogger
+): Promise<ConnectionInfo | null> {
+  const cached = connectionCache.get(openhabId);
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.connectionInfo;
+  }
+
+  const connectionKey = 'connection:' + openhabId;
+  try {
+    const result = await redis.get(connectionKey);
+    let connInfo: ConnectionInfo | null = null;
+    if (result) {
+      try {
+        connInfo = JSON.parse(result) as ConnectionInfo;
+      } catch (parseError) {
+        logger.error('Failed to parse Redis connection info: ' + parseError);
+      }
+    }
+    connectionCache.set(openhabId, {
+      connectionInfo: connInfo,
+      expiresAt: Date.now() + CONNECTION_CACHE_TTL_MS,
+    });
+    return connInfo;
+  } catch (redisError) {
+    logger.error('openHAB redis lookup error: ' + redisError);
+    return null;
+  }
 }
 
 export interface MiddlewareDependencies {
@@ -446,5 +482,96 @@ export function createMiddleware(deps: MiddlewareDependencies): RouteMiddleware 
     setOpenhab,
     ensureServer,
     preassembleBody,
+  };
+}
+
+/**
+ * Create middleware that rejects requests with bodies exceeding maxBytes.
+ * Checks Content-Length upfront and also monitors actual bytes streamed.
+ */
+export function createBodySizeLimit(maxBytes: number): RequestHandler {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const contentLength = req.headers['content-length'];
+    if (contentLength && parseInt(contentLength, 10) > maxBytes) {
+      res.status(413).json({ error: 'Request body too large' });
+      return;
+    }
+
+    let received = 0;
+    req.on('data', (chunk: Buffer) => {
+      received += chunk.length;
+      if (received > maxBytes) {
+        req.destroy();
+        if (!res.headersSent) {
+          res.status(413).json({ error: 'Request body too large' });
+        }
+      }
+    });
+
+    next();
+  };
+}
+
+/**
+ * Repository interface for webhook lookup
+ */
+export interface IWebhookRepositoryForMiddleware {
+  findByUuid(uuid: string): Promise<IWebhook | null>;
+}
+
+/**
+ * Repository interface for openhab lookup by ID
+ */
+export interface IOpenhabRepositoryForMiddleware {
+  findById(id: string): Promise<IOpenhab | null>;
+}
+
+/**
+ * Create middleware that looks up a webhook by UUID and sets req.openhab
+ * and req.webhookLocalPath. No user authentication — the UUID is the secret.
+ */
+export function createSetOpenhabForWebhook(
+  webhookRepository: IWebhookRepositoryForMiddleware,
+  openhabRepository: IOpenhabRepositoryForMiddleware,
+  redis: PromisifiedRedisClient,
+  logger: AppLogger
+): RequestHandler {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const uuidParam = req.params['uuid'];
+    const uuid = Array.isArray(uuidParam) ? uuidParam[0] : uuidParam;
+    if (!uuid) {
+      res.status(400).json({ error: 'Missing webhook UUID' });
+      return;
+    }
+
+    try {
+      const webhook = await webhookRepository.findByUuid(uuid);
+      if (!webhook || webhook.expiresAt <= new Date()) {
+        res.status(404).json({ error: 'Webhook not found or expired' });
+        return;
+      }
+
+      const openhab = await openhabRepository.findById(webhook.openhab.toString());
+      if (!openhab) {
+        res.status(404).json({ error: 'openHAB instance not found' });
+        return;
+      }
+
+      req.openhab = openhab;
+      req.webhookLocalPath = webhook.localPath;
+
+      const openhabId = openhab._id?.toString() || '';
+      const connInfo = await getConnectionInfoCached(openhabId, redis, logger);
+      if (!connInfo) {
+        res.status(502).json({ error: 'openHAB instance is offline' });
+        return;
+      }
+
+      req.connectionInfo = connInfo;
+      next();
+    } catch (error) {
+      logger.error('Error in webhook middleware: ' + error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   };
 }
