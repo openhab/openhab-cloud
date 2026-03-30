@@ -558,7 +558,12 @@ export function createSetOpenhabForWebhook(
       }
 
       req.openhab = openhab;
-      req.webhookLocalPath = webhook.localPath;
+
+      // Append any sub-path after the UUID to the webhook's local path
+      // e.g. /api/hooks/{uuid}/extra/path → localPath + /extra/path
+      const subpathParam = req.params['subpath'];
+      const subpath = Array.isArray(subpathParam) ? subpathParam[0] : subpathParam;
+      req.webhookLocalPath = subpath ? webhook.localPath + '/' + subpath : webhook.localPath;
 
       const openhabId = openhab._id?.toString() || '';
       const connInfo = await getConnectionInfoCached(openhabId, redis, logger);
