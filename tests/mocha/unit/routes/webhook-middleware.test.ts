@@ -211,6 +211,42 @@ describe('Webhook Middleware', () => {
       });
     });
 
+    it('should append multi-segment subpath to webhookLocalPath', async () => {
+      const middleware = createMiddleware();
+      const openhabId = new Types.ObjectId();
+      const mockOpenhab = { _id: openhabId, uuid: 'openhab-uuid' };
+
+      webhookRepo.findByUuid.resolves({
+        _id: new Types.ObjectId(),
+        uuid: 'valid-uuid',
+        openhab: openhabId,
+        localPath: '/rest/hooks/test',
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 86400000),
+      });
+      openhabRepo.findById.resolves(mockOpenhab);
+      mockRedis.get.resolves(JSON.stringify({
+        serverAddress: 'server1:3000',
+        connectionId: 'conn-1',
+      }));
+
+      // Express 5 {*subpath} returns an array of path segments
+      const req = {
+        params: { uuid: 'valid-uuid', subpath: ['twilio:phone:main:15551234567', 'sms'] },
+      } as unknown as Request;
+      const statusStub = sinon.stub().returnsThis();
+      const jsonStub = sinon.stub();
+      const res = { status: statusStub, json: jsonStub } as unknown as Response;
+      const next = sinon.spy();
+
+      await middleware(req, res, next);
+
+      expect(next.calledOnce).to.be.true;
+      expect((req as any).webhookLocalPath).to.equal(
+        '/rest/hooks/test/twilio:phone:main:15551234567/sms'
+      );
+    });
+
     it('should return 500 on unexpected error', async () => {
       const middleware = createMiddleware();
       webhookRepo.findByUuid.rejects(new Error('DB failure'));
