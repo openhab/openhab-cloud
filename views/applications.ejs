@@ -23,7 +23,7 @@
                 <tbody>
                 <% for (let i = 0; i < oauth2tokens.length; i++) { %>
                 <tr>
-                    <td><%= date_util(oauth2tokens[i].created, timeZone).toRelativeCalendar() %></td>
+                    <td><%= date_util(oauth2tokens[i].created, timeZone).toFormat('LLL d, yyyy, h:mm a') %></td>
                     <td>
                         <a href="<% oauth2tokens[i].oAuthClient.homeUrl %>"><img class="oauth-icon" src="/img/oauth2/<%= oauth2tokens[i].oAuthClient.icon %>" alt="">&nbsp;<%= oauth2tokens[i].oAuthClient.name %></a>
                     </td>

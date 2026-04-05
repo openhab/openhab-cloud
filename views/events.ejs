@@ -19,7 +19,7 @@
                 <tbody>
                 <% for (let i = 0; i < events.length; i++) { %>
                 <tr class="<% if (events[i].color == 'good') { %>event-good<% } else if (events[i].color == 'bad') { %>event-bad<% } else { %>event-info<% } %>">
-                    <td><%= date_util(events[i].when, timeZone).toRelativeCalendar() %></td>
+                    <td><%= date_util(events[i].when, timeZone).toFormat('LLL d, yyyy, h:mm a') %></td>
                     <td><a href="/events?source=<%=events[i].source%>"><%= events[i].source %></a></td>
                     <td><%= events[i].status %></td>
                 </tr>

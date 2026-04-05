@@ -29,7 +29,7 @@
                 <tbody>
                 <% for (let i = 0; i < enrollments.length; i++) { %>
                 <tr>
-                    <td><%= date_util(enrollments[i].created, timeZone).toRelativeCalendar() %></td>
+                    <td><%= date_util(enrollments[i].created, timeZone).toFormat('LLL d, yyyy, h:mm a') %></td>
                     <td><%= enrollments[i].email %></td>
                     <td><%= enrollments[i].platform %></td>
                     <td><%= enrollments[i].javaExp %></td>

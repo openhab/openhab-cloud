@@ -39,10 +39,10 @@
                 <tbody>
                 <% for (let i = 0; i < invitations.length; i++) { %>
                 <tr>
-                    <td><%= date_util(invitations[i].created, timeZone).toRelativeCalendar() %></td>
+                    <td><%= date_util(invitations[i].created, timeZone).toFormat('LLL d, yyyy, h:mm a') %></td>
                     <td><%= invitations[i].email %></td>
                     <td><%= invitations[i].code %></td>
-                    <td><%= date_util(invitations[i].lastNotified, timeZone).toRelativeCalendar() %></td>
+                    <td><%= date_util(invitations[i].lastNotified, timeZone).toFormat('LLL d, yyyy, h:mm a') %></td>
                     <td>
                         <a href="/staff/resendinvitation/<%=invitations[i].id%>" title="Resend invitation"><i class="bi bi-envelope"></i></a>
                         <a href="/staff/deleteinvitation/<%=invitations[i].id%>" class="text-danger" title="Delete"><i class="bi bi-trash"></i></a>

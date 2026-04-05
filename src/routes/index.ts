@@ -30,7 +30,7 @@ import type { PromisifiedRedisClient } from '../lib/redis';
 import type { IUser, IInvitation, IOpenhab } from '../types/models';
 
 // Controllers
-import { HealthController, AccountController, InvitationsController, UsersController, OAuth2Controller, StaffController, RegistrationController, DevicesController, ApiController, EventsController, ItemsController, NotificationsViewController, ApplicationsController, HomepageController, TimezoneController, IftttController } from '../controllers';
+import { HealthController, AccountController, InvitationsController, UsersController, OAuth2Controller, StaffController, RegistrationController, DevicesController, ApiController, EventsController, ItemsController, NotificationsViewController, ApplicationsController, WebhooksController, HomepageController, TimezoneController, IftttController } from '../controllers';
 import type { DeviceType, INotification } from '../types/models';
 import type { NotificationPayload } from '../types/notification';
 import type { ServiceContainer } from '../factories';
@@ -63,6 +63,7 @@ import {
   Event,
   Item,
   Openhab,
+  Webhook,
 } from '../models';
 
 export interface RoutesDependencies extends MiddlewareDependencies {
@@ -425,6 +426,21 @@ export function createRoutes(deps: RoutesDependencies): Router {
     logger
   );
 
+  // WebhooksController with repository adapter
+  const webhooksController = new WebhooksController(
+    {
+      findByOpenhab: async (openhabId) =>
+        Webhook.find({ openhab: openhabId }).sort({ createdAt: 'desc' }).lean(),
+      findByIdAndOpenhab: async (id, openhabId) =>
+        Webhook.findOne({ _id: id, openhab: openhabId }).lean(),
+      deleteById: async (id) => {
+        await Webhook.findByIdAndDelete(id);
+      },
+    },
+    { getBaseURL: () => systemConfig.getBaseURL() },
+    logger
+  );
+
   // HomepageController and TimezoneController (simple, no dependencies)
   const homepageController = new HomepageController();
   const timezoneController = new TimezoneController();
@@ -588,6 +604,13 @@ export function createRoutes(deps: RoutesDependencies): Router {
 
   router.get('/applications', ensureAuthenticated, setOpenhab, applicationsController.getApplications);
   router.get('/applications/:id/delete', ensureAuthenticated, setOpenhab, applicationsController.deleteApplication);
+
+  // ============================================
+  // Webhooks Routes (TypeScript Controller)
+  // ============================================
+
+  router.get('/webhooks', ensureAuthenticated, setOpenhab, webhooksController.getWebhooks);
+  router.get('/webhooks/:id/delete', ensureAuthenticated, setOpenhab, webhooksController.deleteWebhook);
 
   // ============================================
   // Invitations Routes (TypeScript Controller)

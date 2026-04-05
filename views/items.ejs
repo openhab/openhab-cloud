@@ -23,7 +23,7 @@
                 <tr>
                     <td><a href="/events?source=<%=items[i].name%>"><%= items[i].name %></a></td>
                     <td><%= items[i].status %></td>
-                    <td><%= date_util(items[i].last_update, timeZone).toRelativeCalendar() %></td>
+                    <td><%= date_util(items[i].last_update, timeZone).toFormat('LLL d, yyyy, h:mm a') %></td>
                 </tr>
                 <% } %>
                 </tbody>

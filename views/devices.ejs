@@ -31,7 +31,7 @@
                 <tr>
                     <td><%= userDevices[selectedDeviceArrayId].deviceType%></td>
                     <td><%= userDevices[selectedDeviceArrayId].deviceId%></td>
-                    <td><%= date_util(userDevices[selectedDeviceArrayId].registered, timeZone).toRelativeCalendar()%></td>
+                    <td><%= date_util(userDevices[selectedDeviceArrayId].registered, timeZone).toFormat('LLL d, yyyy, h:mm a')%></td>
                     <td>
                         <a href="/devices/<%=userDevices[selectedDeviceArrayId].id%>/delete" class="text-danger" title="Delete"><i class="bi bi-trash"></i></a>
                     </td>
