@@ -49,9 +49,9 @@
                 <% if (user) if (locals.openhabstatus) { %>
                 <li class="nav-item d-flex align-items-center me-2">
                     <% if (openhabstatus == 'online') { %>
-                    <a class="badge badge-online text-decoration-none text-white" href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).toRelativeCalendar() %>">Online</a>
+                    <a class="badge badge-online text-decoration-none text-white" href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).toFormat('LLL d, yyyy, h:mm a') %>">Online</a>
                     <% } else { %>
-                    <a class="badge badge-offline text-decoration-none text-white" href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).toRelativeCalendar() %>">Offline</a>
+                    <a class="badge badge-offline text-decoration-none text-white" href="/events?source=openhab" title="Since <%= date_util(openhablastonline, timeZone).toFormat('LLL d, yyyy, h:mm a') %>">Offline</a>
                     <% } %>
                 </li>
                 <% } %>
@@ -62,11 +62,12 @@
                 <% } %>
                 <% if (user) { %>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle<% if (['account', 'devices', 'applications', 'users'].indexOf(section) !== -1) { %> active<% } %>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><%= user.username %></a>
+                    <a class="nav-link dropdown-toggle<% if (['account', 'devices', 'applications', 'webhooks', 'users'].indexOf(section) !== -1) { %> active<% } %>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><%= user.username %></a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item<% if (section == 'account') { %> active<% } %>" href="/account">Account</a></li>
                         <li><a class="dropdown-item<% if (section == 'devices') { %> active<% } %>" href="/devices">Devices</a></li>
                         <li><a class="dropdown-item<% if (section == 'applications') { %> active<% } %>" href="/applications">Applications</a></li>
+                        <li><a class="dropdown-item<% if (section == 'webhooks') { %> active<% } %>" href="/webhooks">Webhooks</a></li>
                         <% if (user.role == "master") { %>
                         <li><a class="dropdown-item<% if (section == 'users') { %> active<% } %>" href="/users">Users</a></li>
                         <% } %>

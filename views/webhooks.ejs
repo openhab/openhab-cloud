@@ -1,0 +1,73 @@
+<% section = 'webhooks' %>
+<%- include ('header.ejs') %>
+<h1 class="page-header">My Webhooks</h1>
+<%- include ('alerts.ejs') %>
+<div class="row">
+    <div class="col-md-3 mb-3">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">About webhooks</h5>
+                <p class="card-text">Webhooks let external services send data to your openHAB. They're registered automatically by add-ons on your openHAB that need to receive incoming requests &mdash; you don't create them here.</p>
+                <p class="card-text"><small class="text-muted">Deleting a webhook here may cause the add-on to register a new one the next time your openHAB reconnects.</small></p>
+            </div>
+        </div>
+        <% if (webhooks.length == 0) { %>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">No Webhooks</h5>
+                <p class="card-text">No webhooks are currently registered for your openHAB.</p>
+            </div>
+        </div>
+        <% } %>
+    </div>
+    <div class="col-md-9">
+        <% if (webhooks.length > 0) { %>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                <tr><th>Path</th><th>URL</th><th>Created</th><th>Expires</th><th></th></tr>
+                </thead>
+                <tbody>
+                <% for (let i = 0; i < webhooks.length; i++) { %>
+                <tr>
+                    <td><code><%= webhooks[i].localPath %></code></td>
+                    <td>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control webhook-url" value="<%= webhooks[i].url %>" readonly>
+                            <button type="button" class="btn btn-outline-secondary webhook-copy-btn" title="Copy URL"><i class="bi bi-clipboard"></i></button>
+                        </div>
+                    </td>
+                    <td><%= date_util(webhooks[i].createdAt, timeZone).toFormat('LLL d, yyyy, h:mm a') %></td>
+                    <td><%= date_util(webhooks[i].expiresAt, timeZone).toFormat('LLL d, yyyy, h:mm a') %></td>
+                    <td>
+                        <a href="/webhooks/<%= webhooks[i]._id %>/delete" class="text-danger" title="Delete" onclick="return confirm('Delete this webhook? Your openHAB add-on may register a new one automatically on reconnect.');"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                <% } %>
+                </tbody>
+            </table>
+        </div>
+        <script>
+        (function () {
+            document.querySelectorAll('.webhook-copy-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var input = btn.parentElement.querySelector('.webhook-url');
+                    if (!input) return;
+                    navigator.clipboard.writeText(input.value).then(function () {
+                        var icon = btn.querySelector('i');
+                        if (!icon) return;
+                        icon.classList.remove('bi-clipboard');
+                        icon.classList.add('bi-check2');
+                        setTimeout(function () {
+                            icon.classList.remove('bi-check2');
+                            icon.classList.add('bi-clipboard');
+                        }, 1500);
+                    });
+                });
+            });
+        })();
+        </script>
+        <% } %>
+    </div>
+</div>
+<%- include ('footer.ejs') %>

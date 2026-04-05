@@ -13,10 +13,6 @@ body {
   padding-top: 70px;
 }
 
-.container {
-  max-width: 1000px;
-}
-
 /* ── Navbar ──────────────────────────────────────────────── */
 .ohc-navbar {
   background-color: var(--bs-body-bg);

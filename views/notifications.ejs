@@ -20,7 +20,7 @@
                 <% for (let i = 0; i < notifications.length; i++) { %>
                     <% const title = notifications[i].payload && notifications[i].payload.type === 'hideNotification' ? '(Hide Notification)' : notifications[i].message %>
                 <tr>
-                    <td><%= date_util(notifications[i].created, timeZone).toRelativeCalendar() %></td>
+                    <td><%= date_util(notifications[i].created, timeZone).toFormat('LLL d, yyyy, h:mm a') %></td>
                     <td><%= title %></td>
                 </tr>
                 <% } %>

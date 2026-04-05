@@ -32,7 +32,7 @@
                     <td><%= oauthclients[i].name %></td>
                     <td><%= oauthclients[i].clientId %></td>
                     <td><%= oauthclients[i].active %></td>
-                    <td><%= date_util(oauthclients[i].created, timeZone).toRelativeCalendar() %></td>
+                    <td><%= date_util(oauthclients[i].created, timeZone).toFormat('LLL d, yyyy, h:mm a') %></td>
                 </tr>
                 <% } %>
                 </tbody>

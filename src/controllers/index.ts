@@ -24,6 +24,7 @@ export { EventsController } from './events.controller';
 export { ItemsController } from './items.controller';
 export { NotificationsViewController } from './notifications-view.controller';
 export { ApplicationsController } from './applications.controller';
+export { WebhooksController } from './webhooks.controller';
 export { HomepageController } from './homepage.controller';
 export { TimezoneController } from './timezone.controller';
 export { IftttController } from './ifttt.controller';
