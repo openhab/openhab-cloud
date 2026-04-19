@@ -56,6 +56,45 @@ Edit `config.json` to configure:
 
 See `config-production.json` for all available options.
 
+### Proxy hostnames
+
+openHAB Cloud can expose each user's openHAB UI through two separate hostnames, tuned for two different clients:
+
+- **`system.proxyHost`** — the hostname used by the openHAB **mobile apps** (iOS/Android). Unauthenticated requests receive an HTTP `401 WWW-Authenticate: Basic` challenge; the app WebViews intercept that challenge and supply stored credentials automatically. Example: `home.myopenhab.org`.
+- **`system.browserProxyHost`** *(optional)* — a hostname intended for **desktop browsers**. Unauthenticated `GET` requests are redirected to `{system.host}/login?returnTo=…` and bounced back to the original URL after sign-in, avoiding the native Basic-auth dialog. Example: `connect.myopenhab.org`.
+
+Both hostnames proxy to the same underlying openHAB instance — only the unauthenticated behavior differs. In `config.json`:
+
+```json
+{
+  "system": {
+    "host": "myopenhab.org",
+    "proxyHost": "home.myopenhab.org",
+    "browserProxyHost": "connect.myopenhab.org",
+    "subDomainCookies": true
+  }
+}
+```
+
+For Docker Compose deployments using `deployment/docker-compose/`, these fields are driven by environment variables via `config.json.template` expansion at container startup. Set them in your `.env` file:
+
+```env
+DOMAIN_NAME=myopenhab.org
+PROXY_HOST=home.myopenhab.org
+BROWSER_PROXY_HOST=connect.myopenhab.org
+SUBDOMAIN_COOKIES=true
+```
+
+See [deployment/docker-compose/README.md](deployment/docker-compose/README.md) for the full env-var list.
+
+Requirements for the browser flow:
+
+1. `system.host`, `system.proxyHost`, and `system.browserProxyHost` must share a common parent domain (e.g. all under `myopenhab.org`).
+2. `system.subDomainCookies` must be enabled (the default) so the session cookie set on `system.host` is also sent to `browserProxyHost`.
+3. Each hostname needs its own DNS record and TLS SAN entry at the reverse proxy, all routed to the openHAB Cloud backend.
+
+If `browserProxyHost` is omitted, only `proxyHost` is active and behavior is unchanged from previous releases.
+
 ## Docker Deployment
 
 ### Using Pre-built Image

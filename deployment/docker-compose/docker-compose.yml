@@ -19,6 +19,9 @@ services:
       - EXPRESS_KEY
       - MORGAN_FORMAT
       - REDIS_PASSWORD
+      - PROXY_HOST
+      - BROWSER_PROXY_HOST
+      - SUBDOMAIN_COOKIES
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.openhab-cloud.rule=Host(`${DOMAIN_NAME}`)"
