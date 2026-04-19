@@ -16,9 +16,9 @@ import passport from 'passport';
 import type { UserRole, UserGroup } from '../types/models';
 
 /**
- * Minimum config shape required by createBrowserAwareAuthenticated.
+ * Minimum config shape required by createLoginRedirectAuthenticated.
  */
-export interface BrowserAwareAuthConfig {
+export interface LoginRedirectAuthConfig {
   getHost(): string;
 }
 
@@ -67,48 +67,33 @@ export const ensureRestAuthenticated: RequestHandler = (req, res, next) => {
 };
 
 /**
- * Create a guard that redirects unauthenticated browser navigations to the
- * main-site login page while leaving API/WebView clients on the HTTP Basic
- * challenge path.
+ * Create a guard that redirects unauthenticated GETs to the main-site login
+ * page. Apply only to surfaces that are known to be browser-facing (e.g. the
+ * dedicated browser proxy vhost, or specific HTML UI proxy paths on the main
+ * host). Do NOT apply to API surfaces or to the mobile-facing proxy vhost —
+ * those must keep the existing HTTP Basic challenge so API clients and mobile
+ * WebViews continue to authenticate.
  *
- * A request is treated as a browser navigation when it is a GET and carries
- * Fetch Metadata headers typical of a top-level document load
- * (Sec-Fetch-Dest: document or Sec-Fetch-Mode: navigate) or prefers HTML via
- * content negotiation. XHR, fetch() requests with Accept: application/json,
- * CORS preflights, and non-idempotent methods fall through to Basic/Bearer
- * authentication with no behavior change.
- *
- * The login target is the main host (configManager.getHost()); the original
- * absolute URL is passed as an encoded returnTo query parameter for the login
- * controller to validate against known hosts before honoring.
+ * Behavior: authenticated → next(). Unauthenticated GET → 302 to
+ * `${configManager.getHost()}/login?returnTo=<absolute-url>`. Any other method
+ * → 401 (no Basic challenge, since these paths are not meant to be scripted).
  */
-export function createBrowserAwareAuthenticated(
-  configManager: BrowserAwareAuthConfig
+export function createLoginRedirectAuthenticated(
+  configManager: LoginRedirectAuthConfig
 ): RequestHandler {
   return (req, res, next) => {
     if (req.isAuthenticated()) {
       return next();
     }
-
-    // Prefer Fetch Metadata when present. Fall back to content negotiation —
-    // listing 'json' first so clients sending `Accept: */*` (e.g. curl) are
-    // treated as API clients, while browsers (which explicitly include
-    // text/html at quality 1.0) still resolve to 'html'.
-    const looksLikeBrowserNav =
-      req.method === 'GET' &&
-      (req.get('sec-fetch-dest') === 'document' ||
-        req.get('sec-fetch-mode') === 'navigate' ||
-        req.accepts(['json', 'html']) === 'html');
-
-    if (looksLikeBrowserNav) {
-      const proto = req.protocol;
-      const target = `${proto}://${req.hostname}${req.originalUrl}`;
-      return res.redirect(
-        `${proto}://${configManager.getHost()}/login?returnTo=${encodeURIComponent(target)}`
-      );
+    if (req.method !== 'GET') {
+      res.sendStatus(401);
+      return;
     }
-
-    return passport.authenticate(['basic', 'bearer'], { session: false })(req, res, next);
+    const proto = req.protocol;
+    const target = `${proto}://${req.hostname}${req.originalUrl}`;
+    return res.redirect(
+      `${proto}://${configManager.getHost()}/login?returnTo=${encodeURIComponent(target)}`
+    );
   };
 }
 

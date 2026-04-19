@@ -13,16 +13,14 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
-import type { Request, Response, NextFunction } from 'express';
-import passport from 'passport';
+import type { Request, Response } from 'express';
 import {
-  createBrowserAwareAuthenticated,
+  createLoginRedirectAuthenticated,
   createApplyReturnTo,
 } from '../../../../src/middleware/guards';
 
 interface MockReqInput {
   method?: string;
-  headers?: Record<string, string>;
   hostname?: string;
   originalUrl?: string;
   protocol?: string;
@@ -33,28 +31,6 @@ interface MockReqInput {
 }
 
 function buildReq(input: MockReqInput = {}): Request {
-  const headers = input.headers ?? {};
-  const lowered: Record<string, string> = {};
-  for (const [k, v] of Object.entries(headers)) {
-    lowered[k.toLowerCase()] = v;
-  }
-  // Minimal shim matching Express's req.accepts for the headers we actually
-  // exercise here. When Accept is */*  or missing, both types match equally
-  // and the first entry of the preference list wins — mirroring Express's
-  // quality-based ordering.
-  const accepts = (types: string | string[]) => {
-    const arr = Array.isArray(types) ? types : [types];
-    const accept = lowered['accept'];
-    if (!accept || accept.includes('*/*')) return arr[0] ?? false;
-    const wantsHtml = accept.includes('text/html');
-    const wantsJson = accept.includes('application/json');
-    for (const t of arr) {
-      if (t === 'html' && wantsHtml) return 'html';
-      if (t === 'json' && wantsJson) return 'json';
-    }
-    return false;
-  };
-
   return {
     method: input.method ?? 'GET',
     hostname: input.hostname ?? 'connect.example.com',
@@ -64,59 +40,45 @@ function buildReq(input: MockReqInput = {}): Request {
     query: input.query ?? {},
     body: input.body ?? {},
     session: input.session ?? {},
-    get: (name: string) => lowered[name.toLowerCase()],
-    accepts,
   } as unknown as Request;
 }
 
-function buildRes(): { res: Response; redirectSpy: sinon.SinonSpy; statusSpy: sinon.SinonSpy } {
+function buildRes(): { res: Response; redirectSpy: sinon.SinonSpy; sendStatusSpy: sinon.SinonSpy } {
   const redirectSpy = sinon.spy();
-  const statusSpy = sinon.spy(() => ({ end: sinon.spy(), send: sinon.spy() }));
+  const sendStatusSpy = sinon.spy();
   const res = {
     redirect: redirectSpy,
-    status: statusSpy,
+    sendStatus: sendStatusSpy,
   } as unknown as Response;
-  return { res, redirectSpy, statusSpy };
+  return { res, redirectSpy, sendStatusSpy };
 }
 
-describe('createBrowserAwareAuthenticated', () => {
+describe('createLoginRedirectAuthenticated', () => {
   const config = { getHost: () => 'mycloud.example.com' };
-  let passportStub: sinon.SinonStub;
-
-  beforeEach(() => {
-    // Stub passport.authenticate to track delegation to Basic/Bearer
-    passportStub = sinon.stub(passport, 'authenticate').returns(((
-      _req: Request,
-      _res: Response,
-      next: NextFunction
-    ) => {
-      next();
-    }) as unknown as ReturnType<typeof passport.authenticate>);
-  });
 
   afterEach(() => {
     sinon.restore();
   });
 
-  it('calls next when already authenticated, without touching Passport', () => {
-    const guard = createBrowserAwareAuthenticated(config);
+  it('calls next when the user is authenticated', () => {
+    const guard = createLoginRedirectAuthenticated(config);
     const req = buildReq({ authenticated: true });
-    const { res } = buildRes();
+    const { res, redirectSpy, sendStatusSpy } = buildRes();
     const next = sinon.spy();
 
     guard(req, res, next);
 
     expect(next.calledOnce).to.be.true;
-    expect(passportStub.called).to.be.false;
+    expect(redirectSpy.called).to.be.false;
+    expect(sendStatusSpy.called).to.be.false;
   });
 
-  it('redirects GET with Sec-Fetch-Dest: document to main-site login', () => {
-    const guard = createBrowserAwareAuthenticated(config);
+  it('redirects an unauthenticated GET to the main-site login with encoded returnTo', () => {
+    const guard = createLoginRedirectAuthenticated(config);
     const req = buildReq({
       method: 'GET',
       hostname: 'connect.example.com',
-      originalUrl: '/basicui/app',
-      headers: { 'sec-fetch-dest': 'document' },
+      originalUrl: '/basicui/app?sitemap=default',
     });
     const { res, redirectSpy } = buildRes();
     const next = sinon.spy();
@@ -124,89 +86,39 @@ describe('createBrowserAwareAuthenticated', () => {
     guard(req, res, next);
 
     expect(next.called).to.be.false;
-    expect(passportStub.called).to.be.false;
     expect(redirectSpy.calledOnce).to.be.true;
     const target = redirectSpy.firstCall.args[0] as string;
-    expect(target).to.include('https://mycloud.example.com/login?returnTo=');
+    expect(target.startsWith('https://mycloud.example.com/login?returnTo=')).to.be.true;
     const returnTo = decodeURIComponent(target.split('returnTo=')[1]!);
-    expect(returnTo).to.equal('https://connect.example.com/basicui/app');
+    expect(returnTo).to.equal('https://connect.example.com/basicui/app?sitemap=default');
   });
 
-  it('redirects GET with Sec-Fetch-Mode: navigate', () => {
-    const guard = createBrowserAwareAuthenticated(config);
-    const req = buildReq({
-      method: 'GET',
-      headers: { 'sec-fetch-mode': 'navigate' },
-    });
-    const { res, redirectSpy } = buildRes();
-
-    guard(req, res, sinon.spy());
-
-    expect(redirectSpy.calledOnce).to.be.true;
-  });
-
-  it('redirects GET with Accept: text/html when Sec-Fetch-* absent', () => {
-    const guard = createBrowserAwareAuthenticated(config);
-    const req = buildReq({
-      method: 'GET',
-      headers: { accept: 'text/html,application/xhtml+xml' },
-    });
-    const { res, redirectSpy } = buildRes();
-
-    guard(req, res, sinon.spy());
-
-    expect(redirectSpy.calledOnce).to.be.true;
-  });
-
-  it('delegates to Passport when Accept is application/json', () => {
-    const guard = createBrowserAwareAuthenticated(config);
-    const req = buildReq({
-      method: 'GET',
-      headers: { accept: 'application/json' },
-    });
-    const { res, redirectSpy } = buildRes();
+  it('returns 401 for an unauthenticated non-GET request', () => {
+    const guard = createLoginRedirectAuthenticated(config);
+    const req = buildReq({ method: 'POST' });
+    const { res, redirectSpy, sendStatusSpy } = buildRes();
     const next = sinon.spy();
 
     guard(req, res, next);
 
+    expect(next.called).to.be.false;
     expect(redirectSpy.called).to.be.false;
-    expect(passportStub.calledOnceWith(['basic', 'bearer'], { session: false })).to.be.true;
+    expect(sendStatusSpy.calledOnceWith(401)).to.be.true;
   });
 
-  it('delegates to Passport for POST regardless of Accept', () => {
-    const guard = createBrowserAwareAuthenticated(config);
+  it('preserves the request path and query string in returnTo', () => {
+    const guard = createLoginRedirectAuthenticated(config);
     const req = buildReq({
-      method: 'POST',
-      headers: { accept: 'text/html', 'sec-fetch-dest': 'document' },
+      hostname: 'mycloud.example.com',
+      originalUrl: '/paperui/index.html#/inbox',
     });
     const { res, redirectSpy } = buildRes();
 
     guard(req, res, sinon.spy());
 
-    expect(redirectSpy.called).to.be.false;
-    expect(passportStub.calledOnce).to.be.true;
-  });
-
-  it('delegates to Passport for GET with no browser navigation signals', () => {
-    const guard = createBrowserAwareAuthenticated(config);
-    const req = buildReq({ method: 'GET', headers: {} });
-    const { res, redirectSpy } = buildRes();
-
-    guard(req, res, sinon.spy());
-
-    expect(redirectSpy.called).to.be.false;
-    expect(passportStub.calledOnce).to.be.true;
-  });
-
-  it("delegates to Passport for curl-style Accept: */*", () => {
-    const guard = createBrowserAwareAuthenticated(config);
-    const req = buildReq({ method: 'GET', headers: { accept: '*/*' } });
-    const { res, redirectSpy } = buildRes();
-
-    guard(req, res, sinon.spy());
-
-    expect(redirectSpy.called).to.be.false;
-    expect(passportStub.calledOnce).to.be.true;
+    const target = redirectSpy.firstCall.args[0] as string;
+    const returnTo = decodeURIComponent(target.split('returnTo=')[1]!);
+    expect(returnTo).to.equal('https://mycloud.example.com/paperui/index.html#/inbox');
   });
 });
 

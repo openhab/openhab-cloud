@@ -25,7 +25,7 @@ import type { Server as SocketIOServer } from 'socket.io';
 
 import { createMiddleware, createSetOpenhabForWebhook, createBodySizeLimit, MiddlewareDependencies } from './middleware';
 import type { IWebhookRepositoryForMiddleware, IOpenhabRepositoryForMiddleware } from './middleware';
-import { createBrowserAwareAuthenticated, createApplyReturnTo } from '../middleware/guards';
+import { createLoginRedirectAuthenticated, createApplyReturnTo } from '../middleware/guards';
 import type { AppLogger } from '../lib/logger';
 import type { PromisifiedRedisClient } from '../lib/redis';
 import type { IUser, IInvitation, IOpenhab } from '../types/models';
@@ -494,13 +494,13 @@ export function createRoutes(deps: RoutesDependencies): Router {
   // For non-vhost requests, next('route') skips to normal web routes below.
 
   const proxyRoute = createProxyHandler(io, requestTracker, systemConfig, logger);
-  const ensureBrowserAware = createBrowserAwareAuthenticated(systemConfig);
+  const redirectToLogin = createLoginRedirectAuthenticated(systemConfig);
 
   router.all('/{*path}', (req: Request, _res: Response, next: NextFunction) => {
     if (!req.isVhostProxy) return next('route');
     next();
   }, (req: Request, res: Response, next: NextFunction) => {
-    const guard = req.isBrowserVhost ? ensureBrowserAware : ensureRestAuthenticated;
+    const guard = req.isBrowserVhost ? redirectToLogin : ensureRestAuthenticated;
     return guard(req, res, next);
   }, setOpenhab, preassembleBody, ensureServer, proxyRoute);
 
@@ -737,16 +737,24 @@ export function createRoutes(deps: RoutesDependencies): Router {
   // WebSocket proxy route — no preassembleBody (upgrade requests have no body to assemble)
   router.all('/ws/{*path}', ensureRestAuthenticated, setOpenhab, ensureServer, proxyRoute);
 
+  // /rest is the REST API surface used by mobile apps, Alexa/Google Home,
+  // IFTTT, and third-party integrations. It stays on the Basic/Bearer path
+  // so unauthenticated requests get the expected 401 challenge.
+  router.all('/rest{*path}', ensureRestAuthenticated, setOpenhab, preassembleBody, ensureServer, proxyRoute);
+
+  // Remaining openHAB proxy paths are browser-facing UIs and their supporting
+  // assets. Unauthenticated GETs redirect to the main-site login and bounce
+  // back; non-GETs without a session return 401.
   // Express 5 route patterns: {*param} = zero-or-more path segments, :param = single segment
-  const proxyPaths = [
-    '/rest{*path}', '/images/{*path}', '/static/{*path}', '/rrdchart.png{*path}', '/chart{*path}',
+  const browserProxyPaths = [
+    '/images/{*path}', '/static/{*path}', '/rrdchart.png{*path}', '/chart{*path}',
     '/openhab.app{*path}', '/WebApp{*path}', '/CMD{*path}', '/cometVisu{*path}', '/proxy{*path}',
     '/greent{*path}', '/jquery.:ext', '/classicui/{*path}', '/paperui/{*path}', '/basicui/{*path}',
     '/doc/{*path}', '/start/{*path}', '/icon{*path}', '/habmin/{*path}', '/habpanel/{*path}',
   ];
 
-  for (const path of proxyPaths) {
-    router.all(path, ensureBrowserAware, setOpenhab, preassembleBody, ensureServer, proxyRoute);
+  for (const path of browserProxyPaths) {
+    router.all(path, redirectToLogin, setOpenhab, preassembleBody, ensureServer, proxyRoute);
   }
 
   return router;
