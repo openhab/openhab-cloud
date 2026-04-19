@@ -171,6 +171,7 @@ describe('ApiController', () => {
       isGcmConfigured: () => true,
       getGcmSenderId: () => 'sender-123',
       getProxyURL: () => 'https://proxy.example.com',
+      getBrowserProxyURL: () => undefined,
       getAppleId: () => 'apple-app-id',
       getAndroidId: () => 'android-app-id',
     };
@@ -322,12 +323,34 @@ describe('ApiController', () => {
   });
 
   describe('getProxyUrl', () => {
-    it('should return proxy URL', () => {
+    it('falls back browserUrl to the proxy URL when no browser proxy is configured', () => {
       controller.getProxyUrl(mockReq as Request, mockRes as Response, () => {});
 
       expect(statusStub.calledWith(200)).to.be.true;
       expect(jsonStub.firstCall.args[0]).to.deep.equal({
         url: 'https://proxy.example.com',
+        browserUrl: 'https://proxy.example.com',
+      });
+    });
+
+    it('returns both url and browserUrl when a browser proxy host is configured', () => {
+      const controllerWithBrowser = new ApiController(
+        notificationRepository,
+        userDeviceRepository,
+        notificationService,
+        pushProvider,
+        {
+          ...systemConfig,
+          getBrowserProxyURL: () => 'https://connect.example.com',
+        },
+        logger
+      );
+
+      controllerWithBrowser.getProxyUrl(mockReq as Request, mockRes as Response, () => {});
+
+      expect(jsonStub.firstCall.args[0]).to.deep.equal({
+        url: 'https://proxy.example.com',
+        browserUrl: 'https://connect.example.com',
       });
     });
   });

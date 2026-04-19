@@ -106,6 +106,7 @@ export interface RoutesDependencies extends MiddlewareDependencies {
     isGcmConfigured(): boolean;
     getGcmSenderId(): string;
     getProxyURL(): string;
+    getBrowserProxyURL(): string | undefined;
     getAppleId(): string;
     getAndroidId(): string;
   };

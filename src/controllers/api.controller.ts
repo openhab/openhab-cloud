@@ -47,6 +47,7 @@ export interface ISystemConfig {
   isGcmConfigured(): boolean;
   getGcmSenderId(): string;
   getProxyURL(): string;
+  getBrowserProxyURL(): string | undefined;
   getAppleId(): string;
   getAndroidId(): string;
 }
@@ -157,11 +158,16 @@ export class ApiController {
   /**
    * GET /api/v1/proxyurl
    *
-   * Get the proxy URL for the current server.
+   * Return the proxy URLs this cloud serves. `url` is the mobile-facing
+   * proxy hostname (HTTP Basic challenge). `browserUrl` is the browser-facing
+   * hostname that redirects unauthenticated navigations to the main-site
+   * login; when not configured, it falls back to `url`.
    */
   getProxyUrl: RequestHandler = (_req, res) => {
+    const url = this.systemConfig.getProxyURL();
     res.status(200).json({
-      url: this.systemConfig.getProxyURL(),
+      url,
+      browserUrl: this.systemConfig.getBrowserProxyURL() ?? url,
     });
   };
 

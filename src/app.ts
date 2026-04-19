@@ -394,6 +394,7 @@ export async function createApp(configPath: string): Promise<AppContainer> {
       isGcmConfigured: () => configManager.isGcmConfigured(),
       getGcmSenderId: () => configManager.isGcmConfigured() ? configManager.getGcmSenderId() : '',
       getProxyURL: () => configManager.getProxyURL(),
+      getBrowserProxyURL: () => configManager.getBrowserProxyURL(),
       getAppleId: () => configManager.getAppleId(),
       getAndroidId: () => configManager.getAndroidId(),
     },
