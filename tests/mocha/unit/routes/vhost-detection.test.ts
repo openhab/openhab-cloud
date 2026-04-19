@@ -18,7 +18,7 @@ import { createVhostDetection } from '../../../../src/middleware/vhost';
 import type { SystemConfigManager } from '../../../../src/config';
 
 describe('Vhost Detection Middleware', () => {
-  let mockConfigManager: Pick<SystemConfigManager, 'getProxyHost' | 'getHost'>;
+  let mockConfigManager: Pick<SystemConfigManager, 'getProxyHost' | 'getHost' | 'getBrowserProxyHost'>;
   let mockRes: Response;
   let nextSpy: sinon.SinonSpy;
 
@@ -32,7 +32,7 @@ describe('Vhost Detection Middleware', () => {
   });
 
   function createReq(hostname: string | undefined): Request {
-    return { hostname, isVhostProxy: undefined } as unknown as Request;
+    return { hostname, isVhostProxy: undefined, isBrowserVhost: undefined } as unknown as Request;
   }
 
   describe('when proxyHost differs from mainHost', () => {
@@ -40,6 +40,7 @@ describe('Vhost Detection Middleware', () => {
       mockConfigManager = {
         getProxyHost: () => 'proxy.example.com',
         getHost: () => 'mycloud.example.com',
+        getBrowserProxyHost: () => undefined,
       };
     });
 
@@ -89,6 +90,7 @@ describe('Vhost Detection Middleware', () => {
       mockConfigManager = {
         getProxyHost: () => 'mycloud.example.com',
         getHost: () => 'mycloud.example.com',
+        getBrowserProxyHost: () => undefined,
       };
     });
 
@@ -118,6 +120,7 @@ describe('Vhost Detection Middleware', () => {
       mockConfigManager = {
         getProxyHost: () => 'proxy.example.com',
         getHost: () => 'mycloud.example.com',
+        getBrowserProxyHost: () => undefined,
       };
     });
 
@@ -145,6 +148,7 @@ describe('Vhost Detection Middleware', () => {
       mockConfigManager = {
         getProxyHost: () => 'proxy.example.com',
         getHost: () => 'mycloud.example.com',
+        getBrowserProxyHost: () => undefined,
       };
     });
 
@@ -174,6 +178,58 @@ describe('Vhost Detection Middleware', () => {
       middleware(req3, mockRes, nextSpy);
 
       expect(nextSpy.callCount).to.equal(3);
+    });
+  });
+
+  describe('browser proxy host detection', () => {
+    beforeEach(() => {
+      mockConfigManager = {
+        getProxyHost: () => 'proxy.example.com',
+        getHost: () => 'mycloud.example.com',
+        getBrowserProxyHost: () => 'connect.example.com',
+      };
+    });
+
+    it('should set isBrowserVhost AND isVhostProxy when hostname matches browserProxyHost', () => {
+      const middleware = createVhostDetection(mockConfigManager as SystemConfigManager);
+      const req = createReq('connect.example.com');
+
+      middleware(req, mockRes, nextSpy);
+
+      expect(req.isBrowserVhost).to.equal(true);
+      expect(req.isVhostProxy).to.equal(true);
+    });
+
+    it('should match browserProxyHost case-insensitively', () => {
+      const middleware = createVhostDetection(mockConfigManager as SystemConfigManager);
+      const req = createReq('Connect.Example.Com');
+
+      middleware(req, mockRes, nextSpy);
+
+      expect(req.isBrowserVhost).to.equal(true);
+    });
+
+    it('should not set isBrowserVhost when browserProxyHost matches mainHost', () => {
+      mockConfigManager = {
+        getProxyHost: () => 'proxy.example.com',
+        getHost: () => 'mycloud.example.com',
+        getBrowserProxyHost: () => 'mycloud.example.com',
+      };
+      const middleware = createVhostDetection(mockConfigManager as SystemConfigManager);
+      const req = createReq('mycloud.example.com');
+
+      middleware(req, mockRes, nextSpy);
+
+      expect(req.isBrowserVhost).to.be.undefined;
+    });
+
+    it('should not set isBrowserVhost for unrelated hosts', () => {
+      const middleware = createVhostDetection(mockConfigManager as SystemConfigManager);
+      const req = createReq('evil.example.com');
+
+      middleware(req, mockRes, nextSpy);
+
+      expect(req.isBrowserVhost).to.be.undefined;
     });
   });
 });

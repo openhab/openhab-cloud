@@ -16,6 +16,24 @@ import passport from 'passport';
 import type { UserRole, UserGroup } from '../types/models';
 
 /**
+ * Minimum config shape required by createBrowserAwareAuthenticated.
+ */
+export interface BrowserAwareAuthConfig {
+  getHost(): string;
+}
+
+/**
+ * Minimum config shape required by createApplyReturnTo. Names the set of
+ * hostnames this deployment actively serves; any returnTo that resolves
+ * outside this set is rejected.
+ */
+export interface ReturnToHostConfig {
+  getHost(): string;
+  getProxyHost(): string;
+  getBrowserProxyHost(): string | undefined;
+}
+
+/**
  * Ensure user is authenticated for web requests
  *
  * If not authenticated, redirects to login page with return URL.
@@ -47,6 +65,93 @@ export const ensureRestAuthenticated: RequestHandler = (req, res, next) => {
   // Try Basic or Bearer authentication
   return passport.authenticate(['basic', 'bearer'], { session: false })(req, res, next);
 };
+
+/**
+ * Create a guard that redirects unauthenticated browser navigations to the
+ * main-site login page while leaving API/WebView clients on the HTTP Basic
+ * challenge path.
+ *
+ * A request is treated as a browser navigation when it is a GET and carries
+ * Fetch Metadata headers typical of a top-level document load
+ * (Sec-Fetch-Dest: document or Sec-Fetch-Mode: navigate) or prefers HTML via
+ * content negotiation. XHR, fetch() requests with Accept: application/json,
+ * CORS preflights, and non-idempotent methods fall through to Basic/Bearer
+ * authentication with no behavior change.
+ *
+ * The login target is the main host (configManager.getHost()); the original
+ * absolute URL is passed as an encoded returnTo query parameter for the login
+ * controller to validate against known hosts before honoring.
+ */
+export function createBrowserAwareAuthenticated(
+  configManager: BrowserAwareAuthConfig
+): RequestHandler {
+  return (req, res, next) => {
+    if (req.isAuthenticated()) {
+      return next();
+    }
+
+    // Prefer Fetch Metadata when present. Fall back to content negotiation —
+    // listing 'json' first so clients sending `Accept: */*` (e.g. curl) are
+    // treated as API clients, while browsers (which explicitly include
+    // text/html at quality 1.0) still resolve to 'html'.
+    const looksLikeBrowserNav =
+      req.method === 'GET' &&
+      (req.get('sec-fetch-dest') === 'document' ||
+        req.get('sec-fetch-mode') === 'navigate' ||
+        req.accepts(['json', 'html']) === 'html');
+
+    if (looksLikeBrowserNav) {
+      const proto = req.protocol;
+      const target = `${proto}://${req.hostname}${req.originalUrl}`;
+      return res.redirect(
+        `${proto}://${configManager.getHost()}/login?returnTo=${encodeURIComponent(target)}`
+      );
+    }
+
+    return passport.authenticate(['basic', 'bearer'], { session: false })(req, res, next);
+  };
+}
+
+/**
+ * Create middleware that accepts a returnTo value from query or body and, when
+ * it points at a host this deployment actively serves, persists it as
+ * req.session.returnTo so passport's successReturnToOrRedirect honors it.
+ *
+ * Absolute URLs outside the allowed hostnames are ignored to prevent open
+ * redirects. Invalid URLs are ignored silently.
+ */
+export function createApplyReturnTo(config: ReturnToHostConfig): RequestHandler {
+  return (req, _res, next) => {
+    const fromQuery = req.query['returnTo'];
+    const fromBody = (req.body as Record<string, unknown> | undefined)?.['returnTo'];
+    const candidate =
+      typeof fromQuery === 'string'
+        ? fromQuery
+        : typeof fromBody === 'string'
+          ? fromBody
+          : null;
+
+    if (candidate) {
+      try {
+        const url = new URL(candidate);
+        const hostname = url.hostname.toLowerCase();
+        const allowed = [
+          config.getHost(),
+          config.getProxyHost(),
+          config.getBrowserProxyHost(),
+        ]
+          .filter((h): h is string => typeof h === 'string' && h.length > 0)
+          .map((h) => h.toLowerCase());
+        if (allowed.includes(hostname)) {
+          req.session.returnTo = url.toString();
+        }
+      } catch {
+        // Invalid URL - ignore
+      }
+    }
+    next();
+  };
+}
 
 /**
  * Create a guard that ensures user has a specific role

@@ -60,17 +60,17 @@
                     switch (openhabMajorVersion){
                         case 1:
         %>
-                            To remotely access your openHAB's web interface go to <code><%=proxyUrl%>/openhab.app?sitemap=yoursitemapname</code>
+                            To remotely access your openHAB's web interface go to <code><%=browserProxyUrl%>/openhab.app?sitemap=yoursitemapname</code>
         <%
                             break;
                         case 2:
         %>
-                            Your openHAB is online. <a href="<%=proxyUrl%>/start/index">Click here to access your openHAB's dashboard</a>
+                            Your openHAB is online. <a href="<%=browserProxyUrl%>/start/index">Click here to access your openHAB's dashboard</a>
         <%
                             break;
                         default:
         %>
-                            Your openHAB is online. <a href="<%=proxyUrl%>/">Click here to access your openHAB's dashboard</a>
+                            Your openHAB is online. <a href="<%=browserProxyUrl%>/">Click here to access your openHAB's dashboard</a>
         <%
                     }
                     break;

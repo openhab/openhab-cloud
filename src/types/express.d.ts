@@ -35,6 +35,13 @@ declare global {
       isVhostProxy?: boolean;
 
       /**
+       * True when the request arrived via the browser-facing proxy hostname.
+       * Implies isVhostProxy; unauthenticated navigations redirect to login
+       * instead of returning an HTTP Basic challenge.
+       */
+      isBrowserVhost?: boolean;
+
+      /**
        * The authenticated user's openHAB instance
        */
       openhab?: IOpenhab;

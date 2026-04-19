@@ -25,6 +25,7 @@ import type { Server as SocketIOServer } from 'socket.io';
 
 import { createMiddleware, createSetOpenhabForWebhook, createBodySizeLimit, MiddlewareDependencies } from './middleware';
 import type { IWebhookRepositoryForMiddleware, IOpenhabRepositoryForMiddleware } from './middleware';
+import { createBrowserAwareAuthenticated, createApplyReturnTo } from '../middleware/guards';
 import type { AppLogger } from '../lib/logger';
 import type { PromisifiedRedisClient } from '../lib/redis';
 import type { IUser, IInvitation, IOpenhab } from '../types/models';
@@ -493,11 +494,15 @@ export function createRoutes(deps: RoutesDependencies): Router {
   // For non-vhost requests, next('route') skips to normal web routes below.
 
   const proxyRoute = createProxyHandler(io, requestTracker, systemConfig, logger);
+  const ensureBrowserAware = createBrowserAwareAuthenticated(systemConfig);
 
   router.all('/{*path}', (req: Request, _res: Response, next: NextFunction) => {
     if (!req.isVhostProxy) return next('route');
     next();
-  }, ensureRestAuthenticated, setOpenhab, preassembleBody, ensureServer, proxyRoute);
+  }, (req: Request, res: Response, next: NextFunction) => {
+    const guard = req.isBrowserVhost ? ensureBrowserAware : ensureRestAuthenticated;
+    return guard(req, res, next);
+  }, setOpenhab, preassembleBody, ensureServer, proxyRoute);
 
   // ============================================
   // Webhook Proxy Routes (no authentication — UUID is the secret)
@@ -536,9 +541,12 @@ export function createRoutes(deps: RoutesDependencies): Router {
     });
   });
 
-  router.get('/login', (req: Request, res: Response) => {
+  const applyReturnTo = createApplyReturnTo(systemConfig);
+
+  router.get('/login', applyReturnTo, (req: Request, res: Response) => {
     const errormessages = req.flash('error');
     const invitationCode = req.query['invitationCode'] ?? '';
+    const returnTo = typeof req.query['returnTo'] === 'string' ? req.query['returnTo'] : '';
 
     res.render('login', {
       title: 'Log in',
@@ -546,11 +554,13 @@ export function createRoutes(deps: RoutesDependencies): Router {
       errormessages,
       infomessages: req.flash('info'),
       invitationCode,
+      returnTo,
     });
   });
 
   router.post(
     '/login',
+    applyReturnTo,
     validateBody(LoginSchema, { redirectOnError: '/login' }),
     passport.authenticate('local', {
       successReturnToOrRedirect: '/',
@@ -736,7 +746,7 @@ export function createRoutes(deps: RoutesDependencies): Router {
   ];
 
   for (const path of proxyPaths) {
-    router.all(path, ensureRestAuthenticated, setOpenhab, preassembleBody, ensureServer, proxyRoute);
+    router.all(path, ensureBrowserAware, setOpenhab, preassembleBody, ensureServer, proxyRoute);
   }
 
   return router;

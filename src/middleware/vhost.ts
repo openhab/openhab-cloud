@@ -16,8 +16,12 @@ import type { SystemConfigManager } from '../config';
 
 /**
  * Create vhost detection middleware.
+ *
  * Sets req.isVhostProxy when the hostname matches the configured proxyHost
- * or the "remote.<mainHost>" convention.
+ * or the "remote.<mainHost>" convention. Additionally sets req.isBrowserVhost
+ * (and implies isVhostProxy) when the hostname matches browserProxyHost — the
+ * browser-facing proxy hostname that redirects unauthenticated navigations to
+ * the main-site login instead of returning an HTTP Basic challenge.
  */
 export function createVhostDetection(configManager: SystemConfigManager) {
   return (req: Request, _res: Response, next: NextFunction) => {
@@ -25,10 +29,15 @@ export function createVhostDetection(configManager: SystemConfigManager) {
     if (host) {
       const proxyHost = configManager.getProxyHost().toLowerCase();
       const mainHost = configManager.getHost().toLowerCase();
+      const browserProxyHost = configManager.getBrowserProxyHost()?.toLowerCase();
       if (
         (proxyHost !== mainHost && host === proxyHost) ||
         host === `remote.${mainHost}`
       ) {
+        req.isVhostProxy = true;
+      }
+      if (browserProxyHost && host === browserProxyHost && browserProxyHost !== mainHost) {
+        req.isBrowserVhost = true;
         req.isVhostProxy = true;
       }
     }
