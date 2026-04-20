@@ -761,6 +761,13 @@ interface ProxyHandlerOptions {
   supportWebSocket?: boolean;
   supportVhost?: boolean;
   setAuthCookie?: boolean;
+  /**
+   * When true, forward the caller's Authorization and Cookie headers to the
+   * target openHAB instance. Used for anonymous webhook proxying where the
+   * UUID in the path is the cloud-level secret and any Authorization / Cookie
+   * value on the request was set by the caller for the openHAB receiver.
+   */
+  forwardClientCredentials?: boolean;
   getPath?: (req: Request) => string | undefined;
   getUserId?: (req: Request) => string | undefined;
 }
@@ -781,6 +788,7 @@ function createProxyHandlerBase(
     supportWebSocket = false,
     supportVhost = false,
     setAuthCookie = false,
+    forwardClientCredentials = false,
     getPath = (req) => req.path,
     getUserId = () => undefined,
   } = options;
@@ -816,10 +824,14 @@ function createProxyHandlerBase(
         || (req.headers['sec-websocket-key'] != null && req.headers['sec-websocket-version'] != null);
     }
 
-    // Remove sensitive headers
-    delete requestHeaders['cookie'];
-    delete requestHeaders['cookie2'];
-    delete requestHeaders['authorization'];
+    // Remove sensitive headers. For webhook proxying (forwardClientCredentials),
+    // keep Authorization and Cookie since the caller addresses the openHAB
+    // receiver directly and the cloud adds no credentials of its own.
+    if (!forwardClientCredentials) {
+      delete requestHeaders['cookie'];
+      delete requestHeaders['cookie2'];
+      delete requestHeaders['authorization'];
+    }
     delete requestHeaders['x-real-ip'];
     delete requestHeaders['x-forwarded-for'];
     delete requestHeaders['x-forwarded-proto'];
@@ -913,6 +925,7 @@ function createWebhookProxyHandler(
   logger: AppLogger
 ) {
   return createProxyHandlerBase(io, requestTracker, systemConfig, logger, {
+    forwardClientCredentials: true,
     getPath: (req) => req.webhookLocalPath,
   });
 }
