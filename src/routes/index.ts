@@ -721,7 +721,7 @@ export function createRoutes(deps: RoutesDependencies): Router {
   router.post('/api/v1/sendnotification', ensureRestAuthenticated, setOpenhab, preassembleBody, apiController.sendNotification);
   router.get('/api/v1/hidenotification/:id', ensureRestAuthenticated, setOpenhab, preassembleBody, apiController.hideNotification);
   router.get('/api/v1/settings/notifications', ensureRestAuthenticated, setOpenhab, preassembleBody, apiController.getNotificationSettings);
-  router.get('/api/v1/proxyurl', ensureRestAuthenticated, setOpenhab, preassembleBody, apiController.getProxyUrl);
+  router.get('/api/v1/proxyurl', apiController.getProxyUrl);
   router.get('/api/v1/appids', apiController.getAppIds);
 
   // ============================================
