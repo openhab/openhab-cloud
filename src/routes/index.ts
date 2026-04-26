@@ -824,12 +824,12 @@ function createProxyHandlerBase(
         || (req.headers['sec-websocket-key'] != null && req.headers['sec-websocket-version'] != null);
     }
 
-    // Remove sensitive headers. For webhook proxying (forwardClientCredentials),
-    // keep Authorization and Cookie since the caller addresses the openHAB
-    // receiver directly and the cloud adds no credentials of its own.
+    // Always remove cookies (may contain cloud session credentials).
+    // For webhook proxying, forward only Authorization since the caller
+    // sets it for the openHAB receiver directly.
+    delete requestHeaders['cookie'];
+    delete requestHeaders['cookie2'];
     if (!forwardClientCredentials) {
-      delete requestHeaders['cookie'];
-      delete requestHeaders['cookie2'];
       delete requestHeaders['authorization'];
     }
     delete requestHeaders['x-real-ip'];
