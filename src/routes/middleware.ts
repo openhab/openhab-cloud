@@ -114,6 +114,9 @@ export interface MiddlewareDependencies {
     getPort(): number;
     getProxyHost(): string;
     getProxyPort(): number;
+    getProxyURL(): string;
+    getBrowserProxyHost(): string | undefined;
+    getBrowserProxyURL(): string | undefined;
   };
 }
 

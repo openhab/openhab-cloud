@@ -123,6 +123,23 @@ export class SystemConfigManager {
   }
 
   /**
+   * Get the configured browser proxy host, if any.
+   * When set, this hostname serves the same proxy content as proxyHost but
+   * redirects unauthenticated browser navigations to the main-site login.
+   */
+  getBrowserProxyHost(): string | undefined {
+    return this.config.system.browserProxyHost;
+  }
+
+  /**
+   * Get the full browser proxy URL, or undefined when not configured.
+   */
+  getBrowserProxyURL(): string | undefined {
+    const host = this.getBrowserProxyHost();
+    return host ? `${this.getProtocol()}://${host}` : undefined;
+  }
+
+  /**
    * Get the port the Node process should listen on
    */
   getNodeProcessPort(): number {

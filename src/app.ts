@@ -139,13 +139,12 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   // Trust proxy for correct client IP and protocol detection behind reverse proxy
   app.set('trust proxy', 1);
 
-  // Configure session cookie (matching original behavior)
-  // Note: We don't set secure/httpOnly/sameSite explicitly to match original app.js
-  // which relied on defaults. This avoids issues with reverse proxies.
   const cookie: session.CookieOptions = {};
   if (config.system.subDomainCookies) {
     cookie.path = '/';
     cookie.domain = '.' + configManager.getHost();
+    cookie.sameSite = 'lax';
+    cookie.secure = true;
     logger.info('Cross sub domain cookie support is configured for domain: ' + cookie.domain);
   }
 
@@ -245,6 +244,7 @@ export async function createApp(configPath: string): Promise<AppContainer> {
   app.use((_req: Request, res: Response, next: NextFunction) => {
     res.locals['baseurl'] = configManager.getBaseURL();
     res.locals['proxyUrl'] = configManager.getProxyURL();
+    res.locals['browserProxyUrl'] = configManager.getBrowserProxyURL() ?? configManager.getProxyURL();
 
     const session = (_req as Request & { session: { timezone?: string } }).session;
     if (session?.timezone) {
@@ -367,6 +367,9 @@ export async function createApp(configPath: string): Promise<AppContainer> {
       getPort: () => configManager.getPort(),
       getProxyHost: () => configManager.getProxyHost(),
       getProxyPort: () => configManager.getProxyPort(),
+      getProxyURL: () => configManager.getProxyURL(),
+      getBrowserProxyHost: () => configManager.getBrowserProxyHost(),
+      getBrowserProxyURL: () => configManager.getBrowserProxyURL(),
     },
     healthController,
     services,
@@ -391,6 +394,7 @@ export async function createApp(configPath: string): Promise<AppContainer> {
       isGcmConfigured: () => configManager.isGcmConfigured(),
       getGcmSenderId: () => configManager.isGcmConfigured() ? configManager.getGcmSenderId() : '',
       getProxyURL: () => configManager.getProxyURL(),
+      getBrowserProxyURL: () => configManager.getBrowserProxyURL(),
       getAppleId: () => configManager.getAppleId(),
       getAndroidId: () => configManager.getAndroidId(),
     },

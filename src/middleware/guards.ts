@@ -16,6 +16,24 @@ import passport from 'passport';
 import type { UserRole, UserGroup } from '../types/models';
 
 /**
+ * Minimum config shape required by createLoginRedirectAuthenticated.
+ */
+export interface LoginRedirectAuthConfig {
+  getHost(): string;
+}
+
+/**
+ * Minimum config shape required by createApplyReturnTo. Names the set of
+ * hostnames this deployment actively serves; any returnTo that resolves
+ * outside this set is rejected.
+ */
+export interface ReturnToHostConfig {
+  getHost(): string;
+  getProxyHost(): string;
+  getBrowserProxyHost(): string | undefined;
+}
+
+/**
  * Ensure user is authenticated for web requests
  *
  * If not authenticated, redirects to login page with return URL.
@@ -47,6 +65,78 @@ export const ensureRestAuthenticated: RequestHandler = (req, res, next) => {
   // Try Basic or Bearer authentication
   return passport.authenticate(['basic', 'bearer'], { session: false })(req, res, next);
 };
+
+/**
+ * Create a guard that redirects unauthenticated GETs to the main-site login
+ * page. Apply only to surfaces that are known to be browser-facing (e.g. the
+ * dedicated browser proxy vhost, or specific HTML UI proxy paths on the main
+ * host). Do NOT apply to API surfaces or to the mobile-facing proxy vhost —
+ * those must keep the existing HTTP Basic challenge so API clients and mobile
+ * WebViews continue to authenticate.
+ *
+ * Behavior: authenticated → next(). Unauthenticated GET → 302 to
+ * `${configManager.getHost()}/login?returnTo=<absolute-url>`. Any other method
+ * → 401 (no Basic challenge, since these paths are not meant to be scripted).
+ */
+export function createLoginRedirectAuthenticated(
+  configManager: LoginRedirectAuthConfig
+): RequestHandler {
+  return (req, res, next) => {
+    if (req.isAuthenticated()) {
+      return next();
+    }
+    if (req.method !== 'GET') {
+      res.sendStatus(401);
+      return;
+    }
+    const proto = req.protocol;
+    const target = `${proto}://${req.hostname}${req.originalUrl}`;
+    return res.redirect(
+      `${proto}://${configManager.getHost()}/login?returnTo=${encodeURIComponent(target)}`
+    );
+  };
+}
+
+/**
+ * Create middleware that accepts a returnTo value from query or body and, when
+ * it points at a host this deployment actively serves, persists it as
+ * req.session.returnTo so passport's successReturnToOrRedirect honors it.
+ *
+ * Absolute URLs outside the allowed hostnames are ignored to prevent open
+ * redirects. Invalid URLs are ignored silently.
+ */
+export function createApplyReturnTo(config: ReturnToHostConfig): RequestHandler {
+  return (req, _res, next) => {
+    const fromQuery = req.query['returnTo'];
+    const fromBody = (req.body as Record<string, unknown> | undefined)?.['returnTo'];
+    const candidate =
+      typeof fromQuery === 'string'
+        ? fromQuery
+        : typeof fromBody === 'string'
+          ? fromBody
+          : null;
+
+    if (candidate) {
+      try {
+        const url = new URL(candidate);
+        const hostname = url.hostname.toLowerCase();
+        const allowed = [
+          config.getHost(),
+          config.getProxyHost(),
+          config.getBrowserProxyHost(),
+        ]
+          .filter((h): h is string => typeof h === 'string' && h.length > 0)
+          .map((h) => h.toLowerCase());
+        if (allowed.includes(hostname)) {
+          req.session.returnTo = url.toString();
+        }
+      } catch {
+        // Invalid URL - ignore
+      }
+    }
+    next();
+  };
+}
 
 /**
  * Create a guard that ensures user has a specific role

@@ -23,7 +23,8 @@ const SystemSchema = z.object({
   protocol: z.enum(['http', 'https']).default('https'),
   proxyHost: z.string().optional(),
   proxyPort: z.coerce.number().int().positive().optional(),
-  subDomainCookies: z.boolean().default(false),
+  browserProxyHost: z.string().optional(),
+  subDomainCookies: z.boolean().default(true),
   muteNotifications: z.boolean().default(false),
   offlineNotificationTime: z.number().default(300000), // 5 minutes in ms
   connectionLockTimeSeconds: z.number().default(70),

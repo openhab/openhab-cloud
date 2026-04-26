@@ -86,6 +86,9 @@ Edit the `.env` file:
 | `SMTP_*` | No | Email settings for notifications |
 | `MORGAN_FORMAT` | No | HTTP request log format (default: off). Set to `combined`, `short`, etc. |
 | `REGISTRATION_ENABLED` | No | Enable user registration (default: `true`) |
+| `PROXY_HOST` | No | Hostname for the mobile-app proxy vhost (returns 401 Basic). Must share a parent domain with `DOMAIN_NAME`. |
+| `BROWSER_PROXY_HOST` | No | Hostname for the browser-facing proxy vhost (redirects unauthenticated GETs to `${DOMAIN_NAME}/login`). Must share a parent domain with `DOMAIN_NAME`. |
+| `SUBDOMAIN_COOKIES` | No | Share the session cookie across subdomains of `DOMAIN_NAME`. Required for the browser redirect flow to carry the session back (default: `true`). |
 
 ### Application Config
 

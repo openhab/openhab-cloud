@@ -48,10 +48,14 @@ describe('Route Middleware', () => {
 
     mockSystemConfig = {
       getInternalAddress: () => 'server1.internal:3000',
+      getBaseURL: () => 'https://localhost',
       getHost: () => 'localhost',
       getPort: () => 3000,
       getProxyHost: () => 'proxy.local',
       getProxyPort: () => 8080,
+      getProxyURL: () => 'https://proxy.local',
+      getBrowserProxyHost: () => undefined,
+      getBrowserProxyURL: () => undefined,
     };
 
     deps = {

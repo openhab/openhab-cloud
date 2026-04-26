@@ -25,6 +25,7 @@ import type { Server as SocketIOServer } from 'socket.io';
 
 import { createMiddleware, createSetOpenhabForWebhook, createBodySizeLimit, MiddlewareDependencies } from './middleware';
 import type { IWebhookRepositoryForMiddleware, IOpenhabRepositoryForMiddleware } from './middleware';
+import { createLoginRedirectAuthenticated, createApplyReturnTo } from '../middleware/guards';
 import type { AppLogger } from '../lib/logger';
 import type { PromisifiedRedisClient } from '../lib/redis';
 import type { IUser, IInvitation, IOpenhab } from '../types/models';
@@ -105,6 +106,7 @@ export interface RoutesDependencies extends MiddlewareDependencies {
     isGcmConfigured(): boolean;
     getGcmSenderId(): string;
     getProxyURL(): string;
+    getBrowserProxyURL(): string | undefined;
     getAppleId(): string;
     getAndroidId(): string;
   };
@@ -493,11 +495,15 @@ export function createRoutes(deps: RoutesDependencies): Router {
   // For non-vhost requests, next('route') skips to normal web routes below.
 
   const proxyRoute = createProxyHandler(io, requestTracker, systemConfig, logger);
+  const redirectToLogin = createLoginRedirectAuthenticated(systemConfig);
 
   router.all('/{*path}', (req: Request, _res: Response, next: NextFunction) => {
     if (!req.isVhostProxy) return next('route');
     next();
-  }, ensureRestAuthenticated, setOpenhab, preassembleBody, ensureServer, proxyRoute);
+  }, (req: Request, res: Response, next: NextFunction) => {
+    const guard = req.isBrowserVhost ? redirectToLogin : ensureRestAuthenticated;
+    return guard(req, res, next);
+  }, setOpenhab, preassembleBody, ensureServer, proxyRoute);
 
   // ============================================
   // Webhook Proxy Routes (no authentication — UUID is the secret)
@@ -536,9 +542,12 @@ export function createRoutes(deps: RoutesDependencies): Router {
     });
   });
 
-  router.get('/login', (req: Request, res: Response) => {
+  const applyReturnTo = createApplyReturnTo(systemConfig);
+
+  router.get('/login', applyReturnTo, (req: Request, res: Response) => {
     const errormessages = req.flash('error');
     const invitationCode = req.query['invitationCode'] ?? '';
+    const returnTo = typeof req.query['returnTo'] === 'string' ? req.query['returnTo'] : '';
 
     res.render('login', {
       title: 'Log in',
@@ -546,11 +555,13 @@ export function createRoutes(deps: RoutesDependencies): Router {
       errormessages,
       infomessages: req.flash('info'),
       invitationCode,
+      returnTo,
     });
   });
 
   router.post(
     '/login',
+    applyReturnTo,
     validateBody(LoginSchema, { redirectOnError: '/login' }),
     passport.authenticate('local', {
       successReturnToOrRedirect: '/',
@@ -710,7 +721,7 @@ export function createRoutes(deps: RoutesDependencies): Router {
   router.post('/api/v1/sendnotification', ensureRestAuthenticated, setOpenhab, preassembleBody, apiController.sendNotification);
   router.get('/api/v1/hidenotification/:id', ensureRestAuthenticated, setOpenhab, preassembleBody, apiController.hideNotification);
   router.get('/api/v1/settings/notifications', ensureRestAuthenticated, setOpenhab, preassembleBody, apiController.getNotificationSettings);
-  router.get('/api/v1/proxyurl', ensureRestAuthenticated, setOpenhab, preassembleBody, apiController.getProxyUrl);
+  router.get('/api/v1/proxyurl', apiController.getProxyUrl);
   router.get('/api/v1/appids', apiController.getAppIds);
 
   // ============================================
@@ -750,6 +761,13 @@ interface ProxyHandlerOptions {
   supportWebSocket?: boolean;
   supportVhost?: boolean;
   setAuthCookie?: boolean;
+  /**
+   * When true, forward the caller's Authorization and Cookie headers to the
+   * target openHAB instance. Used for anonymous webhook proxying where the
+   * UUID in the path is the cloud-level secret and any Authorization / Cookie
+   * value on the request was set by the caller for the openHAB receiver.
+   */
+  forwardClientCredentials?: boolean;
   getPath?: (req: Request) => string | undefined;
   getUserId?: (req: Request) => string | undefined;
 }
@@ -770,6 +788,7 @@ function createProxyHandlerBase(
     supportWebSocket = false,
     supportVhost = false,
     setAuthCookie = false,
+    forwardClientCredentials = false,
     getPath = (req) => req.path,
     getUserId = () => undefined,
   } = options;
@@ -805,10 +824,14 @@ function createProxyHandlerBase(
         || (req.headers['sec-websocket-key'] != null && req.headers['sec-websocket-version'] != null);
     }
 
-    // Remove sensitive headers
+    // Always remove cookies (may contain cloud session credentials).
+    // For webhook proxying, forward only Authorization since the caller
+    // sets it for the openHAB receiver directly.
     delete requestHeaders['cookie'];
     delete requestHeaders['cookie2'];
-    delete requestHeaders['authorization'];
+    if (!forwardClientCredentials) {
+      delete requestHeaders['authorization'];
+    }
     delete requestHeaders['x-real-ip'];
     delete requestHeaders['x-forwarded-for'];
     delete requestHeaders['x-forwarded-proto'];
@@ -902,6 +925,7 @@ function createWebhookProxyHandler(
   logger: AppLogger
 ) {
   return createProxyHandlerBase(io, requestTracker, systemConfig, logger, {
+    forwardClientCredentials: true,
     getPath: (req) => req.webhookLocalPath,
   });
 }
