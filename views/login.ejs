@@ -9,7 +9,7 @@
                 <h3 class="card-title">Sign In</h3>
                 <form method="post" action="/login">
                     <input type="hidden" name="_csrf" value="<%= token %>">
-                    <% if (returnTo) { %>
+                    <% if (typeof returnTo !== 'undefined' && returnTo) { %>
                     <input type="hidden" name="returnTo" value="<%= returnTo %>">
                     <% } %>
                     <div class="form-group">

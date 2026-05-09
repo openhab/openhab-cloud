@@ -392,11 +392,13 @@ export class AccountController {
   // =========================================================================
 
   private renderLogin(req: Request, res: any): void {
+    const returnTo = typeof req.query['returnTo'] === 'string' ? req.query['returnTo'] : '';
     res.render('login', {
       title: 'Login / Sign up',
       user: req.user,
       errormessages: req.flash('error'),
       infomessages: req.flash('info'),
+      returnTo,
     });
   }
 }
