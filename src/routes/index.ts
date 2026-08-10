@@ -23,7 +23,7 @@ import passport from 'passport';
 import { Types } from 'mongoose';
 import type { Server as SocketIOServer } from 'socket.io';
 
-import { createMiddleware, createSetOpenhabForWebhook, createBodySizeLimit, requireWellKnownDoc, appendWellKnownPath, MiddlewareDependencies } from './middleware';
+import { createMiddleware, createSetOpenhabForWebhook, createBodySizeLimit, requireWellKnownDoc, appendWellKnownPath, isWebSocketUpgrade, MiddlewareDependencies } from './middleware';
 import type { IWebhookRepositoryForMiddleware, IOpenhabRepositoryForMiddleware } from './middleware';
 import { createLoginRedirectAuthenticated, createApplyReturnTo } from '../middleware/guards';
 import type { AppLogger } from '../lib/logger';
@@ -825,13 +825,7 @@ function createProxyHandlerBase(
     }
 
     // Check if this is a WebSocket upgrade request
-    let isUpgrade = false;
-    if (supportWebSocket) {
-      // Also detect via sec-websocket-* headers which survive reverse proxies
-      // that strip hop-by-hop headers (Upgrade, Connection)
-      isUpgrade = req.headers['upgrade']?.toLowerCase() === 'websocket'
-        || (req.headers['sec-websocket-key'] != null && req.headers['sec-websocket-version'] != null);
-    }
+    const isUpgrade = supportWebSocket && isWebSocketUpgrade(req);
 
     // Always remove cookies (may contain cloud session credentials).
     // For webhook proxying, forward only Authorization since the caller

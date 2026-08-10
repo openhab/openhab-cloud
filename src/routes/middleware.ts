@@ -18,6 +18,7 @@
  */
 
 import http from 'http';
+import type { Socket as NetSocket } from 'net';
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import passport from 'passport';
 import type { PromisifiedRedisClient } from '../lib/redis';
@@ -64,6 +65,17 @@ const cleanupTimer = setInterval(() => {
   }
 }, CACHE_CLEANUP_INTERVAL_MS);
 cleanupTimer.unref();
+
+/**
+ * True if this request is a WebSocket upgrade.
+ *
+ * The sec-websocket-* headers are checked as well because a reverse proxy in
+ * front of us may strip the hop-by-hop Upgrade/Connection headers.
+ */
+export function isWebSocketUpgrade(req: Request): boolean {
+  return req.headers['upgrade']?.toLowerCase() === 'websocket'
+    || (req.headers['sec-websocket-key'] != null && req.headers['sec-websocket-version'] != null);
+}
 
 /**
  * Invalidate connection cache for an openHAB instance
@@ -324,6 +336,11 @@ export function createMiddleware(deps: MiddlewareDependencies): RouteMiddleware 
       `Internal proxy to ${targetAddress} (current: ${systemConfig.getInternalAddress()})`
     );
 
+    // Once the WebSocket tunnel is up the sockets own their own lifecycle:
+    // proxyReq is detached, so neither client disconnects nor late errors
+    // should tear anything down through the HTTP paths below.
+    let upgraded = false;
+
     const proxyReq = http.request(
       {
         hostname: targetHost,
@@ -348,11 +365,80 @@ export function createMiddleware(deps: MiddlewareDependencies): RouteMiddleware 
       }
     );
 
+    // WebSocket upgrades: the target node answers 101 and Node emits 'upgrade'
+    // instead of 'response'. Without this listener Node destroys the socket,
+    // so WebSockets only worked when the client happened to land on the node
+    // holding the openHAB connection.
+    if (isWebSocketUpgrade(req)) {
+      proxyReq.on('upgrade', (proxyRes, upstreamSocket, upstreamHead) => {
+        proxyReq.setTimeout(0);
+        upgraded = true;
+
+        const clientSocket = res.socket;
+        if (!clientSocket || clientSocket.destroyed) {
+          upstreamSocket.destroy();
+          return;
+        }
+
+        // When the upgrade reached us through Express (a reverse proxy stripped
+        // the hop-by-hop headers so server.on('upgrade') never fired), the HTTP
+        // parser is still listening and would read WebSocket frames as HTTP.
+        clientSocket.removeAllListeners('data');
+        const httpResponse = res as unknown as http.ServerResponse;
+        if (typeof httpResponse.detachSocket === 'function') {
+          httpResponse.detachSocket(clientSocket);
+        }
+
+        // rawHeaders keeps the origin node's casing and order intact
+        let rawResponse = `HTTP/1.1 ${proxyRes.statusCode} ${proxyRes.statusMessage || 'Switching Protocols'}\r\n`;
+        for (let i = 0; i < proxyRes.rawHeaders.length; i += 2) {
+          rawResponse += `${proxyRes.rawHeaders[i]}: ${proxyRes.rawHeaders[i + 1]}\r\n`;
+        }
+        rawResponse += '\r\n';
+        clientSocket.write(rawResponse);
+
+        // Tells the synthetic ServerResponse's 'finish' handler in app.ts to
+        // leave this socket alone — it belongs to the tunnel now.
+        (clientSocket as NetSocket & { __upgraded?: boolean }).__upgraded = true;
+
+        if (upstreamHead && upstreamHead.length > 0) {
+          upstreamSocket.unshift(upstreamHead);
+        }
+
+        clientSocket.setTimeout(0);
+        upstreamSocket.setTimeout(0);
+        clientSocket.setNoDelay(true);
+        upstreamSocket.setNoDelay(true);
+
+        clientSocket.pipe(upstreamSocket);
+        upstreamSocket.pipe(clientSocket);
+
+        let closed = false;
+        const teardown = (reason: string) => {
+          if (closed) return;
+          closed = true;
+          logger.debug(`Internal WebSocket proxy to ${targetAddress} closed (${reason})`);
+          clientSocket.destroy();
+          upstreamSocket.destroy();
+        };
+
+        clientSocket.on('close', () => teardown('client close'));
+        clientSocket.on('error', (err) => teardown(`client error: ${err.message}`));
+        upstreamSocket.on('close', () => teardown('upstream close'));
+        upstreamSocket.on('error', (err) => teardown(`upstream error: ${err.message}`));
+
+        logger.info(`Internal WebSocket proxy established to ${targetAddress}`);
+      });
+    }
+
     proxyReq.on('timeout', () => {
       proxyReq.destroy(new Error('proxy timeout'));
     });
 
-    proxyReq.on('error', onError);
+    proxyReq.on('error', (err) => {
+      if (upgraded) return;
+      onError(err);
+    });
 
     // Tear down the internal proxy request if the client disconnects. The idle
     // timeout is cleared once the response starts streaming (see above), so for
@@ -360,7 +446,7 @@ export function createMiddleware(deps: MiddlewareDependencies): RouteMiddleware 
     // connection when the client goes away — .pipe() does not propagate the
     // client-side close to destroy the source request.
     res.on('close', () => {
-      if (!proxyReq.destroyed) {
+      if (!upgraded && !proxyReq.destroyed) {
         proxyReq.destroy();
       }
     });
