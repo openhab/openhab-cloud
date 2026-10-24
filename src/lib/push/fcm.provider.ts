@@ -11,7 +11,14 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-import * as admin from 'firebase-admin';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
+import type {
+  AndroidConfig,
+  ApnsConfig,
+  Messaging,
+  MulticastMessage,
+} from 'firebase-admin/messaging';
 import crypto from 'crypto';
 import fs from 'fs';
 import type { INotification } from '../../types/models';
@@ -30,7 +37,7 @@ import type {
  */
 export class FCMProvider implements IPushProvider {
   readonly name = 'FCM';
-  private messaging: admin.messaging.Messaging | null = null;
+  private messaging: Messaging | null = null;
   private initialized = false;
 
   constructor(
@@ -54,7 +61,7 @@ export class FCMProvider implements IPushProvider {
       }
 
       // Only initialize if not already initialized (firebase-admin is a singleton)
-      if (admin.apps.length === 0) {
+      if (getApps().length === 0) {
         const fileContent = fs.readFileSync(this.config.serviceAccountPath, 'utf-8');
         let serviceAccountJson: Record<string, unknown>;
         try {
@@ -74,11 +81,11 @@ export class FCMProvider implements IPushProvider {
           return;
         }
 
-        admin.initializeApp({
-          credential: admin.credential.cert(this.config.serviceAccountPath),
+        initializeApp({
+          credential: cert(this.config.serviceAccountPath),
         });
       }
-      this.messaging = admin.messaging();
+      this.messaging = getMessaging();
       this.initialized = true;
       this.logger.info('FCM provider initialized successfully');
     } catch (error) {
@@ -102,7 +109,7 @@ export class FCMProvider implements IPushProvider {
   }
 
   async sendHideNotification(tokens: string[], notificationId: string): Promise<PushResult[]> {
-    const message: admin.messaging.MulticastMessage = {
+    const message: MulticastMessage = {
       tokens,
       data: {
         type: 'hideNotification',
@@ -128,7 +135,7 @@ export class FCMProvider implements IPushProvider {
   /** Send a multicast message via FCM, handling guards and error mapping */
   private async sendMulticast(
     tokens: string[],
-    message: admin.messaging.MulticastMessage
+    message: MulticastMessage
   ): Promise<PushResult[]> {
     if (!this.isConfigured() || !this.messaging) {
       return tokens.map(token => ({
@@ -165,7 +172,7 @@ export class FCMProvider implements IPushProvider {
   private buildMessage(
     tokens: string[],
     notification: INotification
-  ): admin.messaging.MulticastMessage {
+  ): MulticastMessage {
     const payload = notification.payload;
     const data: Record<string, string> = {};
 
@@ -185,7 +192,7 @@ export class FCMProvider implements IPushProvider {
     const isHideNotification = data['type'] === 'hideNotification';
 
     // Build APNs configuration
-    const apns: admin.messaging.ApnsConfig = {
+    const apns: ApnsConfig = {
       payload: {
         aps: isHideNotification
           ? { 'content-available': 1 }
@@ -203,7 +210,7 @@ export class FCMProvider implements IPushProvider {
     };
 
     // Build Android configuration
-    const android: admin.messaging.AndroidConfig = {
+    const android: AndroidConfig = {
       priority: 'high',
     };
 
