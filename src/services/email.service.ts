@@ -13,7 +13,8 @@
 
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
-import Email from 'email-templates';
+import ejs from 'ejs';
+import { convert } from 'html-to-text';
 import path from 'path';
 import type { ILogger } from '../types/notification';
 
@@ -41,12 +42,11 @@ export interface EmailServiceConfig {
 /**
  * Email Service
  *
- * Handles sending emails using nodemailer and email-templates.
+ * Renders EJS email templates and sends them with nodemailer.
  * In development mode, emails are logged but not actually sent.
  */
 export class EmailService {
   private transport: Transporter | null = null;
-  private emailSender: Email | null = null;
 
   constructor(
     private readonly config: EmailServiceConfig,
@@ -62,32 +62,15 @@ export class EmailService {
     }
 
     try {
-      const smtpOptions: nodemailer.TransportOptions = {
-        host: this.config.smtp.host,
-        port: this.config.smtp.port,
-        secure: this.config.smtp.secure,
+      const { host, port, secure, user, password } = this.config.smtp;
+      this.transport = nodemailer.createTransport({
+        host,
+        port,
+        secure,
         tls: {
           rejectUnauthorized: false,
         },
-      } as nodemailer.TransportOptions;
-
-      if (this.config.smtp.user) {
-        (smtpOptions as Record<string, unknown>)['auth'] = {
-          user: this.config.smtp.user,
-          pass: this.config.smtp.password,
-        };
-      }
-
-      this.transport = nodemailer.createTransport(smtpOptions);
-
-      this.emailSender = new Email({
-        views: {
-          root: this.config.templatesDir,
-          options: {
-            extension: 'ejs',
-          },
-        },
-        transport: this.transport,
+        ...(user && { auth: { user, pass: password } }),
       });
 
       this.logger.info('EmailService: Initialized successfully');
@@ -116,19 +99,20 @@ export class EmailService {
       return;
     }
 
-    if (!this.emailSender) {
+    if (!this.transport) {
       throw new Error('EmailService not properly initialized');
     }
 
     try {
-      await this.emailSender.send({
-        template,
-        message: {
-          from: this.config.smtp.from,
-          to,
-          subject,
-        },
-        locals,
+      const html = await ejs.renderFile(path.join(this.config.templatesDir, template, 'html.ejs'), locals);
+      const text = convert(html, { selectors: [{ selector: 'img', format: 'skip' }] });
+
+      await this.transport.sendMail({
+        from: this.config.smtp.from,
+        to,
+        subject,
+        html,
+        text,
       });
 
       this.logger.info(`EmailService: Sent "${subject}" to ${to}`);
