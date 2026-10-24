@@ -250,9 +250,19 @@ export class ProxyHandler {
     // already freed the parser, making this a safe no-op.
     clientSocket.removeAllListeners('data');
 
+    // Cookies staged by the middleware chain (CloudServer affinity,
+    // X-OPENHAB-AUTH-HEADER) would be lost otherwise — the raw 101 below
+    // bypasses the ServerResponse entirely. Browsers honour Set-Cookie on a
+    // handshake response, so this is what keeps the affinity cookie fresh for
+    // clients whose only traffic is a long-lived WebSocket.
+    const httpResponse = request.response as unknown as import('http').ServerResponse;
+    const setCookie = httpResponse.getHeader('set-cookie');
+    const stagedCookies = setCookie === undefined
+      ? []
+      : (Array.isArray(setCookie) ? setCookie : [String(setCookie)]);
+
     // Detach the ServerResponse from the socket so its lifecycle events
     // (close, finish) don't interfere with the WebSocket connection.
-    const httpResponse = request.response as unknown as import('http').ServerResponse;
     if (typeof httpResponse.detachSocket === 'function') {
       httpResponse.detachSocket(clientSocket);
     }
@@ -271,6 +281,9 @@ export class ProxyHandler {
       } else if (typeof value === 'string') {
         rawResponse += `${safeKey}: ${this.sanitizeHeaderValue(value)}\r\n`;
       }
+    }
+    for (const cookie of stagedCookies) {
+      rawResponse += `Set-Cookie: ${this.sanitizeHeaderValue(cookie)}\r\n`;
     }
     rawResponse += '\r\n';
 

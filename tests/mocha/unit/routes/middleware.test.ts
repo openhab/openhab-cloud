@@ -12,6 +12,8 @@
  */
 
 import http from 'http';
+import net from 'net';
+import type { AddressInfo } from 'net';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import type { Request, Response, NextFunction } from 'express';
@@ -583,6 +585,180 @@ describe('Route Middleware', () => {
 
       expect(cookieStub.calledWith('CloudServer', 'server1.internal:3000')).to.be.true;
       expect(nextSpy.calledOnce).to.be.true;
+    });
+  });
+
+  describe('ensureServer WebSocket upgrades', () => {
+    const UPGRADE_RESPONSE =
+      'HTTP/1.1 101 Switching Protocols\r\n'
+      + 'Upgrade: websocket\r\n'
+      + 'Connection: Upgrade\r\n'
+      + 'Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n';
+
+    let servers: http.Server[] = [];
+
+    const listen = (server: http.Server): Promise<number> => {
+      servers.push(server);
+      return new Promise((resolve) => {
+        server.listen(0, '127.0.0.1', () => {
+          resolve((server.address() as AddressInfo).port);
+        });
+      });
+    };
+
+    // Echoes back whatever the tunnel carries, so the test can prove both
+    // directions are wired up.
+    const echoFrames = (socket: net.Socket) => {
+      socket.on('data', (chunk: Buffer) => {
+        socket.write(Buffer.concat([Buffer.from('echo:'), chunk]));
+      });
+    };
+
+    // Front node: no openHAB connection, so ensureServer proxies onwards.
+    const frontHandler = (
+      middleware: ReturnType<typeof createMiddleware>,
+      targetPort: number
+    ) => (req: http.IncomingMessage, res: http.ServerResponse) => {
+      (req as unknown as Request).connectionInfo = {
+        serverAddress: `127.0.0.1:${targetPort}`,
+      };
+      middleware.ensureServer(
+        req as unknown as Request,
+        res as unknown as Response,
+        (() => {}) as NextFunction
+      );
+    };
+
+    // Sends a raw request, waits for the 101, then round-trips a frame.
+    const openTunnel = (port: number, request: string): Promise<string> =>
+      new Promise((resolve, reject) => {
+        const client = net.connect(port, '127.0.0.1');
+        let received = '';
+        let sentFrame = false;
+
+        client.on('data', (chunk: Buffer) => {
+          received += chunk.toString();
+          if (!sentFrame && received.includes('\r\n\r\n')) {
+            sentFrame = true;
+            client.write('hello');
+          } else if (sentFrame && received.includes('echo:hello')) {
+            client.destroy();
+            resolve(received);
+          }
+        });
+        client.on('error', reject);
+        client.on('close', () => reject(new Error(`socket closed early: ${received}`)));
+        client.write(request);
+      });
+
+    afterEach(() => {
+      for (const server of servers) {
+        server.close();
+      }
+      servers = [];
+    });
+
+    it('tunnels an upgrade that arrives on the HTTP upgrade event', async () => {
+      const targetServer = http.createServer();
+      targetServer.on('upgrade', (_req, socket) => {
+        socket.write(UPGRADE_RESPONSE);
+        echoFrames(socket);
+      });
+      const targetPort = await listen(targetServer);
+
+      const middleware = createMiddleware(deps);
+      const frontServer = http.createServer();
+      // Mirrors app.ts: hand the upgrade to the middleware chain with a
+      // synthetic ServerResponse bound to the client socket.
+      frontServer.on('upgrade', (req, socket, head) => {
+        const res = new http.ServerResponse(req);
+        res.assignSocket(socket);
+        if (head && head.length > 0) {
+          socket.unshift(head);
+        }
+        frontHandler(middleware, targetPort)(req, res);
+      });
+      const frontPort = await listen(frontServer);
+
+      const received = await openTunnel(
+        frontPort,
+        'GET /ws/foo HTTP/1.1\r\n'
+        + 'Host: myopenhab.org\r\n'
+        + 'Upgrade: websocket\r\n'
+        + 'Connection: Upgrade\r\n'
+        + 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n'
+        + 'Sec-WebSocket-Version: 13\r\n\r\n'
+      );
+
+      expect(received).to.contain('101 Switching Protocols');
+      expect(received).to.contain('Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=');
+      expect(received).to.contain('echo:hello');
+    });
+
+    it('tunnels an upgrade whose hop-by-hop headers were stripped', async () => {
+      // No Upgrade/Connection headers, so both nodes see a plain request and
+      // detect the upgrade from the sec-websocket-* headers instead.
+      const targetServer = http.createServer((_req, res) => {
+        const socket = res.socket as net.Socket;
+        socket.removeAllListeners('data');
+        res.detachSocket(socket);
+        socket.write(UPGRADE_RESPONSE);
+        echoFrames(socket);
+      });
+      const targetPort = await listen(targetServer);
+
+      const middleware = createMiddleware(deps);
+      const frontServer = http.createServer(frontHandler(middleware, targetPort));
+      const frontPort = await listen(frontServer);
+
+      const received = await openTunnel(
+        frontPort,
+        'GET /ws/foo HTTP/1.1\r\n'
+        + 'Host: myopenhab.org\r\n'
+        + 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n'
+        + 'Sec-WebSocket-Version: 13\r\n\r\n'
+      );
+
+      expect(received).to.contain('101 Switching Protocols');
+      expect(received).to.contain('echo:hello');
+    });
+
+    it('closes the client socket when the target node goes away', async () => {
+      const targetServer = http.createServer();
+      targetServer.on('upgrade', (_req, socket) => {
+        socket.write(UPGRADE_RESPONSE);
+        socket.destroy();
+      });
+      const targetPort = await listen(targetServer);
+
+      const middleware = createMiddleware(deps);
+      const frontServer = http.createServer();
+      frontServer.on('upgrade', (req, socket) => {
+        const res = new http.ServerResponse(req);
+        res.assignSocket(socket);
+        frontHandler(middleware, targetPort)(req, res);
+      });
+      const frontPort = await listen(frontServer);
+
+      const closed = await new Promise<string>((resolve, reject) => {
+        const client = net.connect(frontPort, '127.0.0.1');
+        let received = '';
+        client.on('data', (chunk: Buffer) => {
+          received += chunk.toString();
+        });
+        client.on('close', () => resolve(received));
+        client.on('error', reject);
+        client.write(
+          'GET /ws/foo HTTP/1.1\r\n'
+          + 'Host: myopenhab.org\r\n'
+          + 'Upgrade: websocket\r\n'
+          + 'Connection: Upgrade\r\n'
+          + 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n'
+          + 'Sec-WebSocket-Version: 13\r\n\r\n'
+        );
+      });
+
+      expect(closed).to.contain('101 Switching Protocols');
     });
   });
 });
