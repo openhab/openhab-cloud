@@ -101,7 +101,7 @@
     "socket.io-client": "^4.8.4",
     "supertest": "^7.3.1",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "wait-on": "^9.5.1",
     "ws": "^8.22.0"
   },
