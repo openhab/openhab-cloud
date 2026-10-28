@@ -61,7 +61,7 @@
     "passport-http-bearer": "1.0.1",
     "passport-local": "1.0.0",
     "passport-oauth2-client-password": "0.1.2",
-    "redis": "^5.12.1",
+    "redis": "^6.3.0",
     "serve-favicon": "^2.5.1",
     "serve-static": "^2.2.1",
     "socket.io": "^4.8.4",
