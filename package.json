@@ -80,7 +80,7 @@
     "@types/express-session": "^1.19.0",
     "@types/html-to-text": "^9.0.4",
     "@types/luxon": "^3.7.6",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.5",
     "@types/oauth2orize": "^1.11.5",
     "@types/passport": "^1.0.17",
     "@types/passport-http": "^0.3.11",
